@@ -11,5 +11,6 @@ class D:
         pass
 
 
-c = C()
+c = C().id(D())
 d = D()
+c
