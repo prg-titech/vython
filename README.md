@@ -21,7 +21,7 @@ Vython は、[Programming with Versions (PWV) プロジェクト](https://prg.is
   - 内部メソッドとしてバージョンテーブル操作用のヘルパー関数を持つ
   - Objectクラスにバージョンテーブルをもたせる or Objectとバージョンテーブルを持つラッパークラスを新しく定義する
 - バージョンテーブル整合性検査 @ `src/syntax/semantic_object.py` か新しいファイル？
-  - オブジェクトを(1つ? or 2つ?)受け取り、バージョンテーブルを用いて整合性・互換性・一貫性チェックを行う特別な`version_check`関数を追加する
+  - オブジェクトを(1つ? or 2つ?)受け取り、バージョンテーブルを用いて整合性・互換性・一貫性チェックを行う特別な`version_check`関数を追加する。
   - IR ASTに特別な関数を追加する必要はないかも。関数としてパースさせinterpreterで特別な評価を行ってもよい。
 
 #### Step 3: Interpreterのバージョン対応 @ `src/interpreter.py`
