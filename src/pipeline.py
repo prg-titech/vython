@@ -44,7 +44,7 @@ print(ir)
 # [Phase 4]: Evaluate vython-IR AST on Interpreter
 print("=== Evaluate")
 interpreter = Interpreter()
-# 注：最終結果はヒープへのインデックスにすぎないので、出力のため生オブジェクトに解決
+# 注：最終結果はヒープインデックスにすぎないので、出力のため生オブジェクトに解決
 result_index = interpreter.interpret(ir)
 result_heap = interpreter.heap
 result_resolved = resolve_heap_object(result_heap, result_index)
