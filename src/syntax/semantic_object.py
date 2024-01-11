@@ -1,3 +1,6 @@
+from src.syntax.language import Name
+
+
 # 計算結果全体を示すクラス
 class Result:
     pass
@@ -10,13 +13,15 @@ class Value(Result):
 
 
 # 値を返さない計算結果（例：文の実行結果）を表すクラス
-class Void(Result):
-    def __repr__(self):
-        return "Void"
+# こんな値はpythonにはないのでどうするか？Noneは単一のインスタンスで、一度生成されたらずっと使い回せる
+# class Void(Result):
+#     def __repr__(self):
+#         return "Void"
 
 
 # 計算の失敗を表すクラス
 # エラーメッセージや例外情報を保持する。
+# 注：まだ計算失敗は未実装。
 class Failure(Result):
     def __init__(self, message, exception=None):
         self.message = message
@@ -53,31 +58,34 @@ class Object(Value):
 class Environment:
     def __init__(self, parent=None):
         self.parent = parent
-        self.variables = {}
+        self.bindings = {}
 
     def __str__(self):
-        return f"Environment({self.variables}, {self.parent})"
+        return f"Environment({self.bindings}, {self.parent})"
 
     def get(self, name):
-        if name in self.variables:
-            return self.variables[name]
+        if name in self.bindings:
+            return self.bindings[name]
         elif self.parent:
             return self.parent.get(name)
         else:
             raise NameError(f"Name '{name}' is not defined")
 
-    def set(self, name, value):
-        self.variables[name] = value
+    def set(self, name, heap_index):
+        self.bindings[name] = heap_index
 
 
 # ヒープ環境を示すクラス
-# 番地 -> その番地に格納されている値 の辞書
+# 値が生成された順に格納されており、indexがポインタの代わり
 class Heap:
     def __init__(self):
         self.objects = []
 
     def __str__(self):
-        return f"Heap({self.objects})"
+        indexed_objects_str = ", ".join(
+            [f"{index}: {str(obj)}" for index, obj in enumerate(self.objects)]
+        )
+        return f"Heap([{indexed_objects_str}])"
 
     def allocate(self, obj):
         self.objects.append(obj)
@@ -85,3 +93,30 @@ class Heap:
 
     def get(self, index):
         return self.objects[index]
+
+
+# 完全な形式の(参照を含まない)オブジェクトを構成するヘルパー関数
+def resolve_heap_object(heap, index, resolved_indices=None):
+    if resolved_indices is None:
+        resolved_indices = set()
+
+    if index in resolved_indices:
+        return index
+
+    obj = heap.get(index)
+    resolved_indices.add(index)
+
+    if isinstance(obj, Object):
+        resolved_attributes = {}
+        for attr, value in obj.attributes.items():
+            attr_name = attr.id if isinstance(attr, Name) else attr  # 属性名を文字列に変換
+
+            if isinstance(value, int) and value not in resolved_indices:
+                resolved_attributes[attr_name] = resolve_heap_object(
+                    heap, value, resolved_indices
+                )
+            else:
+                resolved_attributes[attr_name] = value
+        return Object(obj.type_tag, **resolved_attributes)
+    else:
+        return obj

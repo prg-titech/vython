@@ -3,6 +3,7 @@ import sys
 from src.parser import Parser
 from src.larkToIR import LarkToCustomAST
 from src.interpreter import Interpreter
+from src.syntax.semantic_object import resolve_heap_object
 
 # コマンドライン引数からファイル名を取得
 if len(sys.argv) != 2:
@@ -17,8 +18,10 @@ try:
         code = file.read()
 except FileNotFoundError:
     print(f"The specified file '{path}' was not found.")
+    sys.exit(1)
 except Exception as e:
     print(f"An error occurred while opening the file: {e}")
+    sys.exit(1)
 
 print("=== File content:")
 print(code)
@@ -40,7 +43,11 @@ print(ir)
 
 # [Phase 4]: Evaluate vython-IR AST on Interpreter
 print("=== Evaluate")
-result = Interpreter().interpret(ir)
+interpreter = Interpreter()
+# 注：最終結果はヒープへのインデックスにすぎないので、出力のため生オブジェクトに解決
+result_index = interpreter.interpret(ir)
+result_heap = interpreter.heap
+result_resolved = resolve_heap_object(result_heap, result_index)
 
 print("\n[DEBUG] Evaluation succeeded!\n[DEBUG] Final result:")
-print(result)
+print(result_resolved)
