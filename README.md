@@ -9,9 +9,9 @@ Vythonは以下の機能を特徴としています。
 2. `src/vython.lark` は、[lark-parserにより提供されるpython3文法](https://github.com/lark-parser/lark/blob/master/lark/grammars/python.lark)に独自の構文拡張を加えたものです。
 
 ## TODO
-やることリスト。1日で実装してバグが取り切れていないので、見つけたら適当に修正する。
 作業を始める前に [Compilation](https://github.com/prg-titech/vython?tab=readme-ov-file#compilation) の節と `src/pipeline.py` を読んで全体のコンパイルフローを把握すること。
-[Phase 2]は、算術プリミティブ値・算術演算をIntオブジェクト・そのメソッドにコンパイルしているが、未検証故に現在未使用。無視して良い。
+- [Phase 2]は無視してよい。算術プリミティブ値・算術演算をIntオブジェクト・そのメソッドにコンパイルしているが、未検証故に現在未使用。
+- バグ修正は最終目標に関係なら後回しにすること。少なくとも `src/test/samples/*` 以下の初期サンプルはすべて正常に評価できる。しかし、1日で実装したためバグが取り切れていない。後で適当な時期に修正すること。
 
 #### Step 1: ASTのバージョン対応
 - 最終目標はvyhton-IRにバージョンの情報が含まれるようにすること。
@@ -38,24 +38,26 @@ Vythonは以下の機能を特徴としています。
 - [ ] Objectを使う/生成する式の評価に、バージョンテーブルの処理を追加する
 
 
-## Installation
+## Requirement
+python 3を前提にしています。また、Parserとして [lark](https://github.com/lark-parser/lark) を使用しています。
 ```
 sudo apt install python3
 pip install lark
 ```
 
 ## How to use
-`pipeline.py`がすべてのコンパイルパスを含む関数。引数としてコンパイル対象へのプロジェクトルートからの相対パスを取る。
 
 ### Run
-`test/sample/basic.py`をコンパイルして実行。ログは標準出力と`log.txt`へ。
+`pipeline.py`がすべてのコンパイルパスを含む関数。
+コマンドライン引数としてコンパイル対象へのプロジェクトルートからの相対パスを取る。
+以下で`test/sample/basic.py`をコンパイルして実行し、ログは標準出力と`log.txt`へと吐き出せる。
 ```sh
 python -m src.pipeline test/sample/basic.py | tee log.txt
 ```
 
 ### Test
-未実装。`test/sample`にサンプルのpythonファイルが入っているのでどんどん追加しましょう。
-いいテストフレームワークがあったら導入したほうがいい。
+未実装。`test/sample`にサンプルのpythonファイルが入っているので積極的に追加すること。
+いいテストフレームワークがあったら導入を検討すること。
 
 ### Structure
 ```
