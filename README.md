@@ -3,33 +3,33 @@ Vython は、[Programming with Versions (PWV) プロジェクト](https://prg.is
 
 <b>免責事項</b>:
 1. この言語は未完成で、実験的な研究用途のみを目的としています。
-2. `src/vython.lark` は、[lark-parser](https://github.com/lark-parser/lark/blob/master/lark/grammars/python.lark)により提供されるpython3文法に独自の構文拡張を加えたものです。
+2. `src/vython.lark` は、[lark-parserにより提供されるpython3文法](https://github.com/lark-parser/lark/blob/master/lark/grammars/python.lark)に独自の構文拡張を加えたものです。
 
 ## TODO
 やることリスト。1日で実装してバグが取り切れていないので、見つけたら適当に修正する。
 #### Step 1: ASTのバージョン対応
 - 最終目標はvyhton-IRにバージョンの情報が含まれるようにすること。
-  - ちゃんとやるなら
-    - lark-pythonのAST定義 `src/vython.lark` を変更 
-    - vython-IRの定義 `src/syntax/language.py` を変更
-    - lark-pythonからvython-IRへのトランスパイラ定義 `src/larkToIR.py` を変更
-  - その場しのぎ的にやるなら
-    - vython-IRの定義 `src/syntax/language.py` を変更
-    - lark-pythonからvython-IRへのトランスパイラ定義 `src/larkToIR.py` に 前処理を追加
-      - `Classname__1`は`Classname`クラスのバージョン`1`と解釈
+- [ ] ちゃんとやるなら
+  - lark-pythonのAST定義 `src/vython.lark` を変更 
+  - vython-IRの定義 `src/syntax/language.py` を変更
+  - lark-pythonからvython-IRへのトランスパイラ定義 `src/larkToIR.py` を変更
+- [ ] その場しのぎ的にやるなら
+  - vython-IRの定義 `src/syntax/language.py` を変更
+  - lark-pythonからvython-IRへのトランスパイラ定義 `src/larkToIR.py` に 前処理を追加
+    - `Classname__1`は`Classname`クラスのバージョン`1`と解釈
 
 #### Step 2: バージョンテーブル対応
-- 2-1 バージョンテーブルクラスを定義する @ `src/syntax/semantic_object.py`
+- [ ] 2-1 バージョンテーブルクラスを定義する @ `src/syntax/semantic_object.py`
   - 内部メソッドとしてバージョンテーブル操作用のヘルパー関数を定義
     - `union`? `modify`? 必要な原始的なヘルパー関数を特定。
   - Objectクラスにバージョンテーブルをもたせる or Objectとバージョンテーブルを持つラッパークラスを新しく定義する
-- 2-2 バージョンテーブル整合性検査を定義する @ `src/syntax/semantic_object.py` か新しいファイル？
+- [ ] 2-2 バージョンテーブル整合性検査を定義する @ `src/syntax/semantic_object.py` か新しいファイル？
   - 名前は `check` だと普通の関数と区別がつかないので、`checkVersionCompatibility` など長い名前にしてもいい
   - オブジェクトへの参照(変数)のリストを受け取り、それらのバージョンテーブルを用い、整合性・互換性・一貫性チェックを行う
   - vython-IR レベルで特別なASTノードを追加する必要はないかもしれない。関数(`Call`)が特別な名前を持つ場合に限ってinterpreterで特別な評価を行うようにしてもよい。
 
 #### Step 3: Interpreterのバージョン対応 @ `src/interpreter.py`
-- Objectを使う/生成する式の評価に、バージョンテーブルの処理を追加する
+- [ ] Objectを使う/生成する式の評価に、バージョンテーブルの処理を追加する
 
 
 ## Installation
@@ -199,7 +199,7 @@ project-name/
 #### 実行時環境
 ```
 <environment> ::=    # 実行時環境
-    "Environment({" <bindings> "}, " <parent> ")"
+    "Environment "(" "{" <bindings> "}" "," <parent> ")"
 
 <bindings> ::=       # 実行時環境の束縛の列
     <binding> "," <bindings>
@@ -216,7 +216,7 @@ project-name/
 #### ヒープ(メモリ領域)
 ```
 <heap> ::=             # ヒープ
-    "Heap([" <indexed_objects> "])"
+    "Heap" "(" "[" <indexed_objects> "]" ")"
 
 <indexed_objects> ::=  # 格納された値(オブジェクト)の列
     <indexed_object> "," <indexed_objects>
