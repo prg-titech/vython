@@ -30,12 +30,12 @@ Vythonは以下の機能を特徴としています。
     - `union`? `modify`? 必要かつ原子的なヘルパー関数を特定。もしかしたら`union`は`modify`を使って定義するのかも？
   - Objectクラスにバージョンテーブルを追加 or Objectとバージョンテーブルを持つラッパークラスを新しく定義
 - [ ] 2-2 バージョンテーブル整合性検査を定義 @ `src/syntax/semantic_object.py` か新しいファイル？
-  - 名前は `check` だと普通の関数と区別がつかないので、`checkVersionCompatibility` など長い名前にしてもいい。
   - オブジェクトへの参照(変数)のリストを受け取り、それらのバージョンテーブルを用い、整合性・互換性・一貫性チェックを行う。
 
 #### Step 3: Interpreterのバージョン対応 @ `src/interpreter.py`
 - [ ] バージョンテーブルの処理をインタプリタに追加
   - バージョンテーブル整合性検査の文の評価を追加
+    - 名前は `check` だと普通の関数と区別がつかないので、`checkVersionCompatibility` など長い名前にしてもいい。
     - 拡張の方向性は２つある。どちらでもOK。
       - lark-pythonとvython-IRに整合性検査を行うための特別なASTノードを追加して、その評価をインタプリタに実装
       - lark-pythonとvython-IRは拡張<u>せず</u>、関数呼び出し(vython ASTレベルでは`Call`)のcalleeのfunctionオブジェクトが特別な名前(`check`や`checkVersionCompatibility`)を持つ場合に限って、interpreterで特別な評価を追加
