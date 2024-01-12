@@ -25,17 +25,19 @@ Vythonは以下の機能を特徴としています。
     - `Classname__1`は`Classname`クラスのバージョン`1`と解釈
 
 #### Step 2: バージョンテーブル対応
-- [ ] 2-1 バージョンテーブルクラスを定義する @ `src/syntax/semantic_object.py`
+- [ ] 2-1 バージョンテーブルクラスを定義 @ `src/syntax/semantic_object.py`
   - 内部メソッドとしてバージョンテーブル操作用のヘルパー関数を定義
-    - `union`? `modify`? 必要かつ原子的なヘルパー関数を特定。もしかしたら`union`は`modify`を使って定義するのかもしれない。
-  - Objectクラスにバージョンテーブルをもたせる or Objectとバージョンテーブルを持つラッパークラスを新しく定義する
-- [ ] 2-2 バージョンテーブル整合性検査を定義する @ `src/syntax/semantic_object.py` か新しいファイル？
-  - 名前は `check` だと普通の関数と区別がつかないので、`checkVersionCompatibility` など長い名前にしてもいい
-  - オブジェクトへの参照(変数)のリストを受け取り、それらのバージョンテーブルを用い、整合性・互換性・一貫性チェックを行う
-  - vython-IR レベルで特別なASTノードを追加する必要はないかもしれない。関数呼び出し(vython ASTレベルでは`Call`)が特別な名前を持つ場合に限ってinterpreterで特別な評価を行うようにしてもよい。
+    - `union`? `modify`? 必要かつ原子的なヘルパー関数を特定。もしかしたら`union`は`modify`を使って定義するのかも？
+  - Objectクラスにバージョンテーブルを追加 or Objectとバージョンテーブルを持つラッパークラスを新しく定義
+- [ ] 2-2 バージョンテーブル整合性検査を定義 @ `src/syntax/semantic_object.py` か新しいファイル？
+  - 名前は `check` だと普通の関数と区別がつかないので、`checkVersionCompatibility` など長い名前にしてもいい。
+  - オブジェクトへの参照(変数)のリストを受け取り、それらのバージョンテーブルを用い、整合性・互換性・一貫性チェックを行う。
+  - 拡張の方向性は２つある。どちらでもOK。
+    - lark-pythonとvython-IRに整合性検査を行うための特別なASTノードを追加して、その評価をインタプリタに実装
+    - lark-pythonとvython-IRは拡張<u>せず</u>、関数呼び出し(vython ASTレベルでは`Call`)のcalleeのfunctionオブジェクトが特別な名前(`check`や`checkVersionCompatibility`)を持つ場合に限って、interpreterで特別な評価を追加
 
 #### Step 3: Interpreterのバージョン対応 @ `src/interpreter.py`
-- [ ] Objectを使う/生成する式の評価に、バージョンテーブルの処理を追加する
+- [ ] Objectを使う/生成する式の評価に、バージョンテーブルの処理を追加
 
 
 ## Requirement
@@ -48,9 +50,9 @@ pip install lark
 ## How to use
 
 ### Run
-`pipeline.py`がすべてのコンパイルパスを含む関数。
-コマンドライン引数としてコンパイル対象へのプロジェクトルートからの相対パスを取る。
-以下で`test/sample/basic.py`をコンパイルして実行し、ログは標準出力と`log.txt`へと吐き出せる。
+`pipeline.py`がすべてのコンパイルパスを含む関数です。
+コマンドライン引数としてコンパイル対象へのプロジェクトルートからの相対パスを取ります。
+以下で`test/sample/basic.py`をコンパイルして実行し、ログは標準出力と`log.txt`へと書きだします。
 ```sh
 python -m src.pipeline test/sample/basic.py | tee log.txt
 ```
