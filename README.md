@@ -8,21 +8,25 @@ Vython は、[Programming with Versions (PWV) プロジェクト](https://prg.is
 ## TODO
 やることリスト
 #### Step 1: ASTのバージョン対応
-- ちゃんとやるなら
-  - `src/vython.lark` を変更 
-  - `src/syntax/language.py` を変更
-  - `src/larkToIR.py` を変更
-- その場しのぎ的にやるなら
-  - `src/syntax/language.py` を変更
-  - `src/larkToIR.py` に 前処理を追加：`Classname__1`は`Classname`クラスのバージョン`1`と解釈
+- 最終目標はvyhton-IRにバージョンの情報が含まれるようにすること。
+  - ちゃんとやるなら
+    - lark-pythonのAST定義 `src/vython.lark` を変更 
+    - vython-IRの定義 `src/syntax/language.py` を変更
+    - lark-pythonからvython-IRへのトランスパイラ定義 `src/larkToIR.py` を変更
+  - その場しのぎ的にやるなら
+    - vython-IRの定義 `src/syntax/language.py` を変更
+    - lark-pythonからvython-IRへのトランスパイラ定義 `src/larkToIR.py` に 前処理を追加
+      - `Classname__1`は`Classname`クラスのバージョン`1`と解釈
 
 #### Step 2: バージョンテーブル対応
-- バージョンテーブルクラスを新しく追加する @ `src/syntax/semantic_object.py`
-  - 内部メソッドとしてバージョンテーブル操作用のヘルパー関数を持つ
+- 2-1 バージョンテーブルクラスを定義する @ `src/syntax/semantic_object.py`
+  - 内部メソッドとしてバージョンテーブル操作用のヘルパー関数を定義
+    - `union`? `modify`? 必要な原始的なヘルパー関数を特定。
   - Objectクラスにバージョンテーブルをもたせる or Objectとバージョンテーブルを持つラッパークラスを新しく定義する
-- バージョンテーブル整合性検査 @ `src/syntax/semantic_object.py` か新しいファイル？
-  - オブジェクトを(1つ? or 2つ?)受け取り、バージョンテーブルを用いて整合性・互換性・一貫性チェックを行う特別な`version_check`関数を追加する。
-  - IR ASTに特別な関数を追加する必要はないかも。関数としてパースさせinterpreterで特別な評価を行ってもよい。
+- 2-2 バージョンテーブル整合性検査を定義する @ `src/syntax/semantic_object.py` か新しいファイル？
+  - 名前は `check` だと普通の関数と区別がつかないので、`checkVersionCompatibility` など長い名前にしてもいい
+  - オブジェクトへの参照(変数)のリストを受け取り、それらのバージョンテーブルを用い、整合性・互換性・一貫性チェックを行う
+  - vython-IR レベルで特別なASTノードを追加する必要はないかもしれない。関数(`Call`)が特別な名前を持つ場合に限ってinterpreterで特別な評価を行うようにしてもよい。
 
 #### Step 3: Interpreterのバージョン対応 @ `src/interpreter.py`
 - Objectを使う/生成する式の評価に、バージョンテーブルの処理を追加する
@@ -51,21 +55,21 @@ python -m src.pipeline test/sample/basic.py | tee log.txt
 ```
 project-name/
 ├── README.md
-├── src/                      # ソースコードが含まれるディレクトリ
-│   ├── __init__.py           # Pythonパッケージとしての初期化ファイル
-│   ├── pipeline.py           # コンパイルプロセス全体を統括するパイプラインの実装
-│   ├── parser.py             # [Phase 1] パーサー
-│   ├── preprocess.py         # [Phase 2] 前処理
-│   ├── larkToIR.py           # [Phase 3] Lark構文解析結果を中間表現に変換するモジュール
-│   ├── interpreter.py        # [Phase 4] インタープリタ
-│   ├── syntax/               # 言語の構文や意味論に関するモジュールが含まれるディレクトリ
-│   │   ├── language.py       # 言語の文法定義やASTノードのクラスを定義
-│   │   └── semantic_object.py# 意味論的なオブジェクト（値、環境、ヒープなど）の定義
-│   └── vython.lark           # Larkで使用する構文定義ファイル
+├── src/                       # ソースコードが含まれるディレクトリ
+│   ├── __init__.py            # 初期化ファイル
+│   ├── pipeline.py            # コンパイラパイプラインの統括
+│   ├── parser.py              # [Phase 1] パーサー
+│   ├── preprocess.py          # [Phase 2] 前処理
+│   ├── larkToIR.py            # [Phase 3] Lark構文解析結果から中間表現へのトランスパイラ
+│   ├── interpreter.py         # [Phase 4] インタープリタ
+│   ├── syntax/                # Vython IRの構文に関するモジュールが含まれるディレクトリ
+│   │   ├── language.py        # Vython IRの構文定義
+│   │   └── semantic_object.py # Vython IR Interpreterの意味論的なオブジェクト（値、環境、ヒープなど）の定義
+│   └── vython.lark            # Lark-python 構文のEBNF定義
 │
-└── test/                     # テストコードが含まれるディレクトリ
-    ├── __init__.py           # テストパッケージの初期化ファイル
-    ├── sample/               # サンプルプログラムやテストケースが含まれるディレクトリ
+└── test/                      # テストコードが含まれるディレクトリ
+    ├── __init__.py            # 初期化ファイル
+    ├── sample/                # サンプルプログラムが含まれるディレクトリ
     │   │
 ...
 ```
@@ -106,7 +110,7 @@ project-name/
 ```
 <prog> ::=                     # トップレベル式の列
     <class_def> <prog>         # クラス定義
-  # | <function_def>             # トップレベル関数定義
+  # | <function_def>             # トップレベル関数定義(未実装)
   | <stmt> <prog>              # 文
   | ε
 
@@ -142,7 +146,7 @@ project-name/
 
 <call> ::=                     # 関数呼び出し
     <attribute> "(" <args> ")" # メソッド呼び出し
-  # | <name> "(" <args> ")"      # 関数呼び出し
+  # | <name> "(" <args> ")"      # 関数呼び出し(未実装)
 
 <attribute> ::=
     <expr> "." <name>          # 属性参照
@@ -168,7 +172,7 @@ project-name/
   # | literal                  # リテラル(未実装)
 
 <object> ::=                 # オブジェクト
-    "Object(" <type_tag> ", {" <attributes> "})"
+    "Object" "(" <type_tag> "," "{" <attributes> "}" ")"
 
 <type_tag> ::=
     <name>                   # 普通のインスタンスを示すtype-tag。クラス名が入る
@@ -177,7 +181,7 @@ project-name/
   | "None"                   # Noneオブジェクトを示す特別なtype-tag
 
 <attributes> ::=             # オブジェクトの持つ属性の列
-    <attribute> <attributes>
+    <attribute> "," <attributes>
   | ε
 
 <attribute> ::=              # オブジェクトの持つ属性
@@ -186,8 +190,10 @@ project-name/
 <heap_index> ::=             # ヒープインデックス(参照)
     (任意の非負整数)
 
-# <failure> ::= "Failure(message=" <message> ")"
-# <message> ::= (任意のエラーメッセージ文字列)
+# <failure> ::=                # 失敗(未実装)
+#     "Failure" "(" <message> ")"  
+# <message> ::=                # エラーメッセージ(未実装, version_checkで使うかも)
+#      (任意のエラーメッセージ文字列)
 ```
 
 #### 実行時環境
@@ -196,14 +202,14 @@ project-name/
     "Environment({" <bindings> "}, " <parent> ")"
 
 <bindings> ::=       # 実行時環境の束縛の列
-    <binding> ("," <binding>)*
+    <binding> "," <bindings>
   | ε
 
 <binding> ::=        # 実行時環境の束縛
     <name> ":" <heap_index>
 
 <parent> ::=         # 親環境
-    <environment>    # 親の環境
+    <environment>
   | "None"           # 親環境なし(ローカル環境 = グローバル環境のとき)
 ```
 
@@ -213,7 +219,7 @@ project-name/
     "Heap([" <indexed_objects> "])"
 
 <indexed_objects> ::=  # 格納された値(オブジェクト)の列
-    <indexed_object> <indexed_objects>
+    <indexed_object> "," <indexed_objects>
   | ε
 
 <indexed_object> ::=   # 格納された値(オブジェクト)
