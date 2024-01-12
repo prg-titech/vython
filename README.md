@@ -32,13 +32,14 @@ Vythonは以下の機能を特徴としています。
 - [ ] 2-2 バージョンテーブル整合性検査を定義 @ `src/syntax/semantic_object.py` か新しいファイル？
   - 名前は `check` だと普通の関数と区別がつかないので、`checkVersionCompatibility` など長い名前にしてもいい。
   - オブジェクトへの参照(変数)のリストを受け取り、それらのバージョンテーブルを用い、整合性・互換性・一貫性チェックを行う。
-  - 拡張の方向性は２つある。どちらでもOK。
-    - lark-pythonとvython-IRに整合性検査を行うための特別なASTノードを追加して、その評価をインタプリタに実装
-    - lark-pythonとvython-IRは拡張<u>せず</u>、関数呼び出し(vython ASTレベルでは`Call`)のcalleeのfunctionオブジェクトが特別な名前(`check`や`checkVersionCompatibility`)を持つ場合に限って、interpreterで特別な評価を追加
 
 #### Step 3: Interpreterのバージョン対応 @ `src/interpreter.py`
-- [ ] Objectを使う/生成する式の評価に、バージョンテーブルの処理を追加
-
+- [ ] バージョンテーブルの処理をインタプリタに追加
+  - バージョンテーブル整合性検査の文の評価を追加
+    - 拡張の方向性は２つある。どちらでもOK。
+      - lark-pythonとvython-IRに整合性検査を行うための特別なASTノードを追加して、その評価をインタプリタに実装
+      - lark-pythonとvython-IRは拡張<u>せず</u>、関数呼び出し(vython ASTレベルでは`Call`)のcalleeのfunctionオブジェクトが特別な名前(`check`や`checkVersionCompatibility`)を持つ場合に限って、interpreterで特別な評価を追加
+  - 他のObjectを使う/生成する式の評価に、返り値のバージョンテーブルを計算する処理を追加
 
 ## Requirement
 python 3を前提にしています。また、Parserとして [lark](https://github.com/lark-parser/lark) を使用しています。
