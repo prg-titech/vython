@@ -6,7 +6,7 @@ Vython は、[Programming with Versions (PWV) プロジェクト](https://prg.is
 2. `src/vython.lark` は、[lark-parser](https://github.com/lark-parser/lark/blob/master/lark/grammars/python.lark)により提供されるpython3文法に独自の構文拡張を加えたものです。
 
 ## TODO
-やることリスト。1日で実装したのでバグがある(多分)ので、見つけたら適当に修正する。
+やることリスト。1日で実装してバグが取り切れていないので、見つけたら適当に修正する。
 #### Step 1: ASTのバージョン対応
 - 最終目標はvyhton-IRにバージョンの情報が含まれるようにすること。
   - ちゃんとやるなら
