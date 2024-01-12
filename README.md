@@ -9,7 +9,7 @@ Vythonは以下の機能を特徴としています。
 2. `src/vython.lark` は、[lark-parserにより提供されるpython3文法](https://github.com/lark-parser/lark/blob/master/lark/grammars/python.lark)に独自の構文拡張を加えたものです。
 
 ## TODO
-作業を始める前に [Compilation](https://github.com/prg-titech/vython?tab=readme-ov-file#compilation) の節と `src/pipeline.py` を読んで全体のコンパイルフローを把握すること。
+作業を始める前に [Compilation](https://github.com/prg-titech/vython?tab=readme-ov-file#compilation) の節を読んで全体のコンパイルフローを把握すること。
 - [Phase 2]は無視してよい。算術プリミティブ値・演算のIntオブジェクト・メソッドへのコンパイルを定義しているが、未検証故に未使用。
 - バグ修正は出来るだけ後回しにすること。少なくとも `test/samples/*` 以下の初期サンプルはすべて正常に評価できる。しかし、1日で実装したためバグが取り切れていない。後で適当な時期に修正すること。
 
@@ -83,6 +83,7 @@ project-name/
 ```
 
 ## Compilation
+[src/pipeline.py](https://github.com/prg-titech/vython/blob/master/src/pipeline.py) に定義されている。
 ```
 +----------+
 | Raw Code |
