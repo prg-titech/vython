@@ -10,7 +10,7 @@ Vythonは以下の機能を特徴としています。
 
 ## TODO
 やることリスト。1日で実装してバグが取り切れていないので、見つけたら適当に修正する。
-作業を始める前に [Compilation](https://github.com/prg-titech/vython?tab=readme-ov-file#structure) の節と `src/pipeline.py` を読んで全体のコンパイルフローを把握すること。
+作業を始める前に [Compilation](https://github.com/prg-titech/vython?tab=readme-ov-file#compilation) の節と `src/pipeline.py` を読んで全体のコンパイルフローを把握すること。
 [Phase 2]は、算術プリミティブ値・算術演算をIntオブジェクト・そのメソッドにコンパイルしているが、未検証故に現在未使用。無視して良い。
 
 #### Step 1: ASTのバージョン対応
