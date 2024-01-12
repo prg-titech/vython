@@ -2,11 +2,11 @@
 Vython は、[Programming with Versions (PWV) プロジェクト](https://prg.is.titech.ac.jp/ja/projects/context-oriented-programming/version-programming/)の予備実験として実装された最小限のPythonサブセットです。Vython では、開発者は単一クラスの複数のバージョンを柔軟に利用できると同時に、プログラム中の計算が期待される仕様のデータフローで行われているかを動的に検査します。
 
 <b>免責事項</b>:
-1. 研究言語なので小さい
-2. 1日で実装したのでバグがある(多分)
+1. この言語は未完成で、実験的な研究用途のみを目的としています。
+2. `src/vython.lark` は、[lark-parser](https://github.com/lark-parser/lark/blob/master/lark/grammars/python.lark)により提供されるpython3文法に独自の構文拡張を加えたものです。
 
 ## TODO
-やることリスト
+やることリスト。1日で実装したのでバグがある(多分)ので、見つけたら適当に修正する。
 #### Step 1: ASTのバージョン対応
 - 最終目標はvyhton-IRにバージョンの情報が含まれるようにすること。
   - ちゃんとやるなら
