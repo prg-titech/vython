@@ -1,7 +1,10 @@
 # Vython
-Vython は、[Programming with Versions (PWV) プロジェクト](https://prg.is.titech.ac.jp/ja/projects/context-oriented-programming/version-programming/)の予備実験として実装された最小限のPythonサブセットです。Vython では、開発者は単一クラスの複数のバージョンを柔軟に利用できると同時に、プログラム中の計算が期待される仕様のデータフローで行われているかを動的に検査します。
+Vython は、[Programming with Versions (PWV) プロジェクト](https://prg.is.titech.ac.jp/ja/projects/context-oriented-programming/version-programming/)の予備実験として実装された最小限のPythonサブセットです。
+Vythonは以下の機能を特徴としています。
+- <b>複数バージョンの利用</b>: 開発者は単一クラスの複数のバージョンを柔軟に利用できます。すべてのインスタンスが生成に使用したクラスのバージョンを記録しており、インスタンス生成や属性参照はそのバージョンの仕様に従って行われます。
+- <b>動的バージョン検査</b>: すべての計算が、期待される仕様に由来する計算の組み合わせで行われていることを<i>動的</i>に検査します。
 
-<b>免責事項</b>:
+<b>免責事項</b>
 1. この言語は未完成で、実験的な研究用途のみを目的としています。
 2. `src/vython.lark` は、[lark-parserにより提供されるpython3文法](https://github.com/lark-parser/lark/blob/master/lark/grammars/python.lark)に独自の構文拡張を加えたものです。
 
