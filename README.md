@@ -28,7 +28,7 @@ Vythonは以下の機能を特徴としています。
 - [ ] 2-1 バージョンテーブルクラスを定義 @ `src/syntax/semantic_object.py`
   - 内部メソッドとしてバージョンテーブル操作用のヘルパー関数を定義
     - `union`? `modify`? 必要かつ原子的なヘルパー関数を特定。もしかしたら`union`は`modify`を使って定義するのかも？
-  - Objectクラスにバージョンテーブルを追加 or Objectとバージョンテーブルを持つラッパークラスを新しく定義
+  - VObjectクラスにバージョンテーブルを追加 or VObjectとバージョンテーブルを持つラッパークラスを新しく定義
 - [ ] 2-2 バージョンテーブル整合性検査を定義 @ `src/syntax/semantic_object.py` か新しいファイル？
   - オブジェクトへの参照(変数)のリストを受け取り、それらのバージョンテーブルを用い、整合性・互換性・一貫性チェックを行う。
 
@@ -39,7 +39,7 @@ Vythonは以下の機能を特徴としています。
     - 拡張の方向性は２つある。どちらでもOK。
       - lark-pythonとvython-IRに整合性検査を行うための特別なASTノードを追加して、その評価をインタプリタに実装
       - lark-pythonとvython-IRは拡張<u>せず</u>、関数呼び出し(vython ASTレベルでは`Call`)のcalleeのfunctionオブジェクトが特別な名前(`check`や`checkVersionCompatibility`)を持つ場合に限って、interpreterで特別な評価を追加
-  - 他のObjectを使う/生成する式の評価に、返り値のバージョンテーブルを計算する処理を追加
+  - 他のVObjectを使う/生成する式の評価に、返り値のバージョンテーブルを計算する処理を追加
 
 ## Requirement
 python 3を前提にしています。また、Parserとして [lark](https://github.com/lark-parser/lark) を使用しています。
@@ -178,7 +178,7 @@ project-name/
 ```
 
 
-### Semantic Objects
+### Semantic VObjects
 #### 結果と値
 ```
 <result> ::=                 # 結果
@@ -191,7 +191,7 @@ project-name/
   # | literal                  # リテラル(未実装)
 
 <object> ::=                 # オブジェクト
-    "Object" "(" <type_tag> "," "{" <attributes> "}" ")"
+    "VObject" "(" <type_tag> "," "{" <attributes> "}" ")"
 
 <type_tag> ::=
     <name>                   # 普通のインスタンスを示すtype-tag。クラス名が入る

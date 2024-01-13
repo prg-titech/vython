@@ -2,12 +2,12 @@ import sys
 import time
 from src.compiler import Compiler
 
-def execute_phase(phase_name, function):
+def execute_phase(message, function):
     start_time = time.time()
-    # print(f"[{phase_name}] Start")
     function()
     end_time = time.time()
-    print(f"[{phase_name}] Completed in {end_time - start_time:.2f} seconds")
+    print(message)
+    print(f"  --> Completed in {end_time - start_time:.2f} seconds")
 
 def main():
     debug_mode = False
@@ -33,16 +33,16 @@ def main():
         print(f"An error occurred while opening the file: {e}")
         sys.exit(1)
 
-    compiler = Compiler(debug_mode = debug_mode)
+    compiler = Compiler(code, debug_mode = debug_mode)
 
     # 各フェーズの実行
-    execute_phase("Phase 1: Parse to lark-python AST", lambda: compiler.parse(code))
-    print("[Phase 2: Preprocess] Skipped")
+    execute_phase("[Phase 1] Parse to lark-python AST", lambda: compiler.parse())
+    print("[Phase 2] Preprocess\n  --> Skipped")
     # execute_phase("Phase 2: Preprocessing", lambda: compiler.preprocess(code))
-    execute_phase("Phase 3: Compile to IR", lambda: compiler.compile_to_ir())
-    execute_phase("Phase 4: Interpretation", lambda: compiler.evaluate())
+    execute_phase("[Phase 3] Compile to IR", lambda: compiler.compile_to_ir())
+    execute_phase("[Phase 4] Interpretation", lambda: compiler.evaluate())
 
-    print(f"Final result:\n{compiler.get_result()}")
+    print(f"[Result]\n  {compiler.get_result()}")
 
 if __name__ == "__main__":
   main()
