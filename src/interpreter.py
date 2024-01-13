@@ -2,16 +2,6 @@ from src.syntax.semantic_object import *
 from src.syntax.language import *
 
 
-##############
-### 要修正 ###
-##############
-# - 今の実装ではNameの使い方がいい加減で、ObjectのattributesでkeyがNameだったり文字列だったりごちゃまぜになっている。
-#   NameはASTにおける名前をラップするノードにすぎないので、オブジェクトになった時点で文字列に落とすべきだと思う。
-#   どこがどうなってるのかまるで把握していないので、精査する必要あり。
-# - interpret_Callの定義が怪しい。多分3つ目の分岐に到達するパスが存在しない。要整理。
-# - 
-
-
 class Interpreter:
     def __init__(self):
         self.heap = Heap()
@@ -48,19 +38,17 @@ class Interpreter:
         if env is None:
             env = self.global_env
 
-        cur_step = self.step_count
-
         # method_name と同名のメソッド実行
         method_name = "interpret_" + type(node).__name__
         method = getattr(self, method_name, self.generic_interpret)
 
-
+        cur_step = self.step_count # 前後のログでステップカウントは同一にする
         self.eval_depth += 1
+        self.step_count += 1
         self.log_state(f"[Starting] Rule: {method_name}", node, self.eval_depth, cur_step, env, self.heap)
 
-        self.step_count += 1
         result = method(node, env)
-
+        
         self.log_state(f"[Completed] Rule: {method_name}", node, self.eval_depth, cur_step, env, self.heap, result)
         self.eval_depth -= 1
 
@@ -97,8 +85,9 @@ class Interpreter:
         for element in node.body:
             if isinstance(element, FunctionDef):
                 method_name = element.name.id
+                method_args = [arg.id for arg in element.args] if element.args else []
                 method_obj = Object(
-                    "function", name=method_name, args=element.args, body=element.body
+                    "function", name=method_name, args=method_args, body=element.body
                 )
                 heap_index = self.heap.allocate(method_obj)  # メソッドオブジェクトをヒープにアロケート
                 class_body[method_name] = heap_index  # メソッドのヒープインデックスを保存
@@ -150,7 +139,7 @@ class Interpreter:
         evaluated_value_index = self.interpret(node.value)
         return evaluated_value_index
 
-    # 関数呼び出しの評価(メソッド/コンストラクタ含む)
+    # 関数呼び出しの評価(インスタンス生成・メソッド呼び出し)
     def interpret_Call(self, node, env):
         callable_obj_index = self.interpret(node.func, env)
         callable_obj = self.heap.get(callable_obj_index)
@@ -159,8 +148,8 @@ class Interpreter:
         if callable_obj is None:
             raise TypeError(f"Callable object is None. Unable to call: \n{node.func}")
 
-        # callable_objがクラス定義を表すオブジェクトのケース
-        # -> ClassDefで環境に入ったものが参照で呼ばれたクラスのインスタンス化が起こる
+        # インスタンス生成
+        # - ClassDefで環境に入ったクラス定義を表すオブジェクトが参照された場合に起きる
         if callable_obj.type_tag == "class":
             # インスタンスオブジェクトのtype_tagにはインスタンス元のクラス名を入れる
             class_name = callable_obj.attributes["name"]
@@ -200,52 +189,33 @@ class Interpreter:
             # オブジェクトが格納されているヒープへのindexを返す
             return heap_index
 
-        # 関数の評価
+        # 関数の評価, オブジェクトから属性参照で取り出されたメソッド呼び出しのケースを含む
         elif callable_obj.type_tag == "function":
             # 新しいローカル環境を作成
             local_env = Environment(parent=env)
 
-            # selfにインスタンスのインデックスをバインド
+            # 変数 'self' にインスタンスのインデックスをバインド
             local_env.set("self", callable_obj_index)
 
-            # 'self' 引数を除外して、残りの引数を処理
-            # 注：リスト記法 + zipで要素の順序保たれる？要注意
+            # 引数リストから 'self' を除外して、残りの引数を処理
             func_args_wo_self = [
-                arg for arg in callable_obj.attributes["args"] if arg.id != "self"
+                arg for arg in callable_obj.attributes["args"] if arg != "self"
             ]
             for arg_name, arg_value in zip(func_args_wo_self, node.args):
                 if arg_value is not None:
                     evaluated_arg = self.interpret(arg_value, env)
-                    local_env.set(arg_name.id, evaluated_arg)
+                    local_env.set(arg_name, evaluated_arg)
 
             # 関数本体の実行
-            # 最後の式or文の評価結果(の値へのインデックス)が最終的な返り値
+            # 最後の式・文の評価結果(の値へのヒープインデックス)が最終的な返り値
             result_index = self.none_index
             for statement in callable_obj.attributes["body"]:
                 result_index = self.interpret(statement, local_env)
             return result_index
 
         else:
-            # callable_objがインスタンスを表すオブジェクトで、なおかつメソッド呼び出しが続くケース
-            method = callable_obj.get_attribute(node.func.attr)
-            if method and method.type_tag == "function":
-                # メソッド実行のための環境を作成
-                method_env = Environment(parent=env)
-                # selfにインスタンスのインデックスをバインド
-                method_env.set("self", callable_obj_index)
-                # メソッドの引数を評価し、ローカル環境にセット
-                for arg_def, arg_val in zip(method.attributes["args"], node.args):
-                    evaluated_arg = self.interpret(arg_val, method_env)
-                    method_env.set(arg_def.id, evaluated_arg)
-                # メソッドの本体を実行
-                for statement in method.attributes["body"]:
-                    result = self.interpret(statement, method_env)
-                    if isinstance(result, Return):
-                        # メソッドからの戻り値を返す
-                        return result.value
-            else:
-                # メソッドが存在しない場合はエラーを発生させる
-                raise TypeError(f"Attribute {node.func.attr} is not a callable method")
+            # type_tag が "class" でも "function" でもないなら不正な関数呼び出し
+            raise TypeError(f"Attribute {callable_obj.type_tag} is not a callable method")
 
     # 属性参照の評価
     def interpret_Attribute(self, node, env):
