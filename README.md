@@ -64,8 +64,15 @@ vython test/sample/basic.py | tee tmp.log
 ```
 
 ### Test
-未実装。`test/sample`にサンプルのpythonファイルが入っているので積極的に追加すること。
-いいテストフレームワークがあったら導入を検討すること。
+pytestを使用する。
+```sh
+pip install pytest
+```
+`test/` 以下の全てのユニットテストを実行する。
+```sh
+pytest test/
+```
+`test/sample`にサンプルのpythonファイルが入っているので積極的に追加すること。
 
 ### Structure
 ```
