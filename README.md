@@ -42,15 +42,16 @@ Vythonは以下の機能を特徴としています。
   - 他のVObjectを使う/生成する式の評価に、返り値のバージョンテーブルを計算する処理を追加
 
 ## Requirement
-python 3を前提にしています。また、Parserとして [lark](https://github.com/lark-parser/lark) を使用しています。
-```
+Vython は Parser として [lark](https://github.com/lark-parser/lark) を使用しています。
+```sh
 sudo apt install python3
 pip install lark
+pip install pytest # ユニットテストでのみ使用
 ```
 
 ## How to install / run / test
 ### Install / Uninstall
-プロジェクトのルートディレクトリで以下を実行してください。
+`vython` をインストール / アンインストールするには、プロジェクトルートで以下を実行してください。
 ```sh
 pip install .        # Install
 pip uninstall vython # Uninstall
@@ -58,21 +59,23 @@ pip uninstall vython # Uninstall
 
 ### Run
 `vython` はコマンドライン引数としてコンパイル対象へのプロジェクトルートからの相対パスを取ります。
-以下でtest/sample/basic.pyをコンパイルして実行し、ログは標準出力と `tmp.log` へと書きだします。
+`test/sample/basic.py` をコンパイル・実行するには、以下を実行してください。
 ```sh
-vython test/sample/basic.py | tee tmp.log
+vython test/sample/basic.py
+```
+`vython` コンパイラのデバッグモードはより詳細な各コンパイルフェーズの情報を出力します。
+デバッグモードで `test/sample/basic.py` をコンパイル・実行し、標準出力と `tmp.log` へとログを書きだすには、以下を実行してください。
+```sh
+vython --debug test/sample/basic.py | tee tmp.log
+vython -d test/sample/basic.py | tee tmp.log
 ```
 
 ### Test
-pytestを使用する。
-```sh
-pip install pytest
-```
-`test/` 以下の全てのユニットテストを実行する。
+pytestを用いて `test/` 以下の全てのユニットテストを実行するには、以下を実行してください。
 ```sh
 pytest test/
 ```
-`test/sample`にサンプルのpythonファイルが入っているので積極的に追加すること。
+`test/sample` にサンプルのpythonファイルが入っているので積極的に追加してください。
 
 ### Structure
 ```
@@ -100,7 +103,7 @@ project-name/
 ```
 
 ## Compilation
-[src/pipeline.py](https://github.com/prg-titech/vython/blob/master/src/pipeline.py) に定義されている。
+[src/compiler.py](https://github.com/prg-titech/vython/blob/master/src/compiler.py) に定義されている。
 ```
 +----------+
 | Raw Code |
