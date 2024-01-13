@@ -32,6 +32,7 @@ class Failure(Result):
 
 
 # オブジェクトを示すクラス
+# 要バージョンテーブル
 class VObject(Value):
     def __init__(self, type_tag, **attributes):
         super().__init__()
@@ -46,6 +47,18 @@ class VObject(Value):
 
     def set_attribute(self, attr, value):
         self.attributes[attr] = value
+
+
+# VersionTableの定義のひな型
+# Versiontable操作用のヘルパー関数もここに定義
+class VersionTable():
+    def __init__(self, version):
+        pass
+    def modify(self, modname, version):
+        pass
+    def union(self, vt):
+        pass
+
 
 
 ##########################

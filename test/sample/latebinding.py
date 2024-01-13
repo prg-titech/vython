@@ -1,11 +1,11 @@
-class Node:
+class Node!1:
     pass
 
 
-class Container:
+class Container!1:
     pass
 
 
-container = Container()
-container.item = Node()
+container = Container!1()
+container.item = Node!1()
 container

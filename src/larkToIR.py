@@ -11,8 +11,8 @@ class LarkToCustomAST(Transformer):
         return Module(body=self._flatten_list(items))
 
     def classdef(self, items):
-        name, bases, body = items[0], [], self._flatten_list(items[2:])
-        return ClassDef(name=name, bases=bases, body=body)
+        name, version, bases, body = items[0], items[1], [], self._flatten_list(items[3:])
+        return ClassDef(name=name, version=version, bases=bases, body=body)
 
     def assign_stmt(self, items):
         assign_tree = items[0]
@@ -34,7 +34,16 @@ class LarkToCustomAST(Transformer):
     def funccall(self, items):
         func, args = items[0], self._flatten_list(items[1:])
         transformed_func = self.transform(func) if isinstance(func, Tree) else func
-        return Call(func=transformed_func, args=args)
+        return Call(func=transformed_func, version=None, args=args)
+
+    def funccallwithversion(self, items):
+        func, version, args = items[0], items[1], self._flatten_list(items[2:])
+        transformed_func = self.transform(func) if isinstance(func, Tree) else func
+        return Call(func=transformed_func, version=version, args=args)
+
+    def version(self, items):
+        number = items[0]
+        return Version(version=number)
 
     def getattr(self, items):
         value, attr = items[0], items[1]

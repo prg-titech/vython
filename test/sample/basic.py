@@ -1,4 +1,4 @@
-class C:
+class C!1:
     def __init__(self):
         pass
 
@@ -6,11 +6,10 @@ class C:
         return a
 
 
-class D:
+class D!1:
     def __init__(self):
         pass
 
 
-c = C().id(D())
-d = D()
+c = C!1().id(D!1())
 c

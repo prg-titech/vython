@@ -73,11 +73,15 @@ class Module(ASTNode):
 
 
 class ClassDef(ASTNode):
-    def __init__(self, name, bases, body):
+    def __init__(self, name, version, bases, body):
         self.name = name
+        self.version = version
         self.bases = bases
         self.body = body
 
+class Version(ASTNode):
+    def __init__(self, version):
+        self.version = version
 
 class FunctionDef(ASTNode):
     def __init__(self, name, args, body):
@@ -103,8 +107,9 @@ class Expr(ASTNode):
 
 
 class Call(ASTNode):
-    def __init__(self, func, args):
+    def __init__(self, func, version, args):
         self.func = func
+        self.version = version # 注：普通の関数が導入された場合は、Validな関数でもNoneの可能性あり
         self.args = args
 
 

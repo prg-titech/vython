@@ -191,6 +191,8 @@ star_expr: "*" expr
 AWAIT: "await"
 
 ?atom_expr: atom_expr "(" [arguments] ")"      -> funccall
+          // Adding below for an instantiation of versioned class
+          | atom_expr "!" version "(" [arguments] ")" -> funccallwithversion
           | atom_expr "[" subscriptlist "]"  -> getitem
           | atom_expr "." name               -> getattr
           | atom
@@ -235,9 +237,9 @@ key_value: test ":"  test
 
 _exprlist: test_or_star_expr (","  test_or_star_expr)* [","]
 
-classdef: "class" name ["(" [arguments] ")"] ":" suite
-
-
+// Adding version
+classdef: "class" name "!" version ["(" [arguments] ")"] ":" suite
+version: "1".."9"
 
 arguments: argvalue ("," argvalue)*  ("," [ starargs | kwargs])?
          | starargs

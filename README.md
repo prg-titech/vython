@@ -4,6 +4,8 @@ Vythonは以下の機能を特徴としています。
 - <b>複数バージョンの利用</b>: 開発者は単一クラスの複数のバージョンを柔軟に利用できます。値(オブジェクト)は計算に使用したクラスのバージョンを記録し、そのバージョンの仕様に従って属性参照を行います。
 - <b>動的バージョン検査</b>: 互換性・一貫性のあるバージョンに由来する式・値(オブジェクト)の組み合わせで計算が行われていることを動的に検査します。
 
+これらの特徴的な言語機能を用いて、更新時の煩雑なプロセスを分割・半自動化することを目標としています。
+
 <b>免責事項</b>
 1. この言語は未完成で、実験的な研究用途のみを目的としています。
 2. `src/vython.lark` は、[lark-parserにより提供されるpython3文法](https://github.com/lark-parser/lark/blob/master/lark/grammars/python.lark)に独自の構文拡張を加えたものです。
@@ -11,35 +13,26 @@ Vythonは以下の機能を特徴としています。
 ## TODO
 作業を始める前に [Compilation](https://github.com/prg-titech/vython?tab=readme-ov-file#compilation) の節を読んで全体のコンパイルフローを把握すること。
 - [Phase 2]は無視してよい。算術プリミティブ値・演算のIntオブジェクト・メソッドへのコンパイルを定義しているが、未検証故に未使用。
-- バグ修正は出来るだけ後回しにすること。少なくとも `test/samples/*` 以下の初期サンプルはすべて正常に評価できる。しかし、1日で実装したためバグが取り切れていない。後で適当な時期に修正すること。
+- バグ修正は出来るだけ後回しにすること。1日で実装したためバグが取り切れていないと思うが、少なくとも `test/samples/*` 以下の初期サンプルはすべて正常に評価できる。
 
 #### Step 1: ASTのバージョン対応
-- 最終目標はvyhton-IRにバージョンの情報が含まれるようにすること。
-- [ ] ちゃんとやるなら
-  - lark-pythonのAST定義 `src/vython.lark` を変更 
-  - vython-IRの定義 `src/syntax/language.py` を変更
-  - lark-pythonからvython-IRへのトランスパイラ定義 `src/larkToIR.py` を変更
-- [ ] その場しのぎ的にやるなら
-  - vython-IRの定義 `src/syntax/language.py` を変更
-  - lark-pythonからvython-IRへのトランスパイラ定義 `src/larkToIR.py` に 前処理を追加
-    - `Classname__1`は`Classname`クラスのバージョン`1`と解釈
+- [x] 済。
 
 #### Step 2: バージョンテーブル対応
-- [ ] 2-1 バージョンテーブルクラスを定義 @ `src/syntax/semantic_object.py`
+- [ ] 2-1 `VersionTable` を定義 @ [`src/syntax/semantic_object.py`](https://github.com/prg-titech/vython/blob/master/src/syntax/semantic_object.py)
   - 内部メソッドとしてバージョンテーブル操作用のヘルパー関数を定義
-    - `union`? `modify`? 必要かつ原子的なヘルパー関数を特定。もしかしたら`union`は`modify`を使って定義するのかも？
-  - VObjectクラスにバージョンテーブルを追加 or VObjectとバージョンテーブルを持つラッパークラスを新しく定義
-- [ ] 2-2 バージョンテーブル整合性検査を定義 @ `src/syntax/semantic_object.py` か新しいファイル？
+    - 必要なヘルパー関数で原子的なものを特定して実装。`union`? `modify`?
+  - `VObject` クラスにバージョンテーブル用の属性を追加
+- [ ] 2-2 `VersionTable` 整合性検査を定義 @ [`src/syntax/comppatibilitychecker.py`](https://github.com/prg-titech/vython/blob/master/src/syntax/comppatibilitychecker.py)
   - オブジェクトへの参照(変数)のリストを受け取り、それらのバージョンテーブルを用い、整合性・互換性・一貫性チェックを行う。
 
-#### Step 3: Interpreterのバージョン対応 @ `src/interpreter.py`
-- [ ] バージョンテーブルの処理をインタプリタに追加
+#### Step 3: Interpreterのバージョン対応
+- [ ] バージョンテーブルの処理をインタプリタに追加 @ [`src/interpreter.py`](https://github.com/prg-titech/vython/blob/master/src/interpreter.py)
   - バージョンテーブル整合性検査の文の評価を追加
-    - 名前は `check` だと普通の関数と区別がつかないので、`checkVersionCompatibility` など長い名前にしてもいい。
     - 拡張の方向性は２つある。どちらでもOK。
-      - lark-pythonとvython-IRに整合性検査を行うための特別なASTノードを追加して、その評価をインタプリタに実装
-      - lark-pythonとvython-IRは拡張<u>せず</u>、関数呼び出し(vython ASTレベルでは`Call`)のcalleeのfunctionオブジェクトが特別な名前(`check`や`checkVersionCompatibility`)を持つ場合に限って、interpreterで特別な評価を追加
-  - 他のVObjectを使う/生成する式の評価に、返り値のバージョンテーブルを計算する処理を追加
+      - lark-pythonとVython-IRに整合性検査を行うための特別なASTノードを追加して、その評価をインタプリタに実装
+      - lark-pythonとVython-IRは拡張<u>せず</u>、関数呼び出し(Vython ASTレベルでは`Call`)のcalleeのfunctionオブジェクトが特別な名前(`check`や`checCompatibility`)を持つ場合に限って、interpreterで特別な評価を追加
+  - `VObject` を使う/生成する式の評価に、返り値のバージョンテーブルを計算する処理を追加
 
 ## Requirement
 Vython は Parser として [lark](https://github.com/lark-parser/lark) を使用しています。
@@ -58,52 +51,52 @@ pip uninstall vython # Uninstall
 ```
 
 ### Run
-`vython` はコマンドライン引数としてコンパイル対象へのプロジェクトルートからの相対パスを取ります。
-`test/sample/basic.py` をコンパイル・実行するには、以下を実行してください。
+`vython` で `test/sample/basic.py` をコンパイル・実行するには、以下を実行してください。
 ```sh
 vython test/sample/basic.py
 ```
-`vython` コンパイラのデバッグモードはより詳細な各コンパイルフェーズの情報を出力します。
-デバッグモードで `test/sample/basic.py` をコンパイル・実行し、標準出力と `tmp.log` へとログを書きだすには、以下を実行してください。
+`vython` コンパイラはオプションで詳細な情報を出力可能です。
 ```sh
-vython --debug test/sample/basic.py | tee tmp.log
+vython --debug test/sample/basic.py | tee tmp.log # tmp.logと標準出力にログを出力
 vython -d test/sample/basic.py | tee tmp.log
 ```
 
 ### Test
-pytestを用いて `test/` 以下の全てのユニットテストを実行するには、以下を実行してください。
+`test/` 以下の全てのユニットテストを実行するには、以下を実行してください。
 ```sh
 pytest test/
 ```
-`test/sample` にサンプルのpythonファイルが入っているので積極的に追加してください。
+`test/sample` にサンプルのpythonファイルが入っています。
+新しいサンプルを積極的に追加してください。
 
 ### Structure
 ```
 project-name/
 ├── README.md
-├── src/                       # ソースコードが含まれるディレクトリ
-│   ├── __init__.py            # 初期化ファイル
-│   ├── run.py                 # Runner
-│   ├── compiler.py            # コンパイラパイプラインの統括
-│   ├── parser.py              # [Phase 1] パーサー
-│   ├── preprocess.py          # [Phase 2] 前処理
-│   ├── larkToIR.py            # [Phase 3] Lark構文解析結果から中間表現へのトランスパイラ
-│   ├── interpreter.py         # [Phase 4] インタープリタ
-│   ├── syntax/                # Vython IRの構文に関するモジュールが含まれるディレクトリ
-│   │   ├── __init__.py        # 初期化ファイル
-│   │   ├── language.py        # Vython IRの構文定義
-│   │   └── semantic_object.py # Vython IR Interpreterの意味論的なオブジェクト（値、環境、ヒープなど）の定義
-│   └── vython.lark            # Lark-python 構文のEBNF定義
+├── src/                        # ソースコードが含まれるディレクトリ
+│   ├── __init__.py             # 初期化ファイル
+│   ├── run.py                  # Runner
+│   ├── compiler.py             # コンパイラパイプラインの統括
+│   ├── parser.py               # [Phase 1] パーサー
+│   ├── preprocess.py           # [Phase 2] 前処理
+│   ├── larkToIR.py             # [Phase 3] Lark構文解析結果から中間表現へのトランスパイラ
+│   ├── interpreter.py          # [Phase 4] インタープリタ
+│   ├── compatibilitychecker.py # バージョンテーブルを使った互換性検査器
+│   ├── syntax/                 # Vython IRの構文に関するモジュールが含まれるディレクトリ
+│   │   ├── __init__.py         # 初期化ファイル
+│   │   ├── language.py         # Vython IRの構文定義
+│   │   └── semantic_object.py  # Vython IR Interpreterの意味論的なオブジェクト（値、環境、ヒープなど）の定義
+│   └── vython.lark             # Lark-python 構文のEBNF定義
 │
-└── test/                      # テストコードが含まれるディレクトリ
-    ├── __init__.py            # 初期化ファイル
-    ├── sample/                # サンプルプログラムが含まれるディレクトリ
+└── test/                       # テストコードが含まれるディレクトリ
+    ├── __init__.py             # 初期化ファイル
+    ├── sample/                 # サンプルプログラムが含まれるディレクトリ
     │   │
 ...
 ```
 
 ## Compilation
-[src/compiler.py](https://github.com/prg-titech/vython/blob/master/src/compiler.py) に定義されている。
+[src/compiler.py](https://github.com/prg-titech/vython/blob/master/src/compiler.py) に定義されています。
 ```
 +----------+
 | Raw Code |
@@ -121,13 +114,13 @@ project-name/
 | lark-python AST |
 +-----------------+
   |
-  ├ [Phase 3]: Compile from lark-python AST to vython-IR AST
+  ├ [Phase 3]: Compile from lark-python AST to Vython-IR AST
   v
 +---------------+
 | Vython-IR AST |
 +---------------+
   |
-  ├ [Phase 4]: Evaluate vython-IR AST on Interpreter
+  ├ [Phase 4]: Evaluate Vython-IR AST on Interpreter
   v
 +-------------------+
 | Evaluation Result |
@@ -135,7 +128,7 @@ project-name/
 ```
 
 ## Syntax
-### MiniPython Syntax
+### Vython Program
 ```
 <prog> ::=                     # トップレベル式の列
     <class_def> <prog>         # クラス定義
@@ -144,7 +137,7 @@ project-name/
   | ε
 
 <class_def> ::=                # クラス定義
-    "class" <name> "(" <bases> ")" "{" <function_def> "}"
+    "class" <name> "!" <version> "(" <bases> ")" "{" <function_def> "}"
 
 <bases> ::=                    # ベース(スーパー)クラスの列
     <name> "," <bases>
@@ -174,7 +167,7 @@ project-name/
   | "None"                     # None値
 
 <call> ::=                     # 関数呼び出し
-    <attribute> "(" <args> ")" # メソッド呼び出し
+    <attribute>  "!" <version> "(" <args> ")" # メソッド呼び出し
   # | <name> "(" <args> ")"      # 関数呼び出し(未実装)
 
 <attribute> ::=
@@ -185,6 +178,8 @@ project-name/
   | ε
 
 <name> ::= (任意の変数名またはクラス名)
+
+<version> ::= [0..9]
 ```
 
 
@@ -201,7 +196,7 @@ project-name/
   # | literal                  # リテラル(未実装)
 
 <object> ::=                 # オブジェクト
-    "VObject" "(" <type_tag> "," "{" <attributes> "}" ")"
+    "VObject" "(" <type_tag> "," "{" <attributes> "}" "," <versiontable> ")"
 
 <type_tag> ::=
     <name>                   # 普通のインスタンスを示すtype-tag。クラス名が入る
@@ -221,8 +216,18 @@ project-name/
 
 # <failure> ::=                # 失敗(未実装)
 #     "Failure" "(" <message> ")"  
-# <message> ::=                # エラーメッセージ(未実装, version_checkで使うかも)
+# <message> ::=                # エラーメッセージ(未実装, checkCompatibilityで使うかも)
 #      (任意のエラーメッセージ文字列)
+
+<versiontable> ::=           # バージョンテーブル
+    "[" <dependencies> "]"
+
+<dependencies> ::=           # クラス依存性(の列)
+    <dependency> "," <dependencies>
+  | ε
+
+<dependency> ::=             # 単体のクラスへの依存性
+    <name> ":" <version>
 ```
 
 #### 実行時環境

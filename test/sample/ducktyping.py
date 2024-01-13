@@ -1,24 +1,24 @@
-class Fly:
+class Fly!1:
     pass
 
-class Swim:
+class Swim!1:
     pass
 
-class Bird:
+class Bird!1:
     def move(self):
-        return Fly()
+        return Fly!1()
 
-class Fish:
+class Fish!1:
     def move(self):
-        return Swim()
+        return Swim!1()
 
-class Animal:
+class Animal!1:
     def make_it_move(animal):
         return animal.move()
 
-bird = Bird()
-fish = Fish()
+bird = Bird!1()
+fish = Fish!1()
 
 # move()メソッドは引数の値によって動的に振る舞いが変わる
-Animal().make_it_move(bird)  # Fly()
-Animal().make_it_move(fish)  # Swim()
+Animal!1().make_it_move(bird)  # Fly()
+Animal!1().make_it_move(fish)  # Swim()
