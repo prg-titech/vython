@@ -3,6 +3,10 @@ from src.syntax.language import *
 
 
 class LarkToCustomAST(Transformer):
+    def __init__(self, debug_mode=False):
+        # 今の所使ってない
+        self.debug_mode = debug_mode
+
     def file_input(self, items):
         return Module(body=self._flatten_list(items))
 

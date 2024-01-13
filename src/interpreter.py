@@ -3,14 +3,15 @@ from src.syntax.language import *
 
 
 class Interpreter:
-    def __init__(self):
+    def __init__(self, debug_mode=False):
         self.heap = Heap()
         self.global_env = Environment()
         self.eval_depth = 0  # 評価の深さ（ネストレベル）
         self.step_count = 0  # 評価のステップ数
+        self.debug_mode = debug_mode # デバッグモードがTrueのときのみ評価列を表示
 
-        # 初期化処理
-        # Noneオブジェクトをヒープにアロケートし、そのインデックスを保存
+        # Noneオブジェクトのための初期化処理
+        # - Noneオブジェクトをヒープにアロケートし、そのインデックスを保存
         none_obj = Object("None")
         self.none_index = self.heap.allocate(none_obj)
 
@@ -45,11 +46,13 @@ class Interpreter:
         cur_step = self.step_count # 前後のログでステップカウントは同一にする
         self.eval_depth += 1
         self.step_count += 1
-        self.log_state(f"[Starting] Rule: {method_name}", node, self.eval_depth, cur_step, env, self.heap)
+        if self.debug_mode:
+            self.log_state(f"[Starting] Rule: {method_name}", node, self.eval_depth, cur_step, env, self.heap)
 
         result = method(node, env)
-        
-        self.log_state(f"[Completed] Rule: {method_name}", node, self.eval_depth, cur_step, env, self.heap, result)
+
+        if self.debug_mode:
+            self.log_state(f"[Completed] Rule: {method_name}", node, self.eval_depth, cur_step, env, self.heap, result)
         self.eval_depth -= 1
 
         return result

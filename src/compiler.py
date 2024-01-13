@@ -4,22 +4,32 @@ from src.interpreter import Interpreter
 from src.syntax.semantic_object import resolve_heap_object
 
 class Compiler:
-    def __init__(self):
+    def __init__(self, debug_mode=False):
         self.ast = None
         self.ir = None
         self.result = None
         self.heap = None
+        self.code = None
+        self.debug_mode = debug_mode
+
+    def set_debug_mode(self, debug_mode):
+        self.debug_mode = debug_mode
 
     def parse(self, code):
-        self.ast = Parser().parse(code)
-        print(self.ast.pretty())
+        self.code = code
+        if self.debug_mode:
+            print(f"File content:\n{self.code}")
+        self.ast = Parser(debug_mode = self.debug_mode).parse(code)
+        if self.debug_mode:
+            print(self.ast.pretty())
 
     def compile_to_ir(self):
-        self.ir = LarkToCustomAST().transform(self.ast)
-        print(self.ir)
+        self.ir = LarkToCustomAST(debug_mode = self.debug_mode).transform(self.ast)
+        if self.debug_mode:
+            print(self.ir)
 
     def evaluate(self):
-        interpreter = Interpreter()
+        interpreter = Interpreter(debug_mode = self.debug_mode)
         result_index = interpreter.interpret(self.ir)
         self.heap = interpreter.heap
         self.result = resolve_heap_object(self.heap, result_index)
