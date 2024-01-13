@@ -28,7 +28,7 @@ Vythonは以下の機能を特徴としています。
 - [ ] 2-1 バージョンテーブルクラスを定義 @ `src/syntax/semantic_object.py`
   - 内部メソッドとしてバージョンテーブル操作用のヘルパー関数を定義
     - `union`? `modify`? 必要かつ原子的なヘルパー関数を特定。もしかしたら`union`は`modify`を使って定義するのかも？
-  - Objectクラスにバージョンテーブルを追加 or Objectとバージョンテーブルを持つラッパークラスを新しく定義
+  - VObjectクラスにバージョンテーブルを追加 or VObjectとバージョンテーブルを持つラッパークラスを新しく定義
 - [ ] 2-2 バージョンテーブル整合性検査を定義 @ `src/syntax/semantic_object.py` か新しいファイル？
   - オブジェクトへの参照(変数)のリストを受け取り、それらのバージョンテーブルを用い、整合性・互換性・一貫性チェックを行う。
 
@@ -39,28 +39,43 @@ Vythonは以下の機能を特徴としています。
     - 拡張の方向性は２つある。どちらでもOK。
       - lark-pythonとvython-IRに整合性検査を行うための特別なASTノードを追加して、その評価をインタプリタに実装
       - lark-pythonとvython-IRは拡張<u>せず</u>、関数呼び出し(vython ASTレベルでは`Call`)のcalleeのfunctionオブジェクトが特別な名前(`check`や`checkVersionCompatibility`)を持つ場合に限って、interpreterで特別な評価を追加
-  - 他のObjectを使う/生成する式の評価に、返り値のバージョンテーブルを計算する処理を追加
+  - 他のVObjectを使う/生成する式の評価に、返り値のバージョンテーブルを計算する処理を追加
 
 ## Requirement
-python 3を前提にしています。また、Parserとして [lark](https://github.com/lark-parser/lark) を使用しています。
-```
+Vython は Parser として [lark](https://github.com/lark-parser/lark) を使用しています。
+```sh
 sudo apt install python3
 pip install lark
+pip install pytest # ユニットテストでのみ使用
 ```
 
-## How to use
+## How to install / run / test
+### Install / Uninstall
+`vython` をインストール / アンインストールするには、プロジェクトルートで以下を実行してください。
+```sh
+pip install .        # Install
+pip uninstall vython # Uninstall
+```
 
 ### Run
-`pipeline.py`がすべてのコンパイルパスを含む関数です。
-コマンドライン引数としてコンパイル対象へのプロジェクトルートからの相対パスを取ります。
-以下で`test/sample/basic.py`をコンパイルして実行し、ログは標準出力と`log.txt`へと書きだします。
+`vython` はコマンドライン引数としてコンパイル対象へのプロジェクトルートからの相対パスを取ります。
+`test/sample/basic.py` をコンパイル・実行するには、以下を実行してください。
 ```sh
-python -m src.pipeline test/sample/basic.py | tee log.txt
+vython test/sample/basic.py
+```
+`vython` コンパイラのデバッグモードはより詳細な各コンパイルフェーズの情報を出力します。
+デバッグモードで `test/sample/basic.py` をコンパイル・実行し、標準出力と `tmp.log` へとログを書きだすには、以下を実行してください。
+```sh
+vython --debug test/sample/basic.py | tee tmp.log
+vython -d test/sample/basic.py | tee tmp.log
 ```
 
 ### Test
-未実装。`test/sample`にサンプルのpythonファイルが入っているので積極的に追加すること。
-いいテストフレームワークがあったら導入を検討すること。
+pytestを用いて `test/` 以下の全てのユニットテストを実行するには、以下を実行してください。
+```sh
+pytest test/
+```
+`test/sample` にサンプルのpythonファイルが入っているので積極的に追加してください。
 
 ### Structure
 ```
@@ -68,12 +83,14 @@ project-name/
 ├── README.md
 ├── src/                       # ソースコードが含まれるディレクトリ
 │   ├── __init__.py            # 初期化ファイル
-│   ├── pipeline.py            # コンパイラパイプラインの統括
+│   ├── run.py                 # Runner
+│   ├── compiler.py            # コンパイラパイプラインの統括
 │   ├── parser.py              # [Phase 1] パーサー
 │   ├── preprocess.py          # [Phase 2] 前処理
 │   ├── larkToIR.py            # [Phase 3] Lark構文解析結果から中間表現へのトランスパイラ
 │   ├── interpreter.py         # [Phase 4] インタープリタ
 │   ├── syntax/                # Vython IRの構文に関するモジュールが含まれるディレクトリ
+│   │   ├── __init__.py        # 初期化ファイル
 │   │   ├── language.py        # Vython IRの構文定義
 │   │   └── semantic_object.py # Vython IR Interpreterの意味論的なオブジェクト（値、環境、ヒープなど）の定義
 │   └── vython.lark            # Lark-python 構文のEBNF定義
@@ -86,7 +103,7 @@ project-name/
 ```
 
 ## Compilation
-[src/pipeline.py](https://github.com/prg-titech/vython/blob/master/src/pipeline.py) に定義されている。
+[src/compiler.py](https://github.com/prg-titech/vython/blob/master/src/compiler.py) に定義されている。
 ```
 +----------+
 | Raw Code |
@@ -171,7 +188,7 @@ project-name/
 ```
 
 
-### Semantic Objects
+### Semantic VObjects
 #### 結果と値
 ```
 <result> ::=                 # 結果
@@ -184,7 +201,7 @@ project-name/
   # | literal                  # リテラル(未実装)
 
 <object> ::=                 # オブジェクト
-    "Object" "(" <type_tag> "," "{" <attributes> "}" ")"
+    "VObject" "(" <type_tag> "," "{" <attributes> "}" ")"
 
 <type_tag> ::=
     <name>                   # 普通のインスタンスを示すtype-tag。クラス名が入る

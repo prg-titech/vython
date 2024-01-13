@@ -7,7 +7,7 @@ class Result:
 
 
 # 値(式の計算結果)を示すクラス
-# 今このクラスを継承する唯一のクラスはObject。（Int値やBool値はないため）
+# 今このクラスを継承する唯一のクラスはVObject。（Int値やBool値はないため）
 class Value(Result):
     pass
 
@@ -32,14 +32,14 @@ class Failure(Result):
 
 
 # オブジェクトを示すクラス
-class Object(Value):
-    def __init__(self, class_name, **attributes):
+class VObject(Value):
+    def __init__(self, type_tag, **attributes):
         super().__init__()
-        self.type_tag = class_name
+        self.type_tag = type_tag
         self.attributes = attributes
 
     def __repr__(self):
-        return f"Object(type_tag='{self.type_tag}', attributes={self.attributes})"
+        return f"VObject(type_tag='{self.type_tag}', attributes={self.attributes})"
 
     def get_attribute(self, attr):
         return self.attributes.get(attr)
@@ -106,7 +106,7 @@ def resolve_heap_object(heap, index, resolved_indices=None):
     obj = heap.get(index)
     resolved_indices.add(index)
 
-    if isinstance(obj, Object):
+    if isinstance(obj, VObject):
         resolved_attributes = {}
         for attr, value in obj.attributes.items():
             attr_name = attr.id if isinstance(attr, Name) else attr  # 属性名を文字列に変換
@@ -117,6 +117,6 @@ def resolve_heap_object(heap, index, resolved_indices=None):
                 )
             else:
                 resolved_attributes[attr_name] = value
-        return Object(obj.type_tag, **resolved_attributes)
+        return VObject(obj.type_tag, **resolved_attributes)
     else:
         return obj
