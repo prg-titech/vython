@@ -17,34 +17,34 @@ eval_input: testlist _NEWLINE*
 
 decorator: "@" dotted_name [ "(" [arguments] ")" ] _NEWLINE
 decorators: decorator+
-decorated: decorators (classdef | funcdef) // | async_funcdef)
+decorated: decorators (classdef | funcdef | async_funcdef)
 
-// async_funcdef: "async" funcdef
+async_funcdef: "async" funcdef
 funcdef: "def" name "(" [parameters] ")" ["->" test] ":" suite
 
-parameters: paramvalue ("," paramvalue)* ["," SLASH ("," paramvalue)*] //["," [starparams | kwparams]]
-          // | starparams
-          // | kwparams
+parameters: paramvalue ("," paramvalue)* ["," SLASH ("," paramvalue)*] ["," [starparams | kwparams]]
+          | starparams
+          | kwparams
 
 SLASH: "/" // Otherwise the it will completely disappear and it will be undisguisable in the result
-// starparams: (starparam | starguard) poststarparams
-// starparam: "*" typedparam
-// starguard: "*"
-// poststarparams: ("," paramvalue)* ["," kwparams]
-// kwparams: "**" typedparam ","?
+starparams: (starparam | starguard) poststarparams
+starparam: "*" typedparam
+starguard: "*"
+poststarparams: ("," paramvalue)* ["," kwparams]
+kwparams: "**" typedparam ","?
 
 ?paramvalue: typedparam ("=" test)?
 ?typedparam: name (":" test)?
 
 
-// lambdef: "lambda" [lambda_params] ":" test
-// lambdef_nocond: "lambda" [lambda_params] ":" test_nocond
-// lambda_params: lambda_paramvalue ("," lambda_paramvalue)* ["," [lambda_starparams | lambda_kwparams]]
-          // | lambda_starparams
-          // | lambda_kwparams
-// ?lambda_paramvalue: name ("=" test)?
-// lambda_starparams: "*" [name]  ("," lambda_paramvalue)* ["," [lambda_kwparams]]
-// lambda_kwparams: "**" name ","?
+lambdef: "lambda" [lambda_params] ":" test
+lambdef_nocond: "lambda" [lambda_params] ":" test_nocond
+lambda_params: lambda_paramvalue ("," lambda_paramvalue)* ["," [lambda_starparams | lambda_kwparams]]
+          | lambda_starparams
+          | lambda_kwparams
+?lambda_paramvalue: name ("=" test)?
+lambda_starparams: "*" [name]  ("," lambda_paramvalue)* ["," [lambda_kwparams]]
+lambda_kwparams: "**" name ","?
 
 
 ?stmt: simple_stmt | compound_stmt
@@ -154,13 +154,13 @@ keyw_arg_pattern: NAME "=" as_pattern
 suite: simple_stmt | _NEWLINE _INDENT stmt+ _DEDENT
 
 ?test: or_test ("if" or_test "else" test)?
-    //  | lambdef
+     | lambdef
      | assign_expr
 
 assign_expr: name ":=" test
 
 ?test_nocond: or_test
-          //  | lambdef_nocond
+           | lambdef_nocond
 
 ?or_test: and_test ("or" and_test)*
 ?and_test: not_test_ ("and" not_test_)*
