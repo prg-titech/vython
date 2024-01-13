@@ -4,22 +4,21 @@ from src.interpreter import Interpreter
 from src.syntax.semantic_object import resolve_heap_object
 
 class Compiler:
-    def __init__(self, debug_mode=False):
+    def __init__(self, code, debug_mode=False):
+        self.debug_mode = debug_mode
+        self.code = code
         self.ast = None
         self.ir = None
         self.result = None
         self.heap = None
-        self.code = None
-        self.debug_mode = debug_mode
 
     def set_debug_mode(self, debug_mode):
         self.debug_mode = debug_mode
 
-    def parse(self, code):
-        self.code = code
+    def parse(self):
         if self.debug_mode:
             print(f"File content:\n{self.code}")
-        self.ast = Parser(debug_mode = self.debug_mode).parse(code)
+        self.ast = Parser(debug_mode = self.debug_mode).parse(self.code)
         if self.debug_mode:
             print(self.ast.pretty())
 
@@ -35,4 +34,7 @@ class Compiler:
         self.result = resolve_heap_object(self.heap, result_index)
 
     def get_result(self):
+        return self.result
+
+    def get_result_fullpath(self):
         return self.result

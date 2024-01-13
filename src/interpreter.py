@@ -12,7 +12,7 @@ class Interpreter:
 
         # Noneオブジェクトのための初期化処理
         # - Noneオブジェクトをヒープにアロケートし、そのインデックスを保存
-        none_obj = Object("None")
+        none_obj = VObject("None")
         self.none_index = self.heap.allocate(none_obj)
 
     def log_state(self, message, node, eval_depth, step_count, env=None, heap=None, result=None):
@@ -80,7 +80,7 @@ class Interpreter:
 
     # クラス定義の評価
     def interpret_ClassDef(self, node, env):
-        class_name = node.name.id  # クラス名を取得
+        type_tag = node.name.id  # クラス名を取得
         class_bases = [self.interpret(base) for base in node.bases]  # 基底クラスを評価（簡易版）
 
         # クラスの本体（メソッドなど）を評価
@@ -89,16 +89,16 @@ class Interpreter:
             if isinstance(element, FunctionDef):
                 method_name = element.name.id
                 method_args = [arg.id for arg in element.args] if element.args else []
-                method_obj = Object(
+                method_obj = VObject(
                     "function", name=method_name, args=method_args, body=element.body
                 )
                 heap_index = self.heap.allocate(method_obj)  # メソッドオブジェクトをヒープにアロケート
                 class_body[method_name] = heap_index  # メソッドのヒープインデックスを保存
 
         # クラスオブジェクトを作成し、グローバル環境に登録
-        class_obj = Object("class", name=class_name, bases=class_bases, body=class_body)
+        class_obj = VObject("class", name=type_tag, bases=class_bases, body=class_body)
         heap_index = self.heap.allocate(class_obj)
-        env.set(class_name, heap_index)
+        env.set(type_tag, heap_index)
         return self.none_index  # None値が格納されたメモリ上へのポインタを返す
 
     # 関数定義の評価
@@ -107,7 +107,7 @@ class Interpreter:
         arg_names = [arg.id for arg in node.args.args] if node.args else []
 
         # 関数オブジェクトの作成
-        func_obj = Object("function", name=node.name.id, args=arg_names, body=node.body)
+        func_obj = VObject("function", name=node.name.id, args=arg_names, body=node.body)
 
         # 関数オブジェクトをヒープに格納し、そのインデックスを環境に設定
         heap_index = self.heap.allocate(func_obj)
@@ -127,7 +127,7 @@ class Interpreter:
                 # LHSが属性参照の場合
                 obj_heap_index = self.interpret(target.value, env)
                 obj = self.heap.get(obj_heap_index)
-                if not isinstance(obj, Object):
+                if not isinstance(obj, VObject):
                     raise TypeError("Only objects have attributes")
 
                 # 属性に設定する値は、評価された値のヒープインデックスを参照
@@ -155,7 +155,7 @@ class Interpreter:
         # - ClassDefで環境に入ったクラス定義を表すオブジェクトが参照された場合に起きる
         if callable_obj.type_tag == "class":
             # インスタンスオブジェクトのtype_tagにはインスタンス元のクラス名を入れる
-            class_name = callable_obj.attributes["name"]
+            type_tag = callable_obj.attributes["name"]
 
             # インスタンスに含まれるメソッドをクラス定義からコピー
             instance_attributes = {
@@ -164,7 +164,7 @@ class Interpreter:
             }
 
             # インスタンスオブジェクト作成
-            instance = Object(class_name, **instance_attributes)
+            instance = VObject(type_tag, **instance_attributes)
 
             # インスタンスをヒープに配置し、そのインデックスを取得
             heap_index = self.heap.allocate(instance)
@@ -231,7 +231,7 @@ class Interpreter:
 
         if attr is None:
             raise AttributeError(
-                f"Object of type {obj.__class__.__name__} has no attribute '{attr_name}'"
+                f"VObject of type {obj.__class__.__name__} has no attribute '{attr_name}'"
             )
 
         # 属性がヒープ上の別のオブジェクトを参照する場合、その参照（インデックス）を返す
