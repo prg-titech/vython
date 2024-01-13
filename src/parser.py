@@ -11,6 +11,10 @@ class PythonIndenter(Indenter):
     tab_len = 8
 
 class Parser:
+    def __init__(self, debug_mode=False):
+        # 今の所使ってない
+        self.debug_mode = debug_mode
+
     def parse(self, code):
         # 文法定義を読み込む
         with open("src/vython.lark", "r") as file:
