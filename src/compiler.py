@@ -37,4 +37,8 @@ class Compiler:
         return self.result
 
     def get_result_fullpath(self):
-        return self.result
+        self.parse()
+        self.compile_to_ir()
+        self.evaluate()
+        result = self.get_result()
+        return result
