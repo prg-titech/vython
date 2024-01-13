@@ -48,14 +48,19 @@ sudo apt install python3
 pip install lark
 ```
 
-## How to use
+## How to install / run / test
+### Install / Uninstall
+プロジェクトのルートディレクトリで以下を実行してください。
+```sh
+pip install .        # Install
+pip uninstall vython # Uninstall
+```
 
 ### Run
-`pipeline.py`がすべてのコンパイルパスを含む関数です。
-コマンドライン引数としてコンパイル対象へのプロジェクトルートからの相対パスを取ります。
-以下で`test/sample/basic.py`をコンパイルして実行し、ログは標準出力と`log.txt`へと書きだします。
+`vython` はコマンドライン引数としてコンパイル対象へのプロジェクトルートからの相対パスを取ります。
+以下でtest/sample/basic.pyをコンパイルして実行し、ログは標準出力と `tmp.log` へと書きだします。
 ```sh
-python -m src.pipeline test/sample/basic.py | tee log.txt
+vython test/sample/basic.py | tee tmp.log
 ```
 
 ### Test
@@ -68,12 +73,14 @@ project-name/
 ├── README.md
 ├── src/                       # ソースコードが含まれるディレクトリ
 │   ├── __init__.py            # 初期化ファイル
-│   ├── pipeline.py            # コンパイラパイプラインの統括
+│   ├── run.py                 # Runner
+│   ├── compiler.py            # コンパイラパイプラインの統括
 │   ├── parser.py              # [Phase 1] パーサー
 │   ├── preprocess.py          # [Phase 2] 前処理
 │   ├── larkToIR.py            # [Phase 3] Lark構文解析結果から中間表現へのトランスパイラ
 │   ├── interpreter.py         # [Phase 4] インタープリタ
 │   ├── syntax/                # Vython IRの構文に関するモジュールが含まれるディレクトリ
+│   │   ├── __init__.py        # 初期化ファイル
 │   │   ├── language.py        # Vython IRの構文定義
 │   │   └── semantic_object.py # Vython IR Interpreterの意味論的なオブジェクト（値、環境、ヒープなど）の定義
 │   └── vython.lark            # Lark-python 構文のEBNF定義
