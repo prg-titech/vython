@@ -24,10 +24,8 @@ class Interpreter:
         none_obj = Object("None")
         self.none_index = self.heap.allocate(none_obj)
 
-    def log_state(self, message, node, eval_depth, env=None, heap=None, result=None):
-        self.step_count += 1  # ステップ数をカウントアップ
-        step_info = f"[Step {self.step_count}]"  # ステップ数の情報
-
+    def log_state(self, message, node, eval_depth, step_count, env=None, heap=None, result=None):
+        step_info = f"[Step {step_count}]"
         node_info = f"----[Node]: {node}" if node else "None"
         env_info = f"-----[Env]: {env}" if env is not None else "No Env"
         heap_info = f"----[Heap]: {heap}" if heap is not None else "Empty Heap"
@@ -35,12 +33,14 @@ class Interpreter:
 
         indent = "|" * (eval_depth - 1)
 
-        # 結果情報がある場合のみ、その行を出力
-        print(
-            f"{indent} {step_info} {message}\n{indent} {node_info}\n{indent} {env_info}\n{indent} {heap_info}"
-        )
+        # 結果情報がある場合はresult, それ以外の場合はターゲットノードを出力
+        print(f"{indent} {step_info} {message}")
         if result_info:
             print(f"{indent} {result_info}")
+        else:
+            print(f"{indent} {node_info}")
+        print(f"{indent} {env_info}")
+        print(f"{indent} {heap_info}")
 
     # ASTノードを評価するメソッド
     # ASTのオブジェクト名を利用して、適切なinterpret_*メソッドを呼び出す
@@ -48,17 +48,20 @@ class Interpreter:
         if env is None:
             env = self.global_env
 
-        self.eval_depth += 1
+        cur_step = self.step_count
+
+        # method_name と同名のメソッド実行
         method_name = "interpret_" + type(node).__name__
         method = getattr(self, method_name, self.generic_interpret)
 
-        cur_heap = self.heap
 
-        self.log_state(f"[Starting]", node, self.eval_depth, env, cur_heap)
+        self.eval_depth += 1
+        self.log_state(f"[Starting] Rule: {method_name}", node, self.eval_depth, cur_step, env, self.heap)
 
+        self.step_count += 1
         result = method(node, env)
 
-        self.log_state(f"[Completed]", node, self.eval_depth, env, cur_heap, result)
+        self.log_state(f"[Completed] Rule: {method_name}", node, self.eval_depth, cur_step, env, self.heap, result)
         self.eval_depth -= 1
 
         return result
