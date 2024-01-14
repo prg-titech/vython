@@ -4,7 +4,7 @@ from src.syntax.semantic_object import VObject
 
 def test():
     # テスト用のソースコードを読み込む
-    with open("test/sample/function.py", "r") as f:
+    with open("test/sample/basic/function.py", "r") as f:
         source_code = f.read()
 
     # コンパイラのインスタンスを作成

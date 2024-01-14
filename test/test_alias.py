@@ -3,7 +3,7 @@ from src.syntax.semantic_object import *
 
 def test():
     # テスト用のソースコードを読み込む
-    with open("test/sample/alias.py", "r") as f:
+    with open("test/sample/basic/alias.py", "r") as f:
         source_code = f.read()
 
     # コンパイラのインスタンスを作成
