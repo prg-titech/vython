@@ -132,7 +132,7 @@ project-name/
 ```
 <prog> ::=                     # トップレベル式の列
     <class_def> <prog>         # クラス定義
-  # | <function_def>             # トップレベル関数定義(未実装)
+  | <function_def>             # トップレベル関数定義
   | <stmt> <prog>              # 文
   | ε
 
@@ -168,7 +168,7 @@ project-name/
 
 <call> ::=                     # 関数呼び出し
     <attribute>  "!" <version> "(" <args> ")" # メソッド呼び出し
-  # | <name> "(" <args> ")"      # 関数呼び出し(未実装)
+  | <name> "(" <args> ")"      # 関数呼び出し
 
 <attribute> ::=
     <expr> "." <name>          # 属性参照

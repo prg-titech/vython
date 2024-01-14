@@ -73,46 +73,66 @@ class Interpreter:
 
     # Moduleの評価
     def interpret_Module(self, node, env):
-        last_result = None
+        last_result_index = None
         for n in node.body:
-            last_result = self.interpret(n, env)
-        return last_result
+            last_result_index = self.interpret(n, env)
+        # Moduleの評価結果は、Module bodyの最後の式・文の評価結果と同一と見做す
+        return last_result_index
 
     # クラス定義の評価
     def interpret_ClassDef(self, node, env):
-        type_tag = node.name.id  # クラス名を取得
-        class_bases = [self.interpret(base) for base in node.bases]  # 基底クラスを評価（簡易版）
+        # クラス名を取得
+        type_tag = node.name.id
+
+        # 基底クラスを評価（簡易版, 未実装）
+        class_bases = [self.interpret(base) for base in node.bases]
 
         # クラスの本体（メソッドなど）を評価
         class_body = {}
         for element in node.body:
             if isinstance(element, FunctionDef):
+                # メソッド名を取得
                 method_name = element.name.id
-                method_args = [arg.id for arg in element.args] if element.args else []
-                method_obj = VObject(
-                    "function", name=method_name, args=method_args, body=element.body
-                )
-                heap_index = self.heap.allocate(method_obj)  # メソッドオブジェクトをヒープにアロケート
-                class_body[method_name] = heap_index  # メソッドのヒープインデックスを保存
+
+                # メソッドオブジェクトをヒープにアロケート
+                heap_index = self.allocate_FunctionDef(element, env)
+
+                # メソッドのヒープインデックスを保存
+                class_body[method_name] = heap_index
 
         # クラスオブジェクトを作成し、グローバル環境に登録
         class_obj = VObject("class", name=type_tag, bases=class_bases, body=class_body)
         heap_index = self.heap.allocate(class_obj)
         env.set(type_tag, heap_index)
-        return self.none_index  # None値が格納されたメモリ上へのポインタを返す
+
+        # None値が格納されたメモリ上へのポインタを返す
+        return self.none_index
 
     # 関数定義の評価
     def interpret_FunctionDef(self, node, env):
-        # 関数の引数名を取得（node.argsが引数のリストを持つことを確認）
-        arg_names = [arg.id for arg in node.args.args] if node.args else []
+        # FunctionDefノードをヒープにallocate
+        heap_index = self.allocate_FunctionDef(node, env)
+
+        # 関数オブジェクトのヒープインデックスを環境に登録
+        env.set(node.name.id, heap_index)
+
+        # None値が格納されたメモリ上へのポインタを返す
+        return self.none_index
+
+    # 関数定義とメソッド定義に共通のallocate処理
+    def allocate_FunctionDef(self, node, env):
+        function_name = node.name.id
+        # 関数の引数名を取得
+        arg_names = [arg.id for arg in node.args] if node.args else []
 
         # 関数オブジェクトの作成
-        func_obj = VObject("function", name=node.name.id, args=arg_names, body=node.body)
+        func_obj = VObject("function", name=function_name, args=arg_names, body=node.body)
 
         # 関数オブジェクトをヒープに格納し、そのインデックスを環境に設定
         heap_index = self.heap.allocate(func_obj)
-        env.set(node.name.id, heap_index)
-        return self.none_index  # None値が格納されたメモリ上へのポインタを返す
+        
+        # 確保したヒープ領域のheap_indexを返す
+        return heap_index
 
     # 代入文の評価
     def interpret_Assign(self, node, env):
@@ -135,7 +155,8 @@ class Interpreter:
             else:
                 raise TypeError("Invalid assignment target")
 
-        return self.none_index  # None値が格納されたメモリ上へのポインタを返す
+        # None値が格納されたメモリ上へのポインタを返す
+        return self.none_index
 
     # 式の評価
     def interpret_Expr(self, node, env):
@@ -223,7 +244,9 @@ class Interpreter:
     # 属性参照の評価
     def interpret_Attribute(self, node, env):
         obj_heap_index = self.interpret(node.value, env)
-        obj = self.heap.get(obj_heap_index)  # ヒープからオブジェクトを取得
+
+        # ヒープからオブジェクトを取得
+        obj = self.heap.get(obj_heap_index)
 
         # 属性名が正しく取得されているか確認
         attr_name = node.attr.id if isinstance(node.attr, Name) else node.attr
@@ -234,24 +257,29 @@ class Interpreter:
                 f"VObject of type {obj.__class__.__name__} has no attribute '{attr_name}'"
             )
 
-        # 属性がヒープ上の別のオブジェクトを参照する場合、その参照（インデックス）を返す
+        # 属性が参照するオブジェクトのインデックスを返す
         return attr
 
     # 名前(変数)の評価
     def interpret_Name(self, node, env):
         # 環境からヒープ上のインデックスを取得
         heap_index = env.get(node.id)
-        # ヒープから実際のオブジェクトを取得
+        # ヒープインデックスを返す
         return heap_index
 
     # リターン文の評価
     def interpret_Return(self, node, env):
+        # リターン文は引数の式の評価結果をそのまま返す
         return self.interpret(node.value, env)
 
     # パス文の評価
     def interpret_Pass(self, node, env):
-        return self.none_index  # None値が格納されたメモリ上へのポインタを返す
+        # Pass文は何も計算しない
+        # None値が格納されたメモリ上へのポインタを返す
+        return self.none_index
 
     # Noneの評価
     def interpret_NoneNode(self, node, env):
-        return self.none_index  # None値が格納されたメモリ上へのポインタを返す
+        # None式は単にNoneノードを返す
+        # None値が格納されたメモリ上へのポインタを返す
+        return self.none_index
