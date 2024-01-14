@@ -17,7 +17,7 @@ class Parser:
 
     def parse(self, code):
         # 文法定義を読み込む
-        with open("src/vython.lark", "r") as file:
+        with open("src/syntax/lark-vython.lark", "r") as file:
             grammar = file.read()
 
         parser = Lark(

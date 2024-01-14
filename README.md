@@ -60,11 +60,11 @@ project-name/
 │   ├── larkToIR.py             # [Phase 3] Lark構文解析結果から中間表現へのトランスパイラ
 │   ├── interpreter.py          # [Phase 4] インタープリタ
 │   ├── compatibilitychecker.py # バージョンテーブルを使った互換性検査器
-│   ├── syntax/                 # Vython IRの構文に関するモジュールが含まれるディレクトリ
-│   │   ├── __init__.py         # 初期化ファイル
-│   │   ├── language.py         # Vython IRの構文定義
-│   │   └── semantics.py  # Vython IR Interpreterの意味論的なオブジェクト（値、環境、ヒープなど）の定義
-│   └── vython.lark             # Lark-python 構文のEBNF定義
+│   └── syntax/                 # Vython IRの構文に関するモジュールが含まれるディレクトリ
+│       ├── __init__.py         # 初期化ファイル
+│       ├── language.py         # Vython IRの構文定義
+│       ├── semantics.py        # Vython IR Interpreterの意味論的なオブジェクト（値、環境、ヒープなど）の定義
+│       └── lark-vython.lark    # Lark-vython 構文のEBNF定義
 │
 └── test/                       # テストコードが含まれるディレクトリ
     ├── __init__.py             # 初期化ファイル
@@ -80,19 +80,19 @@ project-name/
 | Raw Code |
 +----------+
   |
-  ├ [Phase 1]: Parse to lark-python AST
+  ├ [Phase 1]: Parse to lark-vython AST
   v
 +-----------------+
-| lark-python AST |
+| lark-vython AST |
 +-----------------+
   |
   ├ [Phase 2]: Preprocess (if applicable)
   v
 +-----------------+
-| lark-python AST |
+| lark-vython AST |
 +-----------------+
   |
-  ├ [Phase 3]: Compile from lark-python AST to Vython-IR AST
+  ├ [Phase 3]: Compile from lark-vython AST to Vython-IR AST
   v
 +---------------+
 | Vython-IR AST |
@@ -124,8 +124,8 @@ project-name/
 - [ ] バージョンテーブルの処理をインタプリタに追加 @ [`src/interpreter.py`](https://github.com/prg-titech/vython/blob/master/src/interpreter.py)
   - バージョンテーブル整合性検査の文の評価を追加
     - 拡張の方向性は２つある。どちらでもOK。
-      - lark-pythonとVython-IRに整合性検査を行うための特別なASTノードを追加して、その評価をインタプリタに実装
-      - lark-pythonとVython-IRは拡張<u>せず</u>、関数呼び出し(Vython ASTレベルでは`Call`)のcalleeのfunctionオブジェクトが特別な名前(`check`や`checCompatibility`)を持つ場合に限って、interpreterで特別な評価を追加
+      - lark-vythonとVython-IRに整合性検査を行うための特別なASTノードを追加して、その評価をインタプリタに実装
+      - lark-vythonとVython-IRは拡張<u>せず</u>、関数呼び出し(Vython ASTレベルでは`Call`)のcalleeのfunctionオブジェクトが特別な名前(`check`や`checCompatibility`)を持つ場合に限って、interpreterで特別な評価を追加
   - `VObject` を使う/生成する式の評価に、返り値のバージョンテーブルを計算する処理を追加
 
 ## Syntax

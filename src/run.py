@@ -36,7 +36,7 @@ def main():
     compiler = Compiler(code, debug_mode = debug_mode)
 
     # 各フェーズの実行
-    execute_phase("[Phase 1] Parse to lark-python AST", lambda: compiler.parse())
+    execute_phase("[Phase 1] Parse to lark-vython AST", lambda: compiler.parse())
     print("[Phase 2] Preprocess\n  --> Skipped")
     # execute_phase("Phase 2: Preprocessing", lambda: compiler.preprocess(code))
     execute_phase("[Phase 3] Compile to IR", lambda: compiler.compile_to_ir())
