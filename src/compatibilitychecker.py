@@ -1,4 +1,4 @@
-from src.syntax.semantic_object import VersionTable
+from src.syntax.semantics import VersionTable
 
 # バージョンの整合性検査
 # アルゴリズムと仕様もコメントで書くこと

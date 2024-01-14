@@ -1,5 +1,5 @@
 from src.compiler import Compiler
-from src.syntax.semantic_object import *
+from src.syntax.semantics import *
 
 def test():
     # テスト用のソースコードを読み込む

@@ -1,7 +1,7 @@
 from src.parser import Parser
 from src.larkToIR import LarkToCustomAST
 from src.interpreter import Interpreter
-from src.syntax.semantic_object import resolve_heap_object
+from src.syntax.semantics import resolve_heap_object
 
 class Compiler:
     def __init__(self, code, debug_mode=False):

@@ -1,6 +1,6 @@
 from src.syntax.language import Pass
 from src.compiler import Compiler
-from src.syntax.semantic_object import VObject
+from src.syntax.semantics import VObject
 
 def test():
     # テスト用のソースコードを読み込む

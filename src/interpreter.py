@@ -1,4 +1,4 @@
-from src.syntax.semantic_object import *
+from src.syntax.semantics import *
 from src.syntax.language import *
 
 

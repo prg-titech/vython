@@ -63,7 +63,7 @@ project-name/
 │   ├── syntax/                 # Vython IRの構文に関するモジュールが含まれるディレクトリ
 │   │   ├── __init__.py         # 初期化ファイル
 │   │   ├── language.py         # Vython IRの構文定義
-│   │   └── semantic_object.py  # Vython IR Interpreterの意味論的なオブジェクト（値、環境、ヒープなど）の定義
+│   │   └── semantics.py  # Vython IR Interpreterの意味論的なオブジェクト（値、環境、ヒープなど）の定義
 │   └── vython.lark             # Lark-python 構文のEBNF定義
 │
 └── test/                       # テストコードが含まれるディレクトリ
@@ -113,7 +113,7 @@ project-name/
 - [x] 済。
 
 #### Step 2: バージョンテーブル対応
-- [ ] 2-1 `VersionTable` を定義 @ [`src/syntax/semantic_object.py`](https://github.com/prg-titech/vython/blob/master/src/syntax/semantic_object.py)
+- [ ] 2-1 `VersionTable` を定義 @ [`src/syntax/semantics.py`](https://github.com/prg-titech/vython/blob/master/src/syntax/semantics.py)
   - 内部メソッドとしてバージョンテーブル操作用のヘルパー関数を定義
     - 必要なヘルパー関数で原子的なものを特定して実装。`union`? `modify`?
   - `VObject` クラスにバージョンテーブル用の属性を追加
