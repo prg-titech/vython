@@ -6,11 +6,13 @@ class Swim!1:
 
 class Bird!1:
     def move(self):
-        return Fly!1()
+        a = Fly!1()
+        return a
 
 class Fish!1:
     def move(self):
-        return Swim!1()
+        a = Swim!1()
+        return a
 
 class Animal!1:
     def make_it_move(animal):

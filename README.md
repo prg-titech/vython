@@ -4,17 +4,17 @@ Vythonは以下の機能を特徴としています。
 - <b>複数バージョンの利用</b>: 開発者は単一クラスの複数のバージョンを柔軟に利用できます。値(オブジェクト)は計算に使用したクラスのバージョンを記録し、そのバージョンの仕様に従って属性参照を行います。
 - <b>動的バージョン検査</b>: 互換性・一貫性のあるバージョンに由来する式・値(オブジェクト)の組み合わせで計算が行われていることを動的に検査します。
 
-これらの特徴的な言語機能を用いて、将来的には煩雑な更新プロセスを分割・半自動化することを目標としています。
+これらの言語機能を用いて、煩雑な更新プロセスを分割・半自動化することを目標としています。
 
 <b>免責事項</b>
-1. この言語は未完成で、実験的な研究用途のみを目的としています。
-2. `src/vython.lark` は、[lark-parserにより提供されるpython3文法](https://github.com/lark-parser/lark/blob/master/lark/grammars/python.lark)に独自の構文拡張を加えたものです。
+1. この言語は未完成です。また、研究用途のみを目的とした実験言語です。
+2. [`src/syntax/lark-vython.lark`](https://github.com/prg-titech/vython/blob/master/src/syntax/lark-vython.lark) は、[larkのPython 3文法](https://github.com/lark-parser/lark/blob/master/lark/grammars/python.lark)に独自の構文拡張を加えたものです。
 
-<b>※作業を始める前に [Compilation](https://github.com/prg-titech/vython?tab=readme-ov-file#compilation) の節を読んで実装の全体を把握すること。</b>
+<b>※作業を始める前に [Compilation](https://github.com/prg-titech/vython?tab=readme-ov-file#compilation) の節を読んで実装の全体像を把握すること。</b>
 
 ## How to install / run / test
 ### Requirement
-Vython は Parser として [lark](https://github.com/lark-parser/lark) を使用しています。
+Vython は 表面言語の構文解析に [lark](https://github.com/lark-parser/lark) を使用しています。
 ```sh
 sudo apt install python3
 pip install lark
@@ -40,12 +40,12 @@ vython -d test/sample/basic.py | tee tmp.log
 ```
 
 ### Test
-`test/` 以下の全てのユニットテストを実行するには、以下を実行してください。
+`test/` 以下のユニットテストを実行するには、以下を実行してください。
 ```sh
 pytest test/
 ```
 `test/sample` にサンプルのpythonファイルが入っています。
-新しいサンプルを積極的に追加してください。
+新しいサンプルやテストケースを積極的に追加してください。
 
 ## Structure
 ```
@@ -105,50 +105,54 @@ project-name/
 +-------------------+
 ```
 
+- Raw Code: バージョンに関連する構文拡張が行われたPython 3のプログラム
+- lark-vython AST: [`src/syntax/lark-vython.lark`](https://github.com/prg-titech/vython/blob/master/src/syntax/lark-vython.lark)のEBNFで定義された言語のAST
+- Vython-IR AST: [`src/syntax/language.py`](https://github.com/prg-titech/vython/blob/master/src/syntax/language.py)で定義されたコア言語のAST
+
 ### TODO
-- [Phase 2]は無視してよい。算術プリミティブ値・演算のIntオブジェクト・メソッドへのコンパイルを定義しているが、未検証故に未使用。
-- バグ修正は出来るだけ後回しにすること。1日で実装したためバグが取り切れていないと思うが、少なくとも `test/samples/*` 以下の初期サンプルはすべて正常に評価できる。
+- [Phase 2] は無視してよい。算術プリミティブ値・演算のIntオブジェクト・メソッドへのコンパイルを定義しているが、未検証故に未使用。
+- バグ修正は出来るだけ後回しにすること。1日で実装したためバグが取り切れていないが、少なくとも `test/samples/*` 以下の初期サンプルはすべて正常に評価できる。
 
 #### Step 1: ASTのバージョン対応
 - [x] 済。
 
 #### Step 2: バージョンテーブル対応
-- [ ] 2-1 `VersionTable` を定義 @ [`src/syntax/semantics.py`](https://github.com/prg-titech/vython/blob/master/src/syntax/semantics.py)
+- [ ] `VersionTable` を定義 @ [`src/syntax/semantics.py`](https://github.com/prg-titech/vython/blob/master/src/syntax/semantics.py)
   - 内部メソッドとしてバージョンテーブル操作用のヘルパー関数を定義
     - 必要なヘルパー関数で原子的なものを特定して実装。`union`? `modify`?
   - `VObject` クラスにバージョンテーブル用の属性を追加
-- [ ] 2-2 `VersionTable` 整合性検査を定義 @ [`src/comppatibilitychecker.py`](https://github.com/prg-titech/vython/blob/master/src/comppatibilitychecker.py)
+- [ ] `VersionTable` 整合性検査を定義 @ [`src/compatibilitychecker.py`](https://github.com/prg-titech/vython/blob/master/src/compatibilitychecker.py)
   - オブジェクトへの参照(変数)のリストを受け取り、それらのバージョンテーブルを用い、整合性・互換性・一貫性チェックを行う。
 
 #### Step 3: Interpreterのバージョン対応
-- [ ] 変数管理を名前だけから名前とバージョンの組で行うように変更
-  - 環境中の名前管理も同様。バージョンを持たない名前(関数やローカル変数)とバージョンを持つ名前(クラス定義)が存在するので注意
-  - @ [`src/language.py`](https://github.com/prg-titech/vython/blob/master/src/language.py)
-  - @ [`src/interpreter.py`](https://github.com/prg-titech/vython/blob/master/src/interpreter.py)
-  - @ [`src/syntax/semantics.py`](https://github.com/prg-titech/vython/blob/master/src/interpreter.py)
+- [x] （済）変数管理を名前とバージョンの組で行うように変更
 - [ ] バージョンテーブルの処理をインタプリタに追加 @ [`src/interpreter.py`](https://github.com/prg-titech/vython/blob/master/src/interpreter.py)
-  - バージョンテーブル整合性検査の文の評価を追加
-    - 拡張の方向性は２つある。どちらでもOK。
-      - lark-vythonとVython-IRに整合性検査を行うための特別なASTノードを追加して、その評価をインタプリタに実装
-      - lark-vythonとVython-IRは拡張<u>せず</u>、関数呼び出し(Vython ASTレベルでは`Call`)のcalleeのfunctionオブジェクトが特別な名前(`check`や`checCompatibility`)を持つ場合に限って、interpreterで特別な評価を追加
-  - `VObject` を使う/生成する式の評価に、返り値のバージョンテーブルを計算する処理を追加
-  - `incompatible` メソッド呼び出しの評価(Vython AST `CallIncompatible(value=obj)`のinterpret規則)にバージョンテーブルを操作する処理を追加
+  - `VersionTable` 整合性検査の処理
+    - Vython-IR に整合性検査を行うための特別なASTノードを追加(メソッド形式？関数形式？)
+    - 対応するASTノードの評価をインタプリタに実装
+    - `incompatible` はメソッドとして既にAST・評価規則が追加されている。同じような追加実装をすればよい。
+  - `VObject` の `VersionTable` を計算する処理
+    - `VObject` を生成する式の評価に、返り値の `VersionTable` を計算する処理を追加
+- [ ] `incompatible` メソッドの処理
+  - （済）Vython IRに `incompatible` に対応するASTノード `CallIncompatible` を追加 @ [`src/syntax/language.py`](https://github.com/prg-titech/vython/blob/master/src/syntax/language.py)
+  - Vython AST `CallIncompatible(value=obj)`のinterpret規則にバージョンテーブル処理を追加 @ [`src/interpreter.py`](https://github.com/prg-titech/vython/blob/master/src/interpreter.py)
 
 ## Syntax
 ### Vython Program
 ```
 <prog> ::=                     # トップレベル式の列
     <class_def> <prog>         # クラス定義
-  | <function_def>             # トップレベル関数定義
+  | <function_def> <prog>      # トップレベル関数定義
   | <stmt> <prog>              # 文
   | ε
 
 <class_def> ::=                # クラス定義
-    "class" <name> "!" <version> "(" <bases> ")" "{" <function_def> "}"
+    "class" <vname> "{" <function_def> "}"
+  # | "class" <vname> "(" <bases> ")" "{" <function_def> "}"
 
-<bases> ::=                    # ベース(スーパー)クラスの列
-    <name> "," <bases>
-  | ε
+# <bases> ::=                    # ベースクラスの列(未実装)
+#     <name> "," <bases>
+#   | ε
 
 <function_def> ::=             # 関数定義(今はメソッド定義と同じ)
     "def" <name> "(" <args> ")" ":" <stmts>
@@ -165,28 +169,29 @@ project-name/
 
 <assign> ::=                   # 属性割当
     <name> "=" <expr>          # 変数割当
-  | <attribute> "=" <expr>     # オブジェクトの属性に対する割当
+  | <get_attr> "=" <expr>      # オブジェクトの属性に対する割当
 
 <expr> ::=                     # 式
     <name>                     # 変数参照
   | <call>                     # 関数呼び出し(メソッド含む)
-  | <attribute>                # 属性参照
+  | <get_attr>                 # 属性参照
   | "None"                     # None値
 
 <call> ::=                     # 関数呼び出し
-    <attribute>  "!" <version> "(" <args> ")" # メソッド呼び出し
+    <vname> "(" <args> ")"     # バージョン付きインスタンス生成
   | <name> "(" <args> ")"      # 関数呼び出し
 
-<attribute> ::=
+<get_attr> ::=
     <expr> "." <name>          # 属性参照
 
 <args> ::=                     # 引数の列
     <expr> "," <args>
   | ε
 
+<vname> ::= <name> "!" <version>
 <name> ::= (任意の変数名またはクラス名)
 
-<version> ::= [0..9]
+<version> ::= (任意の非負整数)
 ```
 
 
@@ -222,7 +227,7 @@ project-name/
     (任意の非負整数)
 
 # <failure> ::=                # 失敗(未実装)
-#     "Failure" "(" <message> ")"  
+#     "fail" <message>
 # <message> ::=                # エラーメッセージ(未実装, checkCompatibilityで使うかも)
 #      (任意のエラーメッセージ文字列)
 
@@ -240,7 +245,7 @@ project-name/
 #### Environment
 ```
 <environment> ::=    # 実行時環境
-    "Environment "(" "{" <bindings> "}" "," <parent> ")"
+    "(" "{" <bindings> "}" "," <parent> ")"
 
 <bindings> ::=       # 実行時環境の束縛の列
     <binding> "," <bindings>
@@ -257,7 +262,7 @@ project-name/
 #### Heap Memory
 ```
 <heap> ::=             # ヒープ
-    "Heap" "(" "[" <indexed_objects> "]" ")"
+    "[" <indexed_objects> "]"
 
 <indexed_objects> ::=  # 格納された値(オブジェクト)の列
     <indexed_object> "," <indexed_objects>

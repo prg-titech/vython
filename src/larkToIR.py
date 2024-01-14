@@ -12,7 +12,10 @@ class LarkToCustomAST(Transformer):
 
     def classdef(self, items):
         name, version, bases, body = items[0], items[1], [], self._flatten_list(items[3:])
-        return ClassDef(name=name, version=version, bases=bases, body=body)
+        # バージョン付きクラスは名前にバージョン属性を付与する
+        if isinstance(name, Name):
+            name.version = version
+        return ClassDef(name=name, bases=bases, body=body)
 
     def assign_stmt(self, items):
         assign_tree = items[0]
@@ -41,15 +44,18 @@ class LarkToCustomAST(Transformer):
             transformed_func.attr.id == "incompatible"):
             return CallIncompatible(value=transformed_func.value)
         else:
-            return Call(func=transformed_func, version=None, args=args)
+            return Call(func=transformed_func, args=args)
 
     def funccallwithversion(self, items):
         func, version, args = items[0], items[1], self._flatten_list(items[2:])
         transformed_func = self.transform(func) if isinstance(func, Tree) else func
-        return Call(func=transformed_func, version=version, args=args)
+        # バージョン付きインスタンス生成の場合はNameオブジェクトにバージョンを入れる
+        if isinstance(transformed_func, Name):
+            transformed_func.version = version
+        return Call(func=transformed_func, args=args)
 
     def version(self, items):
-        number = items[0]
+        number = items[0][0]
         return Version(version=number)
 
     def getattr(self, items):
@@ -70,11 +76,11 @@ class LarkToCustomAST(Transformer):
     def var(self, items):
         # 'var' ルールの中の 'name' ルールに対応する Tree オブジェクトから直接文字列を取得
         id = items[0].id
-        return Name(id=id)
+        return Name(id=id, version=None)
 
     def name(self, items):
         id = items[0].value
-        return Name(id=id)
+        return Name(id=id, version=None)
 
     def suite(self, items):
         return self._flatten_list(items)

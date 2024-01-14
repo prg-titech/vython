@@ -81,8 +81,9 @@ class Interpreter:
 
     # クラス定義の評価
     def interpret_ClassDef(self, node, env):
-        # クラス名を取得
+        # クラス名とバージョンを取得
         type_tag = node.name.id
+        version_classdef = node.name.version
 
         # 基底クラスを評価（簡易版, 未実装）
         class_bases = [self.interpret(base) for base in node.bases]
@@ -103,7 +104,7 @@ class Interpreter:
         # クラスオブジェクトを作成し、グローバル環境に登録
         class_obj = VObject("class", name=type_tag, bases=class_bases, body=class_body)
         heap_index = self.heap.allocate(class_obj)
-        env.set(type_tag, heap_index)
+        env.set(type_tag, version_classdef, heap_index)
 
         # None値が格納されたメモリ上へのポインタを返す
         return self.none_index
@@ -114,7 +115,7 @@ class Interpreter:
         heap_index = self.allocate_FunctionDef(node, env)
 
         # 関数オブジェクトのヒープインデックスを環境に登録
-        env.set(node.name.id, heap_index)
+        env.set(node.name.id, None, heap_index)
 
         # None値が格納されたメモリ上へのポインタを返す
         return self.none_index
@@ -142,7 +143,7 @@ class Interpreter:
         for target in node.targets:
             if isinstance(target, Name):
                 # LHSが単純な変数名の場合、ヒープインデックスをそのまま使用
-                env.set(target.id, evaluated_value_index)
+                env.set(target.id, None, evaluated_value_index)
             elif isinstance(target, Attribute):
                 # LHSが属性参照の場合
                 obj_heap_index = self.interpret(target.value, env)
@@ -198,7 +199,7 @@ class Interpreter:
                 method_env = Environment(parent=env)
 
                 # selfを現在のインスタンスにバインド
-                method_env.set("self", heap_index)
+                method_env.set("self", None, heap_index)
 
                 # 引数を評価し、ローカル環境にセット
                 for arg_name, arg_value in zip(
@@ -206,7 +207,7 @@ class Interpreter:
                 ):
                     if arg_name is not None:
                         evaluated_arg = self.interpret(arg_value, method_env)
-                        method_env.set(arg_name.id, evaluated_arg)
+                        method_env.set(arg_name.id, None, evaluated_arg) # ネストクラスを定義するならこの実装ではマズいかも
                 for statement in init_method.attributes["body"]:
                     self.interpret(statement, method_env)
 
@@ -219,7 +220,7 @@ class Interpreter:
             local_env = Environment(parent=env)
 
             # 変数 'self' にインスタンスのインデックスをバインド
-            local_env.set("self", callable_obj_index)
+            local_env.set("self", None, callable_obj_index)
 
             # 引数リストから 'self' を除外して、残りの引数を処理
             func_args_wo_self = [
@@ -228,7 +229,7 @@ class Interpreter:
             for arg_name, arg_value in zip(func_args_wo_self, node.args):
                 if arg_value is not None:
                     evaluated_arg = self.interpret(arg_value, env)
-                    local_env.set(arg_name, evaluated_arg)
+                    local_env.set(arg_name, None, evaluated_arg)
 
             # 関数本体の実行
             # 最後の式・文の評価結果(の値へのヒープインデックス)が最終的な返り値
@@ -262,8 +263,14 @@ class Interpreter:
 
     # 名前(変数)の評価
     def interpret_Name(self, node, env):
+        # 環境走査のためのキーを取得
+        var_name = node.id
+        var_version = None
+        if node.version is not None:
+            var_version = node.version.version
+
         # 環境からヒープ上のインデックスを取得
-        heap_index = env.get(node.id)
+        heap_index = env.get(var_name, var_version)
         # ヒープインデックスを返す
         return heap_index
 

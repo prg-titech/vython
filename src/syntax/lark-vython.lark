@@ -239,7 +239,7 @@ _exprlist: test_or_star_expr (","  test_or_star_expr)* [","]
 
 // Adding version
 classdef: "class" name "!" version ["(" [arguments] ")"] ":" suite
-version: "1".."9"
+version: /\d+/
 
 arguments: argvalue ("," argvalue)*  ("," [ starargs | kwargs])?
          | starargs

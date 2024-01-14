@@ -73,9 +73,8 @@ class Module(ASTNode):
 
 
 class ClassDef(ASTNode):
-    def __init__(self, name, version, bases, body):
+    def __init__(self, name, bases, body):
         self.name = name
-        self.version = version
         self.bases = bases
         self.body = body
 
@@ -109,9 +108,8 @@ class Expr(ASTNode):
 
 
 class Call(ASTNode):
-    def __init__(self, func, version, args):
+    def __init__(self, func, args):
         self.func = func
-        self.version = version # バージョン付きインスタンス生成のケースに必要
         self.args = args
 
 
@@ -131,8 +129,9 @@ class Pass(ASTNode):
 
 
 class Name(ASTNode):
-    def __init__(self, id):
+    def __init__(self, id, version):
         self.id = id
+        self.version = version
 
 
 class NoneNode(ASTNode):

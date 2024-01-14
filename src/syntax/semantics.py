@@ -1,5 +1,4 @@
-from src.syntax.language import Name
-
+from src.syntax.language import Name, Version
 
 # 計算結果全体を示すクラス
 class Result:
@@ -67,7 +66,7 @@ class VersionTable():
 
 
 # グローバルな名前環境を示すクラス
-# 名前 -> それが指すヒープ環境上の値への参照 の辞書
+# (名前, バージョン) -> それが指すヒープ環境上の値への参照 の辞書
 class Environment:
     def __init__(self, parent=None):
         self.parent = parent
@@ -76,16 +75,29 @@ class Environment:
     def __str__(self):
         return f"Environment({self.bindings}, {self.parent})"
 
-    def get(self, name):
-        if name in self.bindings:
-            return self.bindings[name]
-        elif self.parent:
-            return self.parent.get(name)
+    def get(self, name, version):
+        key = None
+        if version is not None:
+          key = (name, version)
         else:
-            raise NameError(f"Name '{name}' is not defined")
+          key = (name, None)
 
-    def set(self, name, heap_index):
-        self.bindings[name] = heap_index
+        if key in self.bindings:
+            return self.bindings[key]
+        elif self.parent is not None:
+            name, version = key
+            return self.parent.get(name, version)
+        else:
+            raise NameError(f"Name '{name}' with version '{version}' is not defined")
+
+    def set(self, name, version, heap_index):
+        key = (None, None)
+        if isinstance(version, Version):
+          key = (name, version.version)
+        else:
+          key = (name, None)
+
+        self.bindings[key] = heap_index
 
 
 # ヒープ環境を示すクラス
