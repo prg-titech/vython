@@ -79,9 +79,11 @@ class ClassDef(ASTNode):
         self.bases = bases
         self.body = body
 
+
 class Version(ASTNode):
     def __init__(self, version):
         self.version = version
+
 
 class FunctionDef(ASTNode):
     def __init__(self, name, args, body):
@@ -109,7 +111,7 @@ class Expr(ASTNode):
 class Call(ASTNode):
     def __init__(self, func, version, args):
         self.func = func
-        self.version = version # 注：普通の関数が導入された場合は、Validな関数でもNoneの可能性あり
+        self.version = version # バージョン付きインスタンス生成のケースに必要
         self.args = args
 
 
@@ -117,6 +119,11 @@ class Attribute(ASTNode):
     def __init__(self, value, attr):
         self.value = value
         self.attr = attr
+
+
+class CallIncompatible(ASTNode):
+    def __init__(self, value):
+        self.value = value
 
 
 class Pass(ASTNode):

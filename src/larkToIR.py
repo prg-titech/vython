@@ -34,7 +34,14 @@ class LarkToCustomAST(Transformer):
     def funccall(self, items):
         func, args = items[0], self._flatten_list(items[1:])
         transformed_func = self.transform(func) if isinstance(func, Tree) else func
-        return Call(func=transformed_func, version=None, args=args)
+
+        # transformed_funcがAttributeで、そのattrが"incompatible"の場合、特別なASTに変換
+        if (isinstance(transformed_func, Attribute) and 
+            isinstance(transformed_func.attr, Name) and 
+            transformed_func.attr.id == "incompatible"):
+            return CallIncompatible(value=transformed_func.value)
+        else:
+            return Call(func=transformed_func, version=None, args=args)
 
     def funccallwithversion(self, items):
         func, version, args = items[0], items[1], self._flatten_list(items[2:])

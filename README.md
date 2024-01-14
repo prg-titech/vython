@@ -121,12 +121,18 @@ project-name/
   - オブジェクトへの参照(変数)のリストを受け取り、それらのバージョンテーブルを用い、整合性・互換性・一貫性チェックを行う。
 
 #### Step 3: Interpreterのバージョン対応
+- [ ] 変数管理を名前だけから名前とバージョンの組で行うように変更
+  - 環境中の名前管理も同様。バージョンを持たない名前(関数やローカル変数)とバージョンを持つ名前(クラス定義)が存在するので注意
+  - @ [`src/language.py`](https://github.com/prg-titech/vython/blob/master/src/language.py)
+  - @ [`src/interpreter.py`](https://github.com/prg-titech/vython/blob/master/src/interpreter.py)
+  - @ [`src/syntax/semantics.py`](https://github.com/prg-titech/vython/blob/master/src/interpreter.py)
 - [ ] バージョンテーブルの処理をインタプリタに追加 @ [`src/interpreter.py`](https://github.com/prg-titech/vython/blob/master/src/interpreter.py)
   - バージョンテーブル整合性検査の文の評価を追加
     - 拡張の方向性は２つある。どちらでもOK。
       - lark-vythonとVython-IRに整合性検査を行うための特別なASTノードを追加して、その評価をインタプリタに実装
       - lark-vythonとVython-IRは拡張<u>せず</u>、関数呼び出し(Vython ASTレベルでは`Call`)のcalleeのfunctionオブジェクトが特別な名前(`check`や`checCompatibility`)を持つ場合に限って、interpreterで特別な評価を追加
   - `VObject` を使う/生成する式の評価に、返り値のバージョンテーブルを計算する処理を追加
+  - `incompatible` メソッド呼び出しの評価(Vython AST `CallIncompatible(value=obj)`のinterpret規則)にバージョンテーブルを操作する処理を追加
 
 ## Syntax
 ### Vython Program

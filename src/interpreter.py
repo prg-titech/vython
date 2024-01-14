@@ -283,3 +283,10 @@ class Interpreter:
         # None式は単にNoneノードを返す
         # None値が格納されたメモリ上へのポインタを返す
         return self.none_index
+
+    # CallIncompatibleの評価
+    def interpret_CallIncompatible(self, node, env):
+        # 値のバージョンテーブルを操作するように変更する
+        # 今はリターン文と同じ
+        return self.interpret(node.value, env)
+
