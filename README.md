@@ -154,7 +154,7 @@ project-name/
 #     <name> "," <bases>
 #   | ε
 
-<function_def> ::=             # 関数定義(今はメソッド定義と同じ)
+<function_def> ::=             # 関数定義
     "def" <name> "(" <args> ")" ":" <stmts>
 
 <stmts> ::=                    # 文の列
@@ -173,13 +173,14 @@ project-name/
 
 <expr> ::=                     # 式
     <name>                     # 変数参照
-  | <call>                     # 関数呼び出し(メソッド含む)
+  | <vname> "(" <args> ")"     # バージョン付きインスタンス生成
+  | <call>                     # 関数呼び出し
+  | <expr> "." <call>          # メソッド呼び出し
   | <get_attr>                 # 属性参照
   | "None"                     # None値
 
 <call> ::=                     # 関数呼び出し
-    <vname> "(" <args> ")"     # バージョン付きインスタンス生成
-  | <name> "(" <args> ")"      # 関数呼び出し
+  | <name> "(" <args> ")"
 
 <get_attr> ::=
     <expr> "." <name>          # 属性参照
