@@ -10,7 +10,7 @@ Vythonは以下の機能を特徴としています。
 1. この言語は未完成です。また、研究用途のみを目的とした実験言語です。
 2. [`src/syntax/lark-vython.lark`](https://github.com/prg-titech/vython/blob/master/src/syntax/lark-vython.lark) は、[larkのPython 3文法](https://github.com/lark-parser/lark/blob/master/lark/grammars/python.lark)に独自の構文拡張を加えたものです。
 
-<b>※作業を始める前に [Compilation](https://github.com/prg-titech/vython?tab=readme-ov-file#compilation) の節を読んで実装の全体像を把握すること。</b>
+<b>※作業を始める前に [Compiler Structure and TODO](https://github.com/prg-titech/vython?tab=readme-ov-file#compiler-structure-and-todo) の節を読んで実装の全体像を把握すること。</b>
 
 ## How to install / run / test
 ### Requirement
@@ -73,7 +73,7 @@ project-name/
 ...
 ```
 
-## Compilation
+## Compiler Structure and TODO
 [src/compiler.py](https://github.com/prg-titech/vython/blob/master/src/compiler.py) に定義されています。
 ```
 +----------+
