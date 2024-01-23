@@ -29,14 +29,14 @@ pip uninstall vython # Uninstall
 ```
 
 ### Run
-`vython` で `test/sample/basic.py` をコンパイル・実行するには、以下を実行してください。
+`vython` で `test/sample/basic/classandmethod.py` をコンパイル・実行するには、以下を実行してください。
 ```sh
-vython test/sample/basic.py
+vython test/sample/basic/classandmethod.py
 ```
 `vython` コンパイラはオプションで詳細な情報を出力可能です。
 ```sh
-vython --debug test/sample/basic.py | tee tmp.log # tmp.logと標準出力にログを出力
-vython -d test/sample/basic.py | tee tmp.log
+vython --debug test/sample/basic/classandmethod.py | tee tmp.log # tmp.logと標準出力にログを出力
+vython -d test/sample/basic/classandmethod.py | tee tmp.log
 ```
 
 ### Test
