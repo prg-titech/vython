@@ -1,5 +1,7 @@
 from src.syntax.semantics import *
 from src.syntax.language import *
+from src.compatibilitychecker import *
+from src.specialclasses import *
 
 
 class Interpreter:
@@ -12,7 +14,7 @@ class Interpreter:
 
         # Noneオブジェクトのための初期化処理
         # - Noneオブジェクトをヒープにアロケートし、そのインデックスを保存
-        none_obj = VObject("None")
+        none_obj = VObject("None", VersionTable("None", 0, False))
         self.none_index = self.heap.allocate(none_obj)
 
     def log_state(self, message, node, eval_depth, step_count, env=None, heap=None, result=None):
@@ -95,14 +97,14 @@ class Interpreter:
                 # メソッド名を取得
                 method_name = element.name.id
 
-                # メソッドオブジェクトをヒープにアロケート
-                heap_index = self.allocate_FunctionDef(element, env)
+                # メソッドオブジェクトをヒープにアロケート(関数定義)
+                heap_index = self.allocate_MethodDef(element, env, type_tag, int(version_classdef.version))
 
                 # メソッドのヒープインデックスを保存
                 class_body[method_name] = heap_index
 
         # クラスオブジェクトを作成し、グローバル環境に登録
-        class_obj = VObject("class", name=type_tag, bases=class_bases, body=class_body)
+        class_obj = VObject("class", VersionTable(type_tag, int(version_classdef.version), False), name=type_tag, bases=class_bases, body=class_body)
         heap_index = self.heap.allocate(class_obj)
         env.set(type_tag, version_classdef, heap_index)
 
@@ -120,14 +122,29 @@ class Interpreter:
         # None値が格納されたメモリ上へのポインタを返す
         return self.none_index
 
-    # 関数定義とメソッド定義に共通のallocate処理
+    # 関数定義のallocate処理
     def allocate_FunctionDef(self, node, env):
         function_name = node.name.id
         # 関数の引数名を取得
         arg_names = [arg.id for arg in node.args] if node.args else []
 
         # 関数オブジェクトの作成
-        func_obj = VObject("function", name=function_name, args=arg_names, body=node.body)
+        func_obj = VObject("function", VersionTable("NormalFunction", 0, False), name=function_name, args=arg_names, body=node.body)
+
+        # 関数オブジェクトをヒープに格納し、そのインデックスを環境に設定
+        heap_index = self.heap.allocate(func_obj)
+        
+        # 確保したヒープ領域のheap_indexを返す
+        return heap_index
+    
+    # メソッド定義用のallocate処理
+    def allocate_MethodDef(self, node, env, c, v):
+        function_name = node.name.id
+        # 関数の引数名を取得
+        arg_names = [arg.id for arg in node.args] if node.args else []
+
+        # 関数オブジェクトの作成
+        func_obj = VObject("function", VersionTable(c, v, False), name=function_name, args=arg_names, body=node.body)
 
         # 関数オブジェクトをヒープに格納し、そのインデックスを環境に設定
         heap_index = self.heap.allocate(func_obj)
@@ -185,8 +202,12 @@ class Interpreter:
                 for method_name, method_obj in callable_obj.attributes["body"].items()
             }
 
+            # インスタンスのクラスとバージョンを環境のクラス定義から得る
+            # 本質的でない実装の可能性
+            instance_vt = callable_obj.version_table
+
             # インスタンスオブジェクト作成
-            instance = VObject(type_tag, **instance_attributes)
+            instance = VObject(type_tag, VersionTable(instance_vt.vt[0][0], instance_vt.vt[0][1], False), **instance_attributes)
 
             # インスタンスをヒープに配置し、そのインデックスを取得
             heap_index = self.heap.allocate(instance)
@@ -219,8 +240,16 @@ class Interpreter:
             # 新しいローカル環境を作成
             local_env = Environment(parent=env)
 
-            # 変数 'self' にインスタンスのインデックスをバインド
-            local_env.set("self", None, callable_obj_index)
+            # 変数 'self' にインスタンスのインデックスをバインド 
+            #### ここでバインドされているのはインスタンスのインデックスではなくインスタンスから呼ばれたfunction 
+            # local_env.set("self", None, callable_obj_index)
+        
+            # 応急処置 heapが汚くなるが再度オブジェクトをメインのヒープ内に作ることにする。しょうがない。
+            # 何か問題があるかもしれない
+            # 属性参照によるメソッド呼び出しの場合特別にselfとしてバインド
+            if type(node.func).__name__ == "Attribute":
+                self_index = self.interpret(node.func.value, env)
+                local_env.set("self", None, self_index)
 
             # 引数リストから 'self' を除外して、残りの引数を処理
             func_args_wo_self = [
@@ -236,6 +265,46 @@ class Interpreter:
             result_index = self.none_index
             for statement in callable_obj.attributes["body"]:
                 result_index = self.interpret(statement, local_env)
+
+
+            # 属性参照によるメソッド呼び出しの場合のVT書き換え操作 & 演算の場合の書き換え操作と互換性検査
+            receiver_index = -1
+            receiver_object = VObject("None", VersionTable("None", 0, False))
+            if type(node.func).__name__ == "Attribute":
+                # レシーバーオブジェクトを取得するために一時的なインタプリタを作成し使用する => ローカル環境使って書き直す
+                tmpInterpreter = Interpreter()
+                tmpInterpreter.heap = self.heap
+                tmpInterpreter.global_env = self.global_env
+                receiver_index = tmpInterpreter.interpret(node.func.value, env)
+                receiver_object = tmpInterpreter.heap.get(receiver_index)
+            # 特別なクラスのメソッド呼び出しの場合 => 集合で表現している。
+            if callable_obj.version_table.vt[0][0] in special_classes:
+                # 引数とレシーバーを取得
+                objsForOp_index = list(local_env.bindings.values())
+                length = len(objsForOp_index)             
+                # 互換性検査
+                for i in range(length):
+                    vt1 = self.heap.get(objsForOp_index[i]).version_table
+                    for j in range(length):
+                        vt2 = self.heap.get(objsForOp_index[j]).version_table
+                        if (j > i):
+                            checkCompatibility(vt1, vt2)
+                # 演算での評価結果のVTをレシーバーと引数オブジェクトのVTの結合で上書き(特別なクラスのメソッド呼び出し)
+                result_object = self.heap.get(result_index)
+                final_result_object_vt = VersionTable("None", 0, False)
+                final_result_object_vt.vt = []
+                for objForOp_index in objsForOp_index:
+                    objForOp = self.heap.get(objForOp_index)
+                    final_result_object_vt.append(objForOp.version_table)
+                result_object.version_table = final_result_object_vt
+                # ヒープの同じ場所に代入
+                self.heap.insert(result_object, result_index)
+            else:
+                # 評価結果のオブジェクトのVTにレシーバーオブジェクトのVTを結合(通常のメソッド呼び出し)
+                result_object = self.heap.get(result_index)
+                result_object.version_table.append(receiver_object.version_table)
+                # ヒープの同じ場所に代入
+                self.heap.insert(result_object, result_index)
             return result_index
 
         else:

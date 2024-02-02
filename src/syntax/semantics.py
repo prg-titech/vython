@@ -33,13 +33,14 @@ class Failure(Result):
 # オブジェクトを示すクラス
 # 要バージョンテーブル
 class VObject(Value):
-    def __init__(self, type_tag, **attributes):
+    def __init__(self, type_tag, version_table, **attributes):
         super().__init__()
         self.type_tag = type_tag
+        self.version_table = version_table
         self.attributes = attributes
 
     def __repr__(self):
-        return f"VObject(type_tag='{self.type_tag}', attributes={self.attributes})"
+        return f"VObject(type_tag='{self.type_tag}', version_table='{repr(self.version_table)}', attributes={self.attributes})"
 
     def get_attribute(self, attr):
         return self.attributes.get(attr)
@@ -50,15 +51,49 @@ class VObject(Value):
 
 # VersionTableの定義のひな型
 # Versiontable操作用のヘルパー関数もここに定義
+# (class,version,checkflag)を可変長リストとして属性に保持
 class VersionTable():
-    def __init__(self, version):
-        pass
+    def __init__(self, c, v, cf):
+        self.vt = [(c, v, cf)]
+    
+    def __repr__(self):
+        return f"{self.vt}"
+
     def modify(self, modname, version):
         pass
-    def union(self, vt):
-        pass
 
+    # APPEND
+    def append(self, vt):
+        self.vt = self.vt + vt.vt
+        return
 
+    #INSERT
+    def insert(self, c, v, cf):
+        for x in self.vt:
+            if(x[0] == c & x[1] == v):
+                x[2] = cf
+                return
+        self.vt.extend([(c, v, cf)])
+
+    #COMPAT - 一引数のみ
+    def compat(self, vt):
+        for x in self.vt:
+            if(x[2] == True):
+                c = x[0]
+                v = x[1]
+                for y in vt.vt:
+                    if((y[0] == c) & (y[1] != v)):
+                        return [c, v, y[1]]
+        for y in vt.vt:
+            if(y[2] == True):
+                c = y[0]
+                v = y[1]
+                for x in self.vt:
+                    if((x[0] == c) & (x[1] != v)):
+                        return [c, x[1], v]
+        return True
+        
+        
 
 ##########################
 ### 以下評価環境の定義 ###
@@ -118,7 +153,16 @@ class Heap:
 
     def get(self, index):
         return self.objects[index]
-
+    
+    # デバッグのため
+    def delete(self, index):
+        self.objects[index] = "deleted"
+        return
+    
+    # インデックスを指定して上書き
+    def insert(self, obj, index):
+        self.objects[index] = obj
+        return
 
 # 完全な形式の(参照を含まない)オブジェクトを構成するヘルパー関数
 def resolve_heap_object(heap, index, resolved_indices=None):
@@ -142,6 +186,6 @@ def resolve_heap_object(heap, index, resolved_indices=None):
                 )
             else:
                 resolved_attributes[attr_name] = value
-        return VObject(obj.type_tag, **resolved_attributes)
+        return VObject(obj.type_tag, obj.version_table, **resolved_attributes)
     else:
         return obj
