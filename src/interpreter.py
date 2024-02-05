@@ -271,7 +271,7 @@ class Interpreter:
             receiver_index = -1
             receiver_object = VObject("None", VersionTable("None", 0, False))
             if type(node.func).__name__ == "Attribute":
-                # レシーバーオブジェクトを取得するために一時的なインタプリタを作成し使用する => ローカル環境使って書き直す
+                # レシーバーオブジェクトを取得するために一時的なインタプリタを作成し使用する
                 tmpInterpreter = Interpreter()
                 tmpInterpreter.heap = self.heap
                 tmpInterpreter.global_env = self.global_env
@@ -362,7 +362,16 @@ class Interpreter:
 
     # CallIncompatibleの評価
     def interpret_CallIncompatible(self, node, env):
-        # 値のバージョンテーブルを操作するように変更する
-        # 今はリターン文と同じ
-        return self.interpret(node.value, env)
+        #incompatibleが呼ばれたオブジェクトの評価
+        result_index = self.interpret(node.value, env)
+        result_object = self.heap.get(result_index)
+        #incompatibleが呼ばれた引数からclassとversionを取得。バージョンはTreeから直接取っている。
+        c = node.args[0].id
+        v = int(node.args[1].children[0].value)
+        #VTの書き換え
+        result_object.version_table.insert(c, v, True)
+        #ヒープに再代入
+        self.heap.insert(result_object, result_index)
+
+        return result_index
 

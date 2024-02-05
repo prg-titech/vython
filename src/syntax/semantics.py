@@ -69,11 +69,12 @@ class VersionTable():
 
     #INSERT
     def insert(self, c, v, cf):
+        #c,vの被りを消す必要はない...が卒論に準じた設計はこれ
         for x in self.vt:
-            if(x[0] == c & x[1] == v):
-                x[2] = cf
-                return
+            if((x[0] == c) and (x[1] == v)):
+                self.vt.remove(x)
         self.vt.extend([(c, v, cf)])
+        return
 
     #COMPAT - 一引数のみ
     def compat(self, vt):
@@ -82,7 +83,7 @@ class VersionTable():
                 c = x[0]
                 v = x[1]
                 for y in vt.vt:
-                    if((y[0] == c) & (y[1] != v)):
+                    if((y[0] == c) and (y[1] != v)):
                         return [c, v, y[1]]
         for y in vt.vt:
             if(y[2] == True):

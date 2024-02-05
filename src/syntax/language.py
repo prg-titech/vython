@@ -120,8 +120,9 @@ class Attribute(ASTNode):
 
 
 class CallIncompatible(ASTNode):
-    def __init__(self, value):
+    def __init__(self, value, args):
         self.value = value
+        self.args = args
 
 
 class Pass(ASTNode):

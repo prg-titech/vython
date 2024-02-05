@@ -42,7 +42,7 @@ class LarkToCustomAST(Transformer):
         if (isinstance(transformed_func, Attribute) and 
             isinstance(transformed_func.attr, Name) and 
             transformed_func.attr.id == "incompatible"):
-            return CallIncompatible(value=transformed_func.value)
+            return CallIncompatible(value=transformed_func.value, args=args)
         else:
             return Call(func=transformed_func, args=args)
 

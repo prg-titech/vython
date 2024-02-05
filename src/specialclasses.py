@@ -1,1 +1,1 @@
-special_classes = {"C"}
+special_classes = {"Equal"}
