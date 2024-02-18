@@ -2,6 +2,7 @@ from src.syntax.semantics import *
 from src.syntax.language import *
 from src.compatibilitychecker import *
 from src.specialclasses import *
+import copy
 
 
 class Interpreter:
@@ -222,13 +223,17 @@ class Interpreter:
                 # selfを現在のインスタンスにバインド
                 method_env.set("self", None, heap_index)
 
+                # メソッド定義の引数リストの深いコピーを作成し、selfを除去
+                args_copy = copy.deepcopy(init_method.attributes["args"])
+                args_copy.pop(0)
+
                 # 引数を評価し、ローカル環境にセット
                 for arg_name, arg_value in zip(
-                    init_method.attributes["args"], node.args
+                    args_copy, node.args
                 ):
-                    if arg_name is not None:
+                    if (arg_name is not None):
                         evaluated_arg = self.interpret(arg_value, method_env)
-                        method_env.set(arg_name.id, None, evaluated_arg) # ネストクラスを定義するならこの実装ではマズいかも
+                        method_env.set(arg_name, None, evaluated_arg) # ネストクラスを定義するならこの実装ではマズいかも
                 for statement in init_method.attributes["body"]:
                     self.interpret(statement, method_env)
 
