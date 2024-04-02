@@ -181,6 +181,19 @@ class Interpreter:
     def interpret_Expr(self, node, env):
         evaluated_value_index = self.interpret(node.value)
         return evaluated_value_index
+    
+    # 数値の評価
+    def interpret_Number(self, node, env):
+        print(node.number)
+        obj = VNumber("number", VersionTable("None", 0, False), node.number)
+        obj_index = self.heap.allocate(obj)
+        return obj_index
+    
+    # 文字列の評価
+    def interpret_String(self, node, env):
+        obj = VString("string", VersionTable("None", 0, False), node.string)
+        obj_index = self.heap.allocate(obj)
+        return obj_index
 
     # 関数呼び出しの評価(インスタンス生成・メソッド呼び出し)
     def interpret_Call(self, node, env):

@@ -207,6 +207,8 @@ project-name/
 
 <value> ::=                  # 値
     <object>                 # オブジェクト
+  | <number>                 # 数値
+  | <string>                 # 文字列
   | <heap_index>             # ヒープインデックス(参照)
   # | literal                  # リテラル(未実装)
 
@@ -217,6 +219,8 @@ project-name/
     <name>                   # 普通のインスタンスを示すtype-tag。クラス名が入る
   | "function"               # 関数オブジェクトを示す特別なtype-tag
   | "class"                  # クラス定義文によって生成されるオブジェクトを示す特別なtype-tag
+  | "number"                 # 数値を表す特別なtype-tag
+  | "string"                 # 文字列を表す特別なtype-tag
   | "None"                   # Noneオブジェクトを示す特別なtype-tag
 
 <attributes> ::=             # オブジェクトの持つ属性の列

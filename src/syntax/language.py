@@ -138,3 +138,13 @@ class Name(ASTNode):
 class NoneNode(ASTNode):
     def __init__(self):
         super().__init__()
+
+ # primitive value
+class Number(ASTNode):
+    def __init__(self, number):
+        self.number = number
+
+
+class String(ASTNode):
+    def __init__(self, string):
+        self.string = string
