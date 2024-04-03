@@ -32,13 +32,17 @@ class LarkToCustomAST(Transformer):
     def expr_stmt(self, items):
         value = items[0]
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
-        # exprが数値と文字列の場合の変換
-        if(isinstance(value, Tree)):
-            if(value.data.value == "number"):
-                transformed_value = Number(value.children[0].value)
-            elif(value.data.value == "string"):
-                transformed_value = String(value.children[0].value)
         return Expr(value=transformed_value)
+    
+    def string(self, items):
+        value = items[0]
+        transformed_value = self.transform(value) if isinstance(value, Tree) else value
+        return String(transformed_value)
+
+    def number(self, items):
+        value = items[0]
+        transformed_value = self.transform(value) if isinstance(value, Tree) else value
+        return Number(transformed_value)
 
     def funccall(self, items):
         func, args = items[0], self._flatten_list(items[1:])
