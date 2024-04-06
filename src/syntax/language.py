@@ -144,6 +144,18 @@ class Number(ASTNode):
     def __init__(self, number):
         self.number = number
 
+class Term(ASTNode):
+    def __init__(self, left, right, op):
+        self.left = left
+        self.right = right
+        self.op = op
+
+class ArithExpr(ASTNode):
+    def __init__(self, left, right, op):
+        self.left = left
+        self.right = right
+        self.op = op
+
 
 class String(ASTNode):
     def __init__(self, string):

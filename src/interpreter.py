@@ -184,14 +184,84 @@ class Interpreter:
     
     # 数値の評価
     def interpret_Number(self, node, env):
-        print(node.number)
-        obj = VNumber("number", VersionTable("None", 0, False), node.number)
+        obj = VObject("number", VersionTable("None", 0, False), num=float(node.number))
+        obj_index = self.heap.allocate(obj)
+        return obj_index
+    
+    def interpret_Term(self, node, env):
+        obj_left_index = self.interpret(node.left)
+        obj_right_index = self.interpret(node.right)
+        obj_left = self.heap.get(obj_left_index)
+        obj_right = self.heap.get(obj_right_index)
+        op = node.op
+
+        # obj_left,rightがNumberかの確認
+        if((obj_left.type_tag != "number") & (obj_right.type_tag != "number")):
+            raise TypeError("number is required in ArithExpr")
+
+        match op:
+            case "*":
+                n = obj_left.attributes["num"] * obj_right.attributes["num"]
+            case "/":
+                n = obj_left.attributes["num"] / obj_right.attributes["num"]
+            case "%":
+                n = obj_left.attributes["num"] % obj_right.attributes["num"]
+            case "//":
+                n = obj_left.attributes["num"] // obj_right.attributes["num"]
+            case _:
+                raise TypeError("undefined operator")
+        
+        #互換性検査
+        print(obj_left.version_table)
+        checkCompatibility(obj_left.version_table, obj_right.version_table)
+        print(checkCompatibility(obj_left.version_table, obj_right.version_table))
+        obj_vt = VersionTable("None", 0, False)
+        obj_vt.vt = []
+        obj_vt.append(obj_left.version_table)
+        obj_vt.append(obj_right.version_table)
+        print(obj_vt)
+        
+        obj = VObject("number", obj_vt, num=n)
+        obj_index = self.heap.allocate(obj)
+        return obj_index
+    
+    # 数値演算の評価
+    def interpret_ArithExpr(self, node, env):
+        obj_left_index = self.interpret(node.left)
+        obj_right_index = self.interpret(node.right)
+        obj_left = self.heap.get(obj_left_index)
+        obj_right = self.heap.get(obj_right_index)
+        op = node.op
+
+        # obj_left,rightがNumberかの確認
+        if((obj_left.type_tag != "number") & (obj_right.type_tag != "number")):
+            raise TypeError("number is required in ArithExpr")
+
+        match op:
+            case "+":
+                n = obj_left.attributes["num"] + obj_right.attributes["num"]
+            case "-":
+                n = obj_left.attributes["num"] - obj_right.attributes["num"]
+            case _:
+                raise TypeError("undefined operator")
+            
+        #互換性検査
+        print(obj_left.version_table)
+        checkCompatibility(obj_left.version_table, obj_right.version_table)
+        print(checkCompatibility(obj_left.version_table, obj_right.version_table))
+        obj_vt = VersionTable("None", 0, False)
+        obj_vt.vt = []
+        obj_vt.append(obj_left.version_table)
+        obj_vt.append(obj_right.version_table)
+        print(obj_vt)
+        
+        obj = VObject("number", obj_vt, num=n)
         obj_index = self.heap.allocate(obj)
         return obj_index
     
     # 文字列の評価
     def interpret_String(self, node, env):
-        obj = VString("string", VersionTable("None", 0, False), node.string)
+        obj = VObject("string", VersionTable("None", 0, False), str=node.string)
         obj_index = self.heap.allocate(obj)
         return obj_index
 
@@ -380,12 +450,14 @@ class Interpreter:
 
     # CallIncompatibleの評価
     def interpret_CallIncompatible(self, node, env):
-        #incompatibleが呼ばれたオブジェクトの評価
+        # incompatibleが呼ばれたオブジェクトの評価
         result_index = self.interpret(node.value, env)
         result_object = self.heap.get(result_index)
-        #incompatibleが呼ばれた引数からclassとversionを取得。バージョンはTreeから直接取っている。
+        # incompatibleが呼ばれた引数からclassとversionを取得。
+        # バージョンはNumberとして保存されている。<-改善した方がいい？
+        print(node)
         c = node.args[0].id
-        v = int(node.args[1].children[0].value)
+        v = int(node.args[1].number)
         #VTの書き換え
         result_object.version_table.insert(c, v, True)
         #ヒープに再代入
