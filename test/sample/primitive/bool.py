@@ -1,3 +1,1 @@
-True
-False
-True & False
+True & 1

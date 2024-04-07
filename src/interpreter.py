@@ -182,46 +182,118 @@ class Interpreter:
         evaluated_value_index = self.interpret(node.value)
         return evaluated_value_index
     
+    # 真偽値の評価
+    def interpret_ConstTrue(self, node, env):
+        obj = VObject("true", VersionTable("None", 0, False))
+        obj_index = self.heap.allocate(obj)
+        return obj_index
+    
+    def interpret_ConstFalse(self, node, env):
+        obj = VObject("false", VersionTable("None", 0, False))
+        obj_index = self.heap.allocate(obj)
+        return obj_index
+    
     # 数値の評価
     def interpret_Number(self, node, env):
         obj = VObject("number", VersionTable("None", 0, False), num=float(node.number))
         obj_index = self.heap.allocate(obj)
         return obj_index
     
-    def interpret_Term(self, node, env):
+    # or式の評価
+    def interpret_OrExpr(self, node, env):
         obj_left_index = self.interpret(node.left)
         obj_right_index = self.interpret(node.right)
         obj_left = self.heap.get(obj_left_index)
         obj_right = self.heap.get(obj_right_index)
-        op = node.op
 
-        # obj_left,rightがNumberかの確認
-        if((obj_left.type_tag != "number") & (obj_right.type_tag != "number")):
-            raise TypeError("number is required in ArithExpr")
-
-        match op:
-            case "*":
-                n = obj_left.attributes["num"] * obj_right.attributes["num"]
-            case "/":
-                n = obj_left.attributes["num"] / obj_right.attributes["num"]
-            case "%":
-                n = obj_left.attributes["num"] % obj_right.attributes["num"]
-            case "//":
-                n = obj_left.attributes["num"] // obj_right.attributes["num"]
-            case _:
-                raise TypeError("undefined operator")
+        # obj_left,rightがBoolかNumberかの確認
+        lt = obj_left.type_tag
+        rt = obj_right.type_tag
+        _boolean = {"number", "true", "false"}
+        if((lt in _boolean) & (rt in _boolean)):
+            pass
+        else:
+            raise TypeError("boolean value is required in AndExpr")
         
         #互換性検査
-        print(obj_left.version_table)
         checkCompatibility(obj_left.version_table, obj_right.version_table)
-        print(checkCompatibility(obj_left.version_table, obj_right.version_table))
         obj_vt = VersionTable("None", 0, False)
         obj_vt.vt = []
         obj_vt.append(obj_left.version_table)
         obj_vt.append(obj_right.version_table)
-        print(obj_vt)
         
-        obj = VObject("number", obj_vt, num=n)
+        # ASTからPythonのTrue,False値に落とす
+        match lt:
+            case "number":
+                lb = (obj_left.attributes["num"] != 0)
+            case "true":
+                lb = True
+            case "false":
+                lb = False
+        match rt:
+            case "number":
+                rb = (obj_right.attributes["num"] != 0)
+            case "true":
+                rb = True
+            case "false":
+                rb = False
+
+        # lb & rb を計算し、ヒープに配置、インデックスを返す
+        b = lb | rb
+        match b:
+            case True:
+                obj = VObject("true", obj_vt)
+            case False:
+                obj = VObject("false", obj_vt)
+        obj_index = self.heap.allocate(obj)
+        return obj_index
+
+    # and式の評価
+    def interpret_AndExpr(self, node, env):
+        obj_left_index = self.interpret(node.left)
+        obj_right_index = self.interpret(node.right)
+        obj_left = self.heap.get(obj_left_index)
+        obj_right = self.heap.get(obj_right_index)
+
+        # obj_left,rightがBoolかNumberかの確認
+        lt = obj_left.type_tag
+        rt = obj_right.type_tag
+        _boolean = {"number", "true", "false"}
+        if((lt in _boolean) & (rt in _boolean)):
+            pass
+        else:
+            raise TypeError("boolean value is required in AndExpr")
+        
+        #互換性検査
+        checkCompatibility(obj_left.version_table, obj_right.version_table)
+        obj_vt = VersionTable("None", 0, False)
+        obj_vt.vt = []
+        obj_vt.append(obj_left.version_table)
+        obj_vt.append(obj_right.version_table)
+        
+        # ASTからPythonのTrue,False値に落とす
+        match lt:
+            case "number":
+                lb = (obj_left.attributes["num"] != 0)
+            case "true":
+                lb = True
+            case "false":
+                lb = False
+        match rt:
+            case "number":
+                rb = (obj_right.attributes["num"] != 0)
+            case "true":
+                rb = True
+            case "false":
+                rb = False
+
+        # lb & rb を計算し、ヒープに配置、インデックスを返す
+        b = lb & rb
+        match b:
+            case True:
+                obj = VObject("true", obj_vt)
+            case False:
+                obj = VObject("false", obj_vt)
         obj_index = self.heap.allocate(obj)
         return obj_index
     
@@ -246,17 +318,73 @@ class Interpreter:
                 raise TypeError("undefined operator")
             
         #互換性検査
-        print(obj_left.version_table)
         checkCompatibility(obj_left.version_table, obj_right.version_table)
-        print(checkCompatibility(obj_left.version_table, obj_right.version_table))
         obj_vt = VersionTable("None", 0, False)
         obj_vt.vt = []
         obj_vt.append(obj_left.version_table)
         obj_vt.append(obj_right.version_table)
-        print(obj_vt)
         
         obj = VObject("number", obj_vt, num=n)
         obj_index = self.heap.allocate(obj)
+        return obj_index
+
+    # Termの評価
+    def interpret_Term(self, node, env):
+        obj_left_index = self.interpret(node.left)
+        obj_right_index = self.interpret(node.right)
+        obj_left = self.heap.get(obj_left_index)
+        obj_right = self.heap.get(obj_right_index)
+        op = node.op
+
+        # obj_left,rightがNumberかの確認
+        if((obj_left.type_tag != "number") & (obj_right.type_tag != "number")):
+            raise TypeError("number is required in ArithExpr")
+
+        match op:
+            case "*":
+                n = obj_left.attributes["num"] * obj_right.attributes["num"]
+            case "/":
+                n = obj_left.attributes["num"] / obj_right.attributes["num"]
+            case "%":
+                n = obj_left.attributes["num"] % obj_right.attributes["num"]
+            case "//":
+                n = obj_left.attributes["num"] // obj_right.attributes["num"]
+            case _:
+                raise TypeError("undefined operator")
+        
+        #互換性検査
+        checkCompatibility(obj_left.version_table, obj_right.version_table)
+        obj_vt = VersionTable("None", 0, False)
+        obj_vt.vt = []
+        obj_vt.append(obj_left.version_table)
+        obj_vt.append(obj_right.version_table)
+        
+        obj = VObject("number", obj_vt, num=n)
+        obj_index = self.heap.allocate(obj)
+        return obj_index
+    
+    # Factorの評価
+    def interpret_Factor(self, node, env):
+        obj_value_index = self.interpret(node.value)
+        obj_value = self.heap.get(obj_value_index)
+        op = node.op
+
+        obj_index = obj_value_index
+
+        # valueがNumberでなかったらエラー
+        match obj_value.type_tag:
+            case "number":
+                if(op == "+"):
+                    pass
+                elif(op == "-"):
+                    n = obj_value.attributes["num"]
+                    obj = VObject("number", obj_value.version_table, num = (-1) * n)
+                    obj_index = self.heap.allocate(obj)
+                else:
+                    raise TypeError(f"We don't support this Operator: {op}")
+            case _:
+                raise TypeError("number is required in Factor")
+            
         return obj_index
     
     # 文字列の評価

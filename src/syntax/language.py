@@ -139,16 +139,32 @@ class NoneNode(ASTNode):
     def __init__(self):
         super().__init__()
 
- # primitive value
+
+class ConstTrue(ASTNode):
+    def __init__(self):
+        super().__init__()
+
+class ConstFalse(ASTNode):
+    def __init__(self):
+        super().__init__()
+
 class Number(ASTNode):
     def __init__(self, number):
         self.number = number
 
-class Term(ASTNode):
-    def __init__(self, left, right, op):
+class String(ASTNode):
+    def __init__(self, string):
+        self.string = string
+
+class OrExpr(ASTNode):
+    def __init__(self, left, right):
         self.left = left
         self.right = right
-        self.op = op
+
+class AndExpr(ASTNode):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
 
 class ArithExpr(ASTNode):
     def __init__(self, left, right, op):
@@ -156,7 +172,13 @@ class ArithExpr(ASTNode):
         self.right = right
         self.op = op
 
+class Term(ASTNode):
+    def __init__(self, left, right, op):
+        self.left = left
+        self.right = right
+        self.op = op
 
-class String(ASTNode):
-    def __init__(self, string):
-        self.string = string
+class Factor(ASTNode):
+    def __init__(self, op, value):
+        self.op = op
+        self.value = value
