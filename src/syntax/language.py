@@ -156,6 +156,16 @@ class String(ASTNode):
     def __init__(self, string):
         self.string = string
 
+class CompOp(ASTNode):
+    def __init__(self, op):
+        self.op = op
+
+class Comparison(ASTNode):
+    # Pythonのsemanticに則ると、引数の数は可変なので、配列を入れる
+    def __init__(self, comp_list):
+        self.comp_list = comp_list
+
+
 class OrExpr(ASTNode):
     def __init__(self, left, right):
         self.left = left

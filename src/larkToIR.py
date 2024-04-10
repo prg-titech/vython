@@ -50,6 +50,18 @@ class LarkToCustomAST(Transformer):
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
         return Number(transformed_value)
     
+    def comp_op(self, items):
+        value = items[0]
+        transformed_value = self.transform(value) if isinstance(value, Tree) else value
+        return CompOp(transformed_value)
+    
+    def comparison(self, items):
+        transformed_values = []
+        for item in items:
+            transformed_value = self.transform(item) if isinstance(item, Tree) else item
+            transformed_values.append(transformed_value)
+        return Comparison(transformed_values)
+    
     def or_expr(self, items):
         value_left = items[0]
         value_right = items[1]
@@ -89,19 +101,6 @@ class LarkToCustomAST(Transformer):
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
         transformed_op = self.transform(op) if isinstance(op, Tree) else op
         return Factor(transformed_op, transformed_value)
-    
-
-    # def arith_expr(self, items):
-    #     value_left = items[0]
-    #     op = items[1]
-    #     value_right = items[2]
-    #     transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
-    #     transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-    #     transformed_op = self.transform(op) if isinstance(op, Tree) else op
-    #     return Call(Attribute(transformed_value_l, Name(op, None)), transformed_value_r)
-    #     # Call = (func, args)
-    #     # Attribute = (value, attr)
-    #     # Name = (id, version)
 
     def funccall(self, items):
         func, args = items[0], self._flatten_list(items[1:])

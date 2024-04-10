@@ -205,6 +205,72 @@ class Interpreter:
         obj_index = self.heap.allocate(obj)
         return obj_index
     
+    # 比較式の評価
+    def interpret_Comparison(self, node, env):
+        comp_list_length = len(node.comp_list)
+        # CompOpの数
+        comp_op_size = int((comp_list_length - 1) / 2)
+        # 比較されるオブジェクトを評価
+        interpreted_obj_index_list = []
+        for i in range(comp_op_size + 1):
+            obj_2i = self.interpret(node.comp_list[2*i])
+            interpreted_obj_index_list.append(obj_2i)
+
+        # 比較演算
+        compared_obj_list = []
+        for i in range(comp_op_size):
+            comp_op = node.comp_list[2*i+1]
+            obj_left_index = interpreted_obj_index_list[i]
+            obj_right_index = interpreted_obj_index_list[i+1]
+            obj_left = self.heap.get(obj_left_index)
+            obj_right = self.heap.get(obj_right_index)
+
+            #互換性検査
+            checkCompatibility(obj_left.version_table, obj_right.version_table)
+            obj_i_vt = VersionTable("None", 0, False)
+            obj_i_vt.vt = []
+            obj_i_vt.append(obj_left.version_table)
+            obj_i_vt.append(obj_right.version_table)
+            
+            match comp_op.op:
+                case "==":
+                    b = obj_left.attributes["value"] == obj_right.attributes["value"]
+                case "!=":
+                    b = obj_left.attributes["value"] != obj_right.attributes["value"]
+                case ">":
+                    b = obj_left.attributes["value"] > obj_right.attributes["value"]
+                case "<":
+                    b = obj_left.attributes["value"] < obj_right.attributes["value"]
+                case "<=":
+                    b = obj_left.attributes["value"] <= obj_right.attributes["value"]
+                case ">=":
+                    b = obj_left.attributes["value"] >= obj_right.attributes["value"]
+                case _:
+                    raise TypeError("undefined operator")
+            
+            obj_i = VObject("bool", obj_i_vt, value=b)
+            compared_obj_list.append(obj_i)
+
+        # compared_obj_listが1以上なら各要素を&で結合
+        obj = compared_obj_list[0]
+        if(len(compared_obj_list) > 1):
+            for i in range(len(compared_obj_list) - 1):
+                obj_right = compared_obj_list[i+1]
+
+                #互換性検査
+                checkCompatibility(obj.version_table, obj_right.version_table)
+                obj_i_vt = VersionTable("None", 0, False)
+                obj_i_vt.vt = []
+                obj_i_vt.append(obj.version_table)
+                obj_i_vt.append(obj_right.version_table)
+
+                b = obj.attributes["value"] & obj_right.attributes["value"]
+
+                obj = VObject("bool", obj_i_vt, value=b)
+
+        obj_index = self.heap.allocate(obj)
+        return obj_index
+    
     # or式の評価
     def interpret_OrExpr(self, node, env):
         obj_left_index = self.interpret(node.left)
