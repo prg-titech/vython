@@ -1,1 +1,4 @@
-True & 1
+x = 1
+y = False
+x | y
+

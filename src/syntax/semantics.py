@@ -195,7 +195,11 @@ def resolve_heap_object(heap, index, resolved_indices=None):
     if index in resolved_indices:
         return index
 
-    obj = heap.get(index)
+    # indexがboolの時はそのまま出力する
+    obj = index
+    if(not isinstance(index, bool)):
+        obj = heap.get(index)
+
     resolved_indices.add(index)
 
     if isinstance(obj, VObject):

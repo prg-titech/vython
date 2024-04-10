@@ -184,18 +184,24 @@ class Interpreter:
     
     # 真偽値の評価
     def interpret_ConstTrue(self, node, env):
-        obj = VObject("true", VersionTable("None", 0, False))
+        obj = VObject("bool", VersionTable("None", 0, False), value=True)
         obj_index = self.heap.allocate(obj)
         return obj_index
     
     def interpret_ConstFalse(self, node, env):
-        obj = VObject("false", VersionTable("None", 0, False))
+        obj = VObject("bool", VersionTable("None", 0, False), value=False)
         obj_index = self.heap.allocate(obj)
         return obj_index
     
     # 数値の評価
     def interpret_Number(self, node, env):
-        obj = VObject("number", VersionTable("None", 0, False), num=float(node.number))
+        obj = VObject("number", VersionTable("None", 0, False), value=float(node.number))
+        obj_index = self.heap.allocate(obj)
+        return obj_index
+
+    # 文字列の評価
+    def interpret_String(self, node, env):
+        obj = VObject("string", VersionTable("None", 0, False), value=node.string)
         obj_index = self.heap.allocate(obj)
         return obj_index
     
@@ -209,11 +215,11 @@ class Interpreter:
         # obj_left,rightがBoolかNumberかの確認
         lt = obj_left.type_tag
         rt = obj_right.type_tag
-        _boolean = {"number", "true", "false"}
+        _boolean = {"number", "bool"}
         if((lt in _boolean) & (rt in _boolean)):
             pass
         else:
-            raise TypeError("boolean value is required in AndExpr")
+            raise TypeError("boolean value is required in OrExpr")
         
         #互換性検査
         checkCompatibility(obj_left.version_table, obj_right.version_table)
@@ -225,26 +231,18 @@ class Interpreter:
         # ASTからPythonのTrue,False値に落とす
         match lt:
             case "number":
-                lb = (obj_left.attributes["num"] != 0)
-            case "true":
-                lb = True
-            case "false":
-                lb = False
+                lb = (obj_left.attributes["value"] != 0)
+            case "bool":
+                lb = obj_left.attributes["value"]
         match rt:
             case "number":
-                rb = (obj_right.attributes["num"] != 0)
-            case "true":
-                rb = True
-            case "false":
-                rb = False
+                rb = (obj_right.attributes["value"] != 0)
+            case "bool":
+                rb = obj_right.attributes["value"]
 
-        # lb & rb を計算し、ヒープに配置、インデックスを返す
+        # lb | rb を計算し、ヒープに配置、インデックスを返す
         b = lb | rb
-        match b:
-            case True:
-                obj = VObject("true", obj_vt)
-            case False:
-                obj = VObject("false", obj_vt)
+        obj = obj = VObject("bool", obj_vt, value=b)
         obj_index = self.heap.allocate(obj)
         return obj_index
 
@@ -258,7 +256,7 @@ class Interpreter:
         # obj_left,rightがBoolかNumberかの確認
         lt = obj_left.type_tag
         rt = obj_right.type_tag
-        _boolean = {"number", "true", "false"}
+        _boolean = {"number", "bool"}
         if((lt in _boolean) & (rt in _boolean)):
             pass
         else:
@@ -274,26 +272,18 @@ class Interpreter:
         # ASTからPythonのTrue,False値に落とす
         match lt:
             case "number":
-                lb = (obj_left.attributes["num"] != 0)
-            case "true":
-                lb = True
-            case "false":
-                lb = False
+                lb = (obj_left.attributes["value"] != 0)
+            case "bool":
+                lb = obj_left.attributes["value"]
         match rt:
             case "number":
-                rb = (obj_right.attributes["num"] != 0)
-            case "true":
-                rb = True
-            case "false":
-                rb = False
+                rb = (obj_right.attributes["value"] != 0)
+            case "bool":
+                rb = obj_right.attributes["value"]
 
         # lb & rb を計算し、ヒープに配置、インデックスを返す
         b = lb & rb
-        match b:
-            case True:
-                obj = VObject("true", obj_vt)
-            case False:
-                obj = VObject("false", obj_vt)
+        obj = VObject("bool", obj_vt, value=b)
         obj_index = self.heap.allocate(obj)
         return obj_index
     
@@ -311,9 +301,9 @@ class Interpreter:
 
         match op:
             case "+":
-                n = obj_left.attributes["num"] + obj_right.attributes["num"]
+                n = obj_left.attributes["value"] + obj_right.attributes["value"]
             case "-":
-                n = obj_left.attributes["num"] - obj_right.attributes["num"]
+                n = obj_left.attributes["value"] - obj_right.attributes["value"]
             case _:
                 raise TypeError("undefined operator")
             
@@ -324,7 +314,7 @@ class Interpreter:
         obj_vt.append(obj_left.version_table)
         obj_vt.append(obj_right.version_table)
         
-        obj = VObject("number", obj_vt, num=n)
+        obj = VObject("number", obj_vt, value=n)
         obj_index = self.heap.allocate(obj)
         return obj_index
 
@@ -342,13 +332,13 @@ class Interpreter:
 
         match op:
             case "*":
-                n = obj_left.attributes["num"] * obj_right.attributes["num"]
+                n = obj_left.attributes["value"] * obj_right.attributes["value"]
             case "/":
-                n = obj_left.attributes["num"] / obj_right.attributes["num"]
+                n = obj_left.attributes["value"] / obj_right.attributes["value"]
             case "%":
-                n = obj_left.attributes["num"] % obj_right.attributes["num"]
+                n = obj_left.attributes["value"] % obj_right.attributes["value"]
             case "//":
-                n = obj_left.attributes["num"] // obj_right.attributes["num"]
+                n = obj_left.attributes["value"] // obj_right.attributes["value"]
             case _:
                 raise TypeError("undefined operator")
         
@@ -359,7 +349,7 @@ class Interpreter:
         obj_vt.append(obj_left.version_table)
         obj_vt.append(obj_right.version_table)
         
-        obj = VObject("number", obj_vt, num=n)
+        obj = VObject("number", obj_vt, value=n)
         obj_index = self.heap.allocate(obj)
         return obj_index
     
@@ -377,20 +367,14 @@ class Interpreter:
                 if(op == "+"):
                     pass
                 elif(op == "-"):
-                    n = obj_value.attributes["num"]
-                    obj = VObject("number", obj_value.version_table, num = (-1) * n)
+                    n = obj_value.attributes["value"]
+                    obj = VObject("number", obj_value.version_table, value = (-1) * n)
                     obj_index = self.heap.allocate(obj)
                 else:
                     raise TypeError(f"We don't support this Operator: {op}")
             case _:
                 raise TypeError("number is required in Factor")
             
-        return obj_index
-    
-    # 文字列の評価
-    def interpret_String(self, node, env):
-        obj = VObject("string", VersionTable("None", 0, False), str=node.string)
-        obj_index = self.heap.allocate(obj)
         return obj_index
 
     # 関数呼び出しの評価(インスタンス生成・メソッド呼び出し)
