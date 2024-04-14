@@ -192,3 +192,21 @@ class Factor(ASTNode):
     def __init__(self, op, value):
         self.op = op
         self.value = value
+
+# if文に関するASTNode
+class If(ASTNode):
+    def __init__(self, test, then_body, elifs, else_body):
+        self.test = test
+        self.then_body = then_body
+        self.elifs = elifs
+        self.else_body = else_body
+
+class Elifs(ASTNode):
+    def __init__(self, elif_):
+        self.elif_ = elif_
+
+class Elif(ASTNode):
+    def __init__(self, test, then_body):
+        self.test = test
+        self.then_body = then_body
+

@@ -442,6 +442,54 @@ class Interpreter:
                 raise TypeError("number is required in Factor")
             
         return obj_index
+    
+    # if文の評価
+    def interpret_If(self, node, env):
+        obj_test_index = self.interpret(node.test)
+        obj_test = self.heap.get(obj_test_index)
+
+        # obj_testが真ならnode.thenを、偽ならnode.elifs,node,elseを、type-tag!=boolならTyepErrorを出す
+        if(obj_test.type_tag != "bool"):         # testの評価値がbool出ない時
+            raise TypeError("boolean value is required in test of If_stmt")
+        elif(obj_test.attributes["value"]):      # testの評価値がTrueの時
+            for n in node.then_body:
+                obj_then_body_index = self.interpret(n, env)
+        else:                                    # testの評価値がFalseの時
+            obj_elifs_index = self.interpret(node.elifs)
+            if(obj_elifs_index < 0):
+                for n in node.else_body:
+                    obj_else_body_index = self.interpret(n, env)
+
+        return self.none_index
+    
+    def interpret_Elifs(self, node, env):
+        last_result_index = None
+        result = -1
+        for n in node.elif_:
+            if(result < 0):
+                obj_elif_index = self.interpret(n, env)
+                result = obj_elif_index
+            else:
+                return self.none_index
+            
+        return result
+
+    def interpret_Elif(self, node, env):
+        obj_test_index = self.interpret(node.test)
+        obj_test = self.heap.get(obj_test_index)
+
+        # このelif節のthenが評価されていない場合、返るindexは-1になる
+        result = -1
+        if(obj_test.type_tag != "bool"):         # testの評価値がbool出ない時
+            raise TypeError("boolean value is required in test of If_stmt")
+        elif(obj_test.attributes["value"]):      # testの評価値がTrueの時
+            for n in node.then_body:
+                obj_then_body_index = self.interpret(n, env)
+                result = obj_then_body_index
+        else:                                    # testの評価値がFalseの時
+            pass
+
+        return result
 
     # 関数呼び出しの評価(インスタンス生成・メソッド呼び出し)
     def interpret_Call(self, node, env):

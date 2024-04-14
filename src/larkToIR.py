@@ -95,12 +95,33 @@ class LarkToCustomAST(Transformer):
         return Term(transformed_value_l, transformed_value_r, transformed_op)
     
     def factor(self, items):
-        print(items)
         op = items[0]
         value = items[1]
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
         transformed_op = self.transform(op) if isinstance(op, Tree) else op
         return Factor(transformed_op, transformed_value)
+    
+    # if文astの変換
+    def if_stmt(self, items):
+        test = items[0]
+        then_body = items[1]
+        elifs = items[2]
+        else_body = items[3]
+        transformed_test = self.transform(test) if isinstance(test, Tree) else test
+        transformed_then_body = self.transform(then_body) if isinstance(then_body, Tree) else then_body
+        transformed_elifs = self.transform(elifs) if isinstance(elifs, Tree) else elifs
+        transformed_else_body = self.transform(else_body) if isinstance(else_body, Tree) else else_body
+        return If(transformed_test, transformed_then_body, transformed_elifs, transformed_else_body)
+    
+    def elifs(self, items):
+        return Elifs(elif_=self._flatten_list(items))
+    
+    def elif_(self, items):
+        test = items[0]
+        then_body = items[1]
+        transformed_test = self.transform(test) if isinstance(test, Tree) else test
+        transformed_then_body = self.transform(then_body) if isinstance(then_body, Tree) else then_body
+        return Elif(transformed_test, transformed_then_body)
 
     def funccall(self, items):
         func, args = items[0], self._flatten_list(items[1:])
