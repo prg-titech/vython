@@ -86,12 +86,26 @@ class VersionTable():
 
     # APPEND
     def append(self, vt):
-        self.vt = self.vt + vt.vt
+        # 以下は見やすくするために行うもの、結合の順序を気にするなら変えた方がいい
+        copy = vt.vt
+        for x in copy:
+            cx = x[0]
+            vx = x[1]
+            bx = x[2]
+            for y in self.vt:
+                cy = y[0]
+                vy = y[1]
+                by = y[2]
+                if((cx==cy) and (vx == vy) and (bx == by)):
+                    copy.remove(x)      
+        # 結合を返す
+        self.vt = self.vt + copy
         return
 
     #INSERT
     def insert(self, c, v, cf):
-        #c,vの被りを消す必要はない...が卒論に準じた設計はこれ
+        # c,vの被りを消す必要はない...が卒論に準じた設計はこれ
+        # appendと同様、結合の順序を気にするなら変えた方がいい
         for x in self.vt:
             if((x[0] == c) and (x[1] == v)):
                 self.vt.remove(x)

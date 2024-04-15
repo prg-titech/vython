@@ -179,7 +179,7 @@ class Interpreter:
 
     # 式の評価
     def interpret_Expr(self, node, env):
-        evaluated_value_index = self.interpret(node.value)
+        evaluated_value_index = self.interpret(node.value, env)
         return evaluated_value_index
     
     # 真偽値の評価
@@ -213,7 +213,7 @@ class Interpreter:
         # 比較されるオブジェクトを評価
         interpreted_obj_index_list = []
         for i in range(comp_op_size + 1):
-            obj_2i = self.interpret(node.comp_list[2*i])
+            obj_2i = self.interpret(node.comp_list[2*i], env)
             interpreted_obj_index_list.append(obj_2i)
 
         # 比較演算
@@ -273,8 +273,8 @@ class Interpreter:
     
     # or式の評価
     def interpret_OrExpr(self, node, env):
-        obj_left_index = self.interpret(node.left)
-        obj_right_index = self.interpret(node.right)
+        obj_left_index = self.interpret(node.left, env)
+        obj_right_index = self.interpret(node.right, env)
         obj_left = self.heap.get(obj_left_index)
         obj_right = self.heap.get(obj_right_index)
 
@@ -314,8 +314,8 @@ class Interpreter:
 
     # and式の評価
     def interpret_AndExpr(self, node, env):
-        obj_left_index = self.interpret(node.left)
-        obj_right_index = self.interpret(node.right)
+        obj_left_index = self.interpret(node.left, env)
+        obj_right_index = self.interpret(node.right, env)
         obj_left = self.heap.get(obj_left_index)
         obj_right = self.heap.get(obj_right_index)
 
@@ -355,8 +355,8 @@ class Interpreter:
     
     # 数値演算の評価
     def interpret_ArithExpr(self, node, env):
-        obj_left_index = self.interpret(node.left)
-        obj_right_index = self.interpret(node.right)
+        obj_left_index = self.interpret(node.left, env)
+        obj_right_index = self.interpret(node.right, env)
         obj_left = self.heap.get(obj_left_index)
         obj_right = self.heap.get(obj_right_index)
         op = node.op
@@ -386,8 +386,8 @@ class Interpreter:
 
     # Termの評価
     def interpret_Term(self, node, env):
-        obj_left_index = self.interpret(node.left)
-        obj_right_index = self.interpret(node.right)
+        obj_left_index = self.interpret(node.left, env)
+        obj_right_index = self.interpret(node.right, env)
         obj_left = self.heap.get(obj_left_index)
         obj_right = self.heap.get(obj_right_index)
         op = node.op
@@ -421,7 +421,7 @@ class Interpreter:
     
     # Factorの評価
     def interpret_Factor(self, node, env):
-        obj_value_index = self.interpret(node.value)
+        obj_value_index = self.interpret(node.value, env)
         obj_value = self.heap.get(obj_value_index)
         op = node.op
 
@@ -445,37 +445,39 @@ class Interpreter:
     
     # if文の評価
     def interpret_If(self, node, env):
-        obj_test_index = self.interpret(node.test)
+        obj_test_index = self.interpret(node.test, env)
         obj_test = self.heap.get(obj_test_index)
 
         # obj_testが真ならnode.thenを、偽ならnode.elifs,node,elseを、type-tag!=boolならTyepErrorを出す
+        result = self.none_index
         if(obj_test.type_tag != "bool"):         # testの評価値がbool出ない時
             raise TypeError("boolean value is required in test of If_stmt")
         elif(obj_test.attributes["value"]):      # testの評価値がTrueの時
             for n in node.then_body:
                 obj_then_body_index = self.interpret(n, env)
+                result = obj_then_body_index
         else:                                    # testの評価値がFalseの時
             obj_elifs_index = self.interpret(node.elifs)
             if(obj_elifs_index < 0):
                 for n in node.else_body:
                     obj_else_body_index = self.interpret(n, env)
+                    result = obj_else_body_index
 
-        return self.none_index
+        return result
     
     def interpret_Elifs(self, node, env):
-        last_result_index = None
         result = -1
         for n in node.elif_:
             if(result < 0):
                 obj_elif_index = self.interpret(n, env)
                 result = obj_elif_index
             else:
-                return self.none_index
+                return result
             
         return result
 
     def interpret_Elif(self, node, env):
-        obj_test_index = self.interpret(node.test)
+        obj_test_index = self.interpret(node.test, env)
         obj_test = self.heap.get(obj_test_index)
 
         # このelif節のthenが評価されていない場合、返るindexは-1になる
