@@ -57,6 +57,7 @@ class LarkToCustomAST(Transformer):
     
     def comparison(self, items):
         transformed_values = []
+        # 
         for item in items:
             transformed_value = self.transform(item) if isinstance(item, Tree) else item
             transformed_values.append(transformed_value)
