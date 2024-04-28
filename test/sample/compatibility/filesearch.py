@@ -20,8 +20,8 @@ class Encryption!2:
     def __init__(self):
         pass
     def hash(self, s):
-        return hasher2(s)
-        # return hasher2(s).incompatible(Encryption, 2)
+        # return hasher2(s)
+        return hasher2(s).incompatible(Encryption, 2)
 
 #--------------------------------------------
 #-----------------  main  -------------------
