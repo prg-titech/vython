@@ -188,17 +188,16 @@ class Interpreter:
         obj = self.heap.get(obj_index)
 
         # objがTruthyかFalthyかの分類
-        if(obj.type_tag=="bool" | obj.type_tag=="number" | obj.type_tag=="string"):
+        if((obj.type_tag=="bool") | (obj.type_tag=="number") | (obj.type_tag=="string")):
             if(obj.attributes["value"]):
-                return self.interpret_ConstTrue(self, node, env)
+                return self.interpret_ConstTrue(node, env)
             else:
-                return self.interpret_ConstFalse(self, node, env)
+                return self.interpret_ConstFalse(node, env)
         elif(obj.type_tag=="None"):
-            return self.interpret_ConstFalse(self, node, env)
+            return self.interpret_ConstFalse(node, env)
         else:
-            return self.interpret_ConstTrue(self, node, env)
+            return self.interpret_ConstTrue(node, env)
             
-    
     # 真偽値の評価
     def interpret_ConstTrue(self, node, env):
         obj = VObject("bool", VersionTable("None", 0, False), value=True)
@@ -222,115 +221,115 @@ class Interpreter:
         obj_index = self.heap.allocate(obj)
         return obj_index
     
-    # 比較式の評価
-    def interpret_Comparison(self, node, env):
-        comp_list_length = len(node.comp_list)
-        # CompOpの数
-        comp_op_size = int((comp_list_length - 1) / 2)
-        # 比較されるオブジェクトを評価
-        interpreted_obj_index_list = []
-        for i in range(comp_op_size + 1):
-            obj_2i = self.interpret(node.comp_list[2*i], env)
-            interpreted_obj_index_list.append(obj_2i)
+    # # 比較式の評価
+    # def interpret_Comparison(self, node, env):
+    #     comp_list_length = len(node.comp_list)
+    #     # CompOpの数
+    #     comp_op_size = int((comp_list_length - 1) / 2)
+    #     # 比較されるオブジェクトを評価
+    #     interpreted_obj_index_list = []
+    #     for i in range(comp_op_size + 1):
+    #         obj_2i = self.interpret(node.comp_list[2*i], env)
+    #         interpreted_obj_index_list.append(obj_2i)
 
-        # 比較演算
-        compared_obj_list = []
-        for i in range(comp_op_size):
-            comp_op = node.comp_list[2*i+1]
-            obj_left_index = interpreted_obj_index_list[i]
-            obj_right_index = interpreted_obj_index_list[i+1]
-            obj_left = self.heap.get(obj_left_index)
-            obj_right = self.heap.get(obj_right_index)
+    #     # 比較演算
+    #     compared_obj_list = []
+    #     for i in range(comp_op_size):
+    #         comp_op = node.comp_list[2*i+1]
+    #         obj_left_index = interpreted_obj_index_list[i]
+    #         obj_right_index = interpreted_obj_index_list[i+1]
+    #         obj_left = self.heap.get(obj_left_index)
+    #         obj_right = self.heap.get(obj_right_index)
 
-            #互換性検査
-            checkCompatibility(obj_left.version_table, obj_right.version_table)
-            obj_i_vt = VersionTable("None", 0, False)
-            obj_i_vt.vt = []
-            obj_i_vt.append(obj_left.version_table)
-            obj_i_vt.append(obj_right.version_table)
+    #         #互換性検査
+    #         checkCompatibility(obj_left.version_table, obj_right.version_table)
+    #         obj_i_vt = VersionTable("None", 0, False)
+    #         obj_i_vt.vt = []
+    #         obj_i_vt.append(obj_left.version_table)
+    #         obj_i_vt.append(obj_right.version_table)
             
-            match comp_op.op:
-                case "==":
-                    b = obj_left.attributes["value"] == obj_right.attributes["value"]
-                case "!=":
-                    b = obj_left.attributes["value"] != obj_right.attributes["value"]
-                case ">":
-                    b = obj_left.attributes["value"] > obj_right.attributes["value"]
-                case "<":
-                    b = obj_left.attributes["value"] < obj_right.attributes["value"]
-                case "<=":
-                    b = obj_left.attributes["value"] <= obj_right.attributes["value"]
-                case ">=":
-                    b = obj_left.attributes["value"] >= obj_right.attributes["value"]
-                case _:
-                    raise TypeError("undefined operator")
+    #         match comp_op.op:
+    #             case "==":
+    #                 b = obj_left.attributes["value"] == obj_right.attributes["value"]
+    #             case "!=":
+    #                 b = obj_left.attributes["value"] != obj_right.attributes["value"]
+    #             case ">":
+    #                 b = obj_left.attributes["value"] > obj_right.attributes["value"]
+    #             case "<":
+    #                 b = obj_left.attributes["value"] < obj_right.attributes["value"]
+    #             case "<=":
+    #                 b = obj_left.attributes["value"] <= obj_right.attributes["value"]
+    #             case ">=":
+    #                 b = obj_left.attributes["value"] >= obj_right.attributes["value"]
+    #             case _:
+    #                 raise TypeError("undefined operator")
             
-            obj_i = VObject("bool", obj_i_vt, value=b)
-            compared_obj_list.append(obj_i)
+    #         obj_i = VObject("bool", obj_i_vt, value=b)
+    #         compared_obj_list.append(obj_i)
 
-        # compared_obj_listが1以上なら各要素を&で結合
-        obj = compared_obj_list[0]
-        if(len(compared_obj_list) > 1):
-            for i in range(len(compared_obj_list) - 1):
-                obj_right = compared_obj_list[i+1]
+    #     # compared_obj_listが1以上なら各要素を&で結合
+    #     obj = compared_obj_list[0]
+    #     if(len(compared_obj_list) > 1):
+    #         for i in range(len(compared_obj_list) - 1):
+    #             obj_right = compared_obj_list[i+1]
 
-                #互換性検査
-                checkCompatibility(obj.version_table, obj_right.version_table)
-                obj_i_vt = VersionTable("None", 0, False)
-                obj_i_vt.vt = []
-                obj_i_vt.append(obj.version_table)
-                obj_i_vt.append(obj_right.version_table)
+    #             #互換性検査
+    #             checkCompatibility(obj.version_table, obj_right.version_table)
+    #             obj_i_vt = VersionTable("None", 0, False)
+    #             obj_i_vt.vt = []
+    #             obj_i_vt.append(obj.version_table)
+    #             obj_i_vt.append(obj_right.version_table)
 
-                b = obj.attributes["value"] & obj_right.attributes["value"]
+    #             b = obj.attributes["value"] & obj_right.attributes["value"]
 
-                obj = VObject("bool", obj_i_vt, value=b)
+    #             obj = VObject("bool", obj_i_vt, value=b)
 
-        obj_index = self.heap.allocate(obj)
-        return obj_index
+    #     obj_index = self.heap.allocate(obj)
+    #     return obj_index
     
-    # or式の評価
-    def interpret_OrExpr(self, node, env):
-        obj_left_index = self.interpret(node.left, env)
-        obj_right_index = self.interpret(node.right, env)
-        obj_left = self.heap.get(obj_left_index)
-        obj_right = self.heap.get(obj_right_index)
+    # # or式の評価
+    # def interpret_OrExpr(self, node, env):
+    #     obj_left_index = self.interpret(node.left, env)
+    #     obj_right_index = self.interpret(node.right, env)
+    #     obj_left = self.heap.get(obj_left_index)
+    #     obj_right = self.heap.get(obj_right_index)
 
-        # obj_left,rightがBoolかNumberかの確認
-        lt = obj_left.type_tag
-        rt = obj_right.type_tag
-        _boolean = {"number", "bool"}
-        if((lt in _boolean) & (rt in _boolean)):
-            pass
-        else:
-            raise TypeError("boolean value is required in OrExpr")
+    #     # obj_left,rightがBoolかNumberかの確認
+    #     lt = obj_left.type_tag
+    #     rt = obj_right.type_tag
+    #     _boolean = {"number", "bool"}
+    #     if((lt in _boolean) & (rt in _boolean)):
+    #         pass
+    #     else:
+    #         raise TypeError("boolean value is required in OrExpr")
         
-        #互換性検査
-        checkCompatibility(obj_left.version_table, obj_right.version_table)
-        obj_vt = VersionTable("None", 0, False)
-        obj_vt.vt = []
-        obj_vt.append(obj_left.version_table)
-        obj_vt.append(obj_right.version_table)
+    #     #互換性検査
+    #     checkCompatibility(obj_left.version_table, obj_right.version_table)
+    #     obj_vt = VersionTable("None", 0, False)
+    #     obj_vt.vt = []
+    #     obj_vt.append(obj_left.version_table)
+    #     obj_vt.append(obj_right.version_table)
         
-        # ASTからPythonのTrue,False値に落とす
-        match lt:
-            case "number":
-                lb = (obj_left.attributes["value"] != 0)
-            case "bool":
-                lb = obj_left.attributes["value"]
-        match rt:
-            case "number":
-                rb = (obj_right.attributes["value"] != 0)
-            case "bool":
-                rb = obj_right.attributes["value"]
+    #     # ASTからPythonのTrue,False値に落とす
+    #     match lt:
+    #         case "number":
+    #             lb = (obj_left.attributes["value"] != 0)
+    #         case "bool":
+    #             lb = obj_left.attributes["value"]
+    #     match rt:
+    #         case "number":
+    #             rb = (obj_right.attributes["value"] != 0)
+    #         case "bool":
+    #             rb = obj_right.attributes["value"]
 
-        # lb | rb を計算し、ヒープに配置、インデックスを返す
-        b = lb | rb
-        obj = obj = VObject("bool", obj_vt, value=b)
-        obj_index = self.heap.allocate(obj)
-        return obj_index
+    #     # lb | rb を計算し、ヒープに配置、インデックスを返す
+    #     b = lb | rb
+    #     obj = obj = VObject("bool", obj_vt, value=b)
+    #     obj_index = self.heap.allocate(obj)
+    #     return obj_index
 
-    # and式の評価
-    def interpret_AndExpr(self, node, env):
+    # # and式の評価
+    # def interpret_AndExpr(self, node, env):
         obj_left_index = self.interpret(node.left, env)
         obj_right_index = self.interpret(node.right, env)
         obj_left = self.heap.get(obj_left_index)
@@ -642,10 +641,8 @@ class Interpreter:
         
         # NumberやStringオブジェクトから呼び出されるメソッド
         elif callable_obj.type_tag == "binary_op":
-            arg_obj_index = self.interpret(node.args)
-            arg_obj = self.heap.get(arg_obj_index)
-            # objそのものを渡しているけどindexとどちらの方が良いかは不明
-            result_index = self.calculate_binaryop(callable_obj,arg_obj)
+            # node.argsを評価せずに渡しているのは、and,or演算では評価する必要がない可能性があるため
+            result_index = self.calculate_binaryop(callable_obj,node.args)
             return result_index
         
         else:
@@ -727,10 +724,9 @@ class Interpreter:
 
         return result_index
     
-    def calculate_binaryop(self, callable_obj, arg_obj):
+    def calculate_binaryop(self, callable_obj, arg_node):
         left_obj=callable_obj.attributes["value"]
         op = callable_obj.attributes["operator"]
-        right_obj = arg_obj
 
         # operatorによる条件分岐
             # operatorが渡されるobjectの型によって振る舞いが変わることはないため
@@ -738,8 +734,11 @@ class Interpreter:
         ops_for_bool = {"&", "|"}
 
         if op in ops_for_num:
+            right_obj_index = self.interpret(arg_node)
+            right_obj = self.heap.get(right_obj_index)
             if((left_obj.type_tag != "number") & (right_obj.type_tag != "number")):
                 raise TypeError(f"The operator {op} is defined for number values")
+            ans_type = "number"
 
             match op:
                 case "*":
@@ -757,14 +756,53 @@ class Interpreter:
                 case _:
                     raise TypeError("undefined operator")
         elif op in ops_for_bool:
-            if((left_obj.type_tag != "bool") & (right_obj.type_tag != "bool")):
+            if((left_obj.type_tag != "bool")):
                 raise TypeError(f"The operator {op} is defined for boolean values")
+            ans_type = "bool"
 
             match op:
                 case "&":
-                    ans_val = left_obj.attributes["value"] & right_obj.attributes["value"]
+                    if(not left_obj.attributes["value"]):
+                        ans_val = False
+                        # 互換性検査で用いるright_objのダミー
+                        tmp_vt = VersionTable("None", 0, False)
+                        tmp_vt.empty()
+                        right_obj = VObject("", tmp_vt)
+                    else:
+                        right_obj_index = self.interpret(arg_node)
+                        right_obj = self.heap.get(right_obj_index)
+                        ans_val = right_obj.attributes["value"]
                 case "|":
-                    ans_val = left_obj.attributes["value"] | right_obj.attributes["value"]
+                    if(left_obj.attributes["value"]):
+                        ans_val = True
+                        # 互換性検査で用いるright_objのダミー
+                        tmp_vt = VersionTable("None", 0, False)
+                        tmp_vt.empty()
+                        right_obj = VObject("", tmp_vt)
+                    else:
+                        right_obj_index = self.interpret(arg_node)
+                        right_obj = self.heap.get(right_obj_index)
+                        ans_val = right_obj.attributes["value"]
+                case _:
+                    raise TypeError("undefined operator")
+        elif(isinstance(op, CompOp)):
+            right_obj_index = self.interpret(arg_node)
+            right_obj = self.heap.get(right_obj_index)
+            ans_type = "bool"
+
+            match op.op:
+                case "==":
+                    ans_val = left_obj.attributes["value"] == right_obj.attributes["value"]
+                case "!=":
+                    ans_val = left_obj.attributes["value"] != right_obj.attributes["value"]
+                case ">":
+                    ans_val = left_obj.attributes["value"] > right_obj.attributes["value"]
+                case "<":
+                    ans_val = left_obj.attributes["value"] < right_obj.attributes["value"]
+                case "<=":
+                    ans_val = left_obj.attributes["value"] <= right_obj.attributes["value"]
+                case ">=":
+                    ans_val = left_obj.attributes["value"] >= right_obj.attributes["value"]
                 case _:
                     raise TypeError("undefined operator")
             
@@ -777,7 +815,7 @@ class Interpreter:
         obj_vt.append(left_obj.version_table)
         obj_vt.append(right_obj.version_table)
         
-        obj = VObject("number", obj_vt, value=ans_val)
+        obj = VObject(ans_type, obj_vt, value=ans_val)
         obj_index = self.heap.allocate(obj)
         return obj_index
 
