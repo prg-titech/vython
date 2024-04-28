@@ -139,6 +139,9 @@ class NoneNode(ASTNode):
     def __init__(self):
         super().__init__()
 
+class Boolean(ASTNode):
+    def __init__(self, value):
+        self.value = value
 
 class ConstTrue(ASTNode):
     def __init__(self):

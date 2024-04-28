@@ -77,6 +77,9 @@ class VObject(Value):
 class VersionTable():
     def __init__(self, c, v, cf):
         self.vt = [(c, v, cf)]
+
+    def empty(self):
+        self.vt = []
     
     def __repr__(self):
         return f"{self.vt}"

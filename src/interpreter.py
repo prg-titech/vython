@@ -182,6 +182,23 @@ class Interpreter:
         evaluated_value_index = self.interpret(node.value, env)
         return evaluated_value_index
     
+    # TruthyかFalthyかを分類し、True,Falseに変換
+    def interpret_Boolean(self, node, env):
+        obj_index = self.interpret(node.value)
+        obj = self.heap.get(obj_index)
+
+        # objがTruthyかFalthyかの分類
+        if(obj.type_tag=="bool" | obj.type_tag=="number" | obj.type_tag=="string"):
+            if(obj.attributes["value"]):
+                return self.interpret_ConstTrue(self, node, env)
+            else:
+                return self.interpret_ConstFalse(self, node, env)
+        elif(obj.type_tag=="None"):
+            return self.interpret_ConstFalse(self, node, env)
+        else:
+            return self.interpret_ConstTrue(self, node, env)
+            
+    
     # 真偽値の評価
     def interpret_ConstTrue(self, node, env):
         obj = VObject("bool", VersionTable("None", 0, False), value=True)
@@ -353,39 +370,39 @@ class Interpreter:
         obj_index = self.heap.allocate(obj)
         return obj_index
     
-    # 数値演算の評価
-    def interpret_ArithExpr(self, node, env):
-        obj_left_index = self.interpret(node.left, env)
-        obj_right_index = self.interpret(node.right, env)
-        obj_left = self.heap.get(obj_left_index)
-        obj_right = self.heap.get(obj_right_index)
-        op = node.op
+    # # 数値演算の評価
+    # def interpret_ArithExpr(self, node, env):
+    #     obj_left_index = self.interpret(node.left, env)
+    #     obj_right_index = self.interpret(node.right, env)
+    #     obj_left = self.heap.get(obj_left_index)
+    #     obj_right = self.heap.get(obj_right_index)
+    #     op = node.op
 
-        # obj_left,rightがNumberかの確認
-        if((obj_left.type_tag != "number") & (obj_right.type_tag != "number")):
-            raise TypeError("number is required in ArithExpr")
+    #     # obj_left,rightがNumberかの確認
+    #     if((obj_left.type_tag != "number") & (obj_right.type_tag != "number")):
+    #         raise TypeError("number is required in ArithExpr")
 
-        match op:
-            case "+":
-                n = obj_left.attributes["value"] + obj_right.attributes["value"]
-            case "-":
-                n = obj_left.attributes["value"] - obj_right.attributes["value"]
-            case _:
-                raise TypeError("undefined operator")
+    #     match op:
+    #         case "+":
+    #             n = obj_left.attributes["value"] + obj_right.attributes["value"]
+    #         case "-":
+    #             n = obj_left.attributes["value"] - obj_right.attributes["value"]
+    #         case _:
+    #             raise TypeError("undefined operator")
             
-        #互換性検査
-        checkCompatibility(obj_left.version_table, obj_right.version_table)
-        obj_vt = VersionTable("None", 0, False)
-        obj_vt.vt = []
-        obj_vt.append(obj_left.version_table)
-        obj_vt.append(obj_right.version_table)
+    #     #互換性検査
+    #     checkCompatibility(obj_left.version_table, obj_right.version_table)
+    #     obj_vt = VersionTable("None", 0, False)
+    #     obj_vt.vt = []
+    #     obj_vt.append(obj_left.version_table)
+    #     obj_vt.append(obj_right.version_table)
         
-        obj = VObject("number", obj_vt, value=n)
-        obj_index = self.heap.allocate(obj)
-        return obj_index
+    #     obj = VObject("number", obj_vt, value=n)
+    #     obj_index = self.heap.allocate(obj)
+    #     return obj_index
 
-    # Termの評価
-    def interpret_Term(self, node, env):
+    # # Termの評価
+    # def interpret_Term(self, node, env):
         obj_left_index = self.interpret(node.left, env)
         obj_right_index = self.interpret(node.right, env)
         obj_left = self.heap.get(obj_left_index)
@@ -622,7 +639,15 @@ class Interpreter:
                 # ヒープの同じ場所に代入
                 self.heap.insert(result_object, result_index)
             return result_index
-
+        
+        # NumberやStringオブジェクトから呼び出されるメソッド
+        elif callable_obj.type_tag == "binary_op":
+            arg_obj_index = self.interpret(node.args)
+            arg_obj = self.heap.get(arg_obj_index)
+            # objそのものを渡しているけどindexとどちらの方が良いかは不明
+            result_index = self.calculate_binaryop(callable_obj,arg_obj)
+            return result_index
+        
         else:
             # type_tag が "class" でも "function" でもないなら不正な関数呼び出し
             raise TypeError(f"Attribute {callable_obj.type_tag} is not a callable method")
@@ -633,6 +658,15 @@ class Interpreter:
 
         # ヒープからオブジェクトを取得
         obj = self.heap.get(obj_heap_index)
+
+        #objが特別なクラスのインスタンスであるかを確認
+        special_classes = {"number", "bool", "string"}
+        if(obj.type_tag in special_classes):
+            #バイナリーオペレーションオブジェクトを返す => interpret_callでargsと混ぜて計算
+            tmp_vt = VersionTable("None", 0, False).empty()
+            binary_op_obj = VObject("binary_op", tmp_vt, value=obj, operator=node.attr)
+            binary_op_obj_index = self.heap.allocate(binary_op_obj)
+            return binary_op_obj_index
 
         # 属性名が正しく取得されているか確認
         attr_name = node.attr.id if isinstance(node.attr, Name) else node.attr
@@ -692,4 +726,59 @@ class Interpreter:
         self.heap.insert(result_object, result_index)
 
         return result_index
+    
+    def calculate_binaryop(self, callable_obj, arg_obj):
+        left_obj=callable_obj.attributes["value"]
+        op = callable_obj.attributes["operator"]
+        right_obj = arg_obj
+
+        # operatorによる条件分岐
+            # operatorが渡されるobjectの型によって振る舞いが変わることはないため
+        ops_for_num = {"+", "-", "*", "/", "%", "//"}
+        ops_for_bool = {"&", "|"}
+
+        if op in ops_for_num:
+            if((left_obj.type_tag != "number") & (right_obj.type_tag != "number")):
+                raise TypeError(f"The operator {op} is defined for number values")
+
+            match op:
+                case "*":
+                    ans_val = left_obj.attributes["value"] * right_obj.attributes["value"]
+                case "/":
+                    ans_val = left_obj.attributes["value"] / right_obj.attributes["value"]
+                case "+":
+                    ans_val = left_obj.attributes["value"] + right_obj.attributes["value"]
+                case "-":
+                    ans_val = left_obj.attributes["value"] - right_obj.attributes["value"]
+                case "%":
+                    ans_val = left_obj.attributes["value"] % right_obj.attributes["value"]
+                case "//":
+                    ans_val = left_obj.attributes["value"] // right_obj.attributes["value"]
+                case _:
+                    raise TypeError("undefined operator")
+        elif op in ops_for_bool:
+            if((left_obj.type_tag != "bool") & (right_obj.type_tag != "bool")):
+                raise TypeError(f"The operator {op} is defined for boolean values")
+
+            match op:
+                case "&":
+                    ans_val = left_obj.attributes["value"] & right_obj.attributes["value"]
+                case "|":
+                    ans_val = left_obj.attributes["value"] | right_obj.attributes["value"]
+                case _:
+                    raise TypeError("undefined operator")
+            
+
+                
+        #互換性検査
+        checkCompatibility(left_obj.version_table, right_obj.version_table)
+        obj_vt = VersionTable("None", 0, False)
+        obj_vt.vt = []
+        obj_vt.append(left_obj.version_table)
+        obj_vt.append(right_obj.version_table)
+        
+        obj = VObject("number", obj_vt, value=ans_val)
+        obj_index = self.heap.allocate(obj)
+        return obj_index
+
 
