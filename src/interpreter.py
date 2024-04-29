@@ -200,24 +200,32 @@ class Interpreter:
             
     # 真偽値の評価
     def interpret_ConstTrue(self, node, env):
-        obj = VObject("bool", VersionTable("None", 0, False), value=True)
+        obj_vt = VersionTable("Bool", 0, False)
+        obj_vt.empty()
+        obj = VObject("bool", obj_vt, value=True)
         obj_index = self.heap.allocate(obj)
         return obj_index
     
     def interpret_ConstFalse(self, node, env):
-        obj = VObject("bool", VersionTable("None", 0, False), value=False)
+        obj_vt = VersionTable("Bool", 0, False)
+        obj_vt.empty()
+        obj = VObject("bool", obj_vt, value=False)
         obj_index = self.heap.allocate(obj)
         return obj_index
     
     # 数値の評価
     def interpret_Number(self, node, env):
-        obj = VObject("number", VersionTable("None", 0, False), value=float(node.number))
+        obj_vt = VersionTable("Number", 0, False)
+        obj_vt.empty()
+        obj = VObject("number", obj_vt, value=float(node.number))
         obj_index = self.heap.allocate(obj)
         return obj_index
 
     # 文字列の評価
     def interpret_String(self, node, env):
-        obj = VObject("string", VersionTable("None", 0, False), value=node.string)
+        obj_vt = VersionTable("String", 0, False)
+        obj_vt.empty()
+        obj = VObject("string", obj_vt, value=node.string)
         obj_index = self.heap.allocate(obj)
         return obj_index
     
@@ -347,7 +355,7 @@ class Interpreter:
         #互換性検査
         checkCompatibility(obj_left.version_table, obj_right.version_table)
         obj_vt = VersionTable("None", 0, False)
-        obj_vt.vt = []
+        obj_vt.empty()
         obj_vt.append(obj_left.version_table)
         obj_vt.append(obj_right.version_table)
         
@@ -427,7 +435,7 @@ class Interpreter:
         #互換性検査
         checkCompatibility(obj_left.version_table, obj_right.version_table)
         obj_vt = VersionTable("None", 0, False)
-        obj_vt.vt = []
+        obj_vt.empty()
         obj_vt.append(obj_left.version_table)
         obj_vt.append(obj_right.version_table)
         
@@ -601,7 +609,9 @@ class Interpreter:
 
             # 属性参照によるメソッド呼び出しの場合のVT書き換え操作 & 演算の場合の書き換え操作と互換性検査
             receiver_index = -1
-            receiver_object = VObject("None", VersionTable("None", 0, False))
+            receiver_vt = VersionTable("None", 0, False)
+            receiver_vt.empty()
+            receiver_object = VObject("None", receiver_vt)
             if type(node.func).__name__ == "Attribute":
                 # レシーバーオブジェクトを取得するために一時的なインタプリタを作成し使用する
                 tmpInterpreter = Interpreter()
@@ -624,7 +634,7 @@ class Interpreter:
                 # 演算での評価結果のVTをレシーバーと引数オブジェクトのVTの結合で上書き(特別なクラスのメソッド呼び出し)
                 result_object = self.heap.get(result_index)
                 final_result_object_vt = VersionTable("None", 0, False)
-                final_result_object_vt.vt = []
+                final_result_object_vt.empty()
                 for objForOp_index in objsForOp_index:
                     objForOp = self.heap.get(objForOp_index)
                     final_result_object_vt.append(objForOp.version_table)
