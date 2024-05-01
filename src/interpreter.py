@@ -130,7 +130,7 @@ class Interpreter:
         arg_names = [arg.id for arg in node.args] if node.args else []
 
         # 関数オブジェクトの作成
-        func_obj = VObject("function", VersionTable("NormalFunction", 0, False), name=function_name, args=arg_names, body=node.body)
+        func_obj = VObject("function", VersionTable("NormalFunction", 0, False), name=function_name, args=arg_names, body=node.body, partial_args=[])
 
         # 関数オブジェクトをヒープに格納し、そのインデックスを環境に設定
         heap_index = self.heap.allocate(func_obj)
@@ -145,7 +145,7 @@ class Interpreter:
         arg_names = [arg.id for arg in node.args] if node.args else []
 
         # 関数オブジェクトの作成
-        func_obj = VObject("function", VersionTable(c, v, False), name=function_name, args=arg_names, body=node.body)
+        func_obj = VObject("function", VersionTable(c, v, False), name=function_name, args=arg_names, body=node.body, partial_args=[])
 
         # 関数オブジェクトをヒープに格納し、そのインデックスを環境に設定
         heap_index = self.heap.allocate(func_obj)
