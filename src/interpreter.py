@@ -2,6 +2,7 @@ from src.syntax.semantics import *
 from src.syntax.language import *
 from src.compatibilitychecker import *
 from src.specialclasses import *
+from src.primitive_lib import Number
 import copy
 
 
@@ -17,6 +18,19 @@ class Interpreter:
         # - Noneオブジェクトをヒープにアロケートし、そのインデックスを保存
         none_obj = VObject("None", VersionTable("None", 0, False))
         self.none_index = self.heap.allocate(none_obj)
+
+        # primitive libraryの読み込み
+        class_body = {}
+        for element in Number.number_member_list:
+            method_name = element[0]
+            method_def = element[1]
+            heap_index = self.heap.allocate(method_def)
+            class_body[method_name] = heap_index
+
+        class_obj = VObject("class", VersionTable("number", 0, False), name="number", bases=[], body=class_body)
+        heap_index = self.heap.allocate(class_obj)
+        self.global_env.set("number", 0, heap_index)
+
 
     def log_state(self, message, node, eval_depth, step_count, env=None, heap=None, result=None):
         step_info = f"[Step {step_count}]"
@@ -217,7 +231,19 @@ class Interpreter:
     def interpret_Number(self, node, env):
         obj_vt = VersionTable("Number", 0, False)
         obj_vt.empty()
-        obj = VObject("number", obj_vt, value=float(node.number))
+
+        # 環境からヒープ上のインデックスを取得
+        # var_name = "number"
+        # var_version = None
+        # num_obj_index = env.get(var_name, var_version)
+        # num_obj = self.heap.get(num_obj_index)
+        # instance_attributes = {
+        #     method_name: method_obj
+        #     for method_name, method_obj in num_obj.attributes["body"].items()
+        # }
+        # instance_attributes["value"] = float(node.number)
+        # obj = VObject("number", obj_vt, **instance_attributes)
+        obj = VObject("number", obj_vt, value = float(node.number))
         obj_index = self.heap.allocate(obj)
         return obj_index
 
@@ -539,7 +565,6 @@ class Interpreter:
             }
 
             # インスタンスのクラスとバージョンを環境のクラス定義から得る
-            # 本質的でない実装の可能性
             instance_vt = callable_obj.version_table
 
             # インスタンスオブジェクト作成
@@ -587,22 +612,28 @@ class Interpreter:
             # 応急処置 heapが汚くなるが再度オブジェクトをメインのヒープ内に作ることにする。しょうがない。
             # 何か問題があるかもしれない
             # 属性参照によるメソッド呼び出しの場合特別にselfとしてバインド
-            if type(node.func).__name__ == "Attribute":
-                self_index = self.interpret(node.func.value, env)
-                local_env.set("self", None, self_index)
+            # if type(node.func).__name__ == "Attribute":
+            #     self_index = self.interpret(node.func.value, env)
+            #     local_env.set("self", None, self_index)
 
-            # 引数リストから 'self' を除外して、残りの引数を処理
-            func_args_wo_self = [
-                arg for arg in callable_obj.attributes["args"] if arg != "self"
-            ]
-            for arg_name, arg_value in zip(func_args_wo_self, node.args):
+            # 引数処理：仮引数に実引数を束縛する
+            # partial_argsが空でない場合 => この評価をメソッド呼び出しとする
+                # 仮引数の第一引数を、pariail_argsに保存された実引数で束縛する
+            func_args = []
+            if(len((callable_obj.attributes["partial_args"]))):
+                first_formal_arg_name = callable_obj.attributes["args"][0]
+                local_env.set(first_formal_arg_name, None, callable_obj.attributes["partial_args"][0])
+                # 引数リストから 先頭要素 を除外して、残りの引数を処理
+                func_args = [
+                    arg for arg in callable_obj.attributes["args"] if arg != callable_obj.attributes["args"][0]
+                ]
+            for arg_name, arg_value in zip(func_args, node.args):
                 if arg_value is not None:
                     evaluated_arg = self.interpret(arg_value, env)
                     local_env.set(arg_name, None, evaluated_arg)
 
             # 関数本体の実行
             # 最後の式・文の評価結果(の値へのヒープインデックス)が最終的な返り値
-            result_index = self.none_index
             for statement in callable_obj.attributes["body"]:
                 result_index = self.interpret(statement, local_env)
 
@@ -665,7 +696,7 @@ class Interpreter:
 
         # ヒープからオブジェクトを取得
         obj = self.heap.get(obj_heap_index)
-
+        
         #objが特別なクラスのインスタンスであるかを確認
         special_classes = {"number", "bool", "string"}
         if(obj.type_tag in special_classes):
@@ -683,9 +714,21 @@ class Interpreter:
             raise AttributeError(
                 f"VObject of type {obj.__class__.__name__} has no attribute '{attr_name}'"
             )
-
+        
+        attr_obj = self.heap.get(attr)
+        # 属性参照の結果が関数であった場合、selfにobj_indexをバインドした部分関数を返す
+        if(attr_obj.type_tag=="function"):
+            result_obj = VObject("function", 
+                                 attr_obj.version_table, 
+                                 name=attr_obj.attributes["name"], 
+                                 args=attr_obj.attributes["args"], 
+                                 body=attr_obj.attributes["body"], 
+                                 partial_args=[obj_heap_index])
+            result_obj_index = self.heap.allocate(result_obj)
+            return result_obj_index
         # 属性が参照するオブジェクトのインデックスを返す
-        return attr
+        else:
+            return attr
 
     # 名前(変数)の評価
     def interpret_Name(self, node, env):
@@ -828,5 +871,8 @@ class Interpreter:
         obj = VObject(ans_type, obj_vt, value=ans_val)
         obj_index = self.heap.allocate(obj)
         return obj_index
-
+        
+    def interpret_function(self, lambdaExp, env):
+        let(self)
+        return lambdaExp()
 
