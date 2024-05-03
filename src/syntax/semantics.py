@@ -29,29 +29,6 @@ class Failure(Result):
     def __repr__(self):
         return f"Failure(message={self.message})"
 
-# NumberとStringはVObjectのtype-tagがnumber,stringのものとして実装する。    
-# # numberを表すクラス
-# class VNumber(Value):
-#     def __init__(self, type_tag, version_table, attribute):
-#         super().__init__()
-#         self.type_tag = type_tag
-#         self.version_table = version_table
-#         self.attribute = attribute
-
-#     def __repr__(self):
-#         return f"VNumber(type_tag='{self.type_tag}', version_table='{repr(self.version_table)}', attribute={self.attribute})"
-    
-# # numberを表すクラス
-# class VString(Value):
-#     def __init__(self, type_tag, version_table, attribute):
-#         super().__init__()
-#         self.type_tag = type_tag
-#         self.version_table = version_table
-#         self.attribute = attribute
-
-#     def __repr__(self):
-#         return f"VString(type_tag='{self.type_tag}', version_table='{repr(self.version_table)}', attribute={self.attribute})"
-
 # オブジェクトを示すクラス
 # 要バージョンテーブル
 class VObject(Value):

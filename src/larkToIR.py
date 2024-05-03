@@ -35,20 +35,20 @@ class LarkToCustomAST(Transformer):
         return Expr(value=transformed_value)
     
     def const_true(self, items):
-        return ConstTrue()
+        return Call(func=Name("bool", Version(0)),args=[True])
     
     def const_false(self, items):
-        return ConstFalse()
+        return Call(func=Name("bool", Version(0)),args=[False])
     
     def string(self, items):
         value = items[0]
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
-        return String(transformed_value)
+        return Call(func=Name("string", Version(0)),args=[transformed_value.value])
 
     def number(self, items):
         value = items[0]
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
-        return Number(transformed_value)
+        return Call(func=Name("number", Version(0)),args=[transformed_value.value])
     
     def comp_op(self, items):
         value = items[0]
@@ -96,9 +96,7 @@ class LarkToCustomAST(Transformer):
         transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
         transformed_attr = Attribute(value=Boolean(transformed_value_l), attr="|")
-        # argsには配列を入れるべきだが、入れていない。
-        return Call(func=transformed_attr, args=Boolean(transformed_value_r))
-        # return OrExpr(transformed_value_l, transformed_value_r)
+        return Call(func=transformed_attr, args=[Boolean(transformed_value_r)])
     
     def and_expr(self, items):
         value_left = items[0]
@@ -106,9 +104,7 @@ class LarkToCustomAST(Transformer):
         transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
         transformed_attr = Attribute(value=Boolean(transformed_value_l), attr="&")
-        # argsには配列を入れるべきだが、入れていない。
-        return Call(func=transformed_attr, args=Boolean(transformed_value_r))
-        # return AndExpr(transformed_value_l, transformed_value_r)
+        return Call(func=transformed_attr, args=[Boolean(transformed_value_r)])
 
     def arith_expr(self, items):
         value_left = items[0]
@@ -118,9 +114,7 @@ class LarkToCustomAST(Transformer):
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
         transformed_op = self.transform(op) if isinstance(op, Tree) else op
         transformed_attr = Attribute(value=transformed_value_l, attr=transformed_op)
-        # argsには配列を入れるべきだが、入れていない。
-        return Call(func=transformed_attr, args=transformed_value_r)
-        # return ArithExpr(transformed_value_l, transformed_value_r, transformed_op)
+        return Call(func=transformed_attr, args=[transformed_value_r])
 
     def term(self, items):
         value_left = items[0]
@@ -130,16 +124,18 @@ class LarkToCustomAST(Transformer):
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
         transformed_op = self.transform(op) if isinstance(op, Tree) else op
         transformed_attr = Attribute(value=transformed_value_l, attr=transformed_op)
-        # argsには配列を入れるべきだが、入れていない。
-        return Call(func=transformed_attr, args=transformed_value_r)
-        # return Term(transformed_value_l, transformed_value_r, transformed_op)
+        return Call(func=transformed_attr, args=[transformed_value_r])
     
     def factor(self, items):
-        op = items[0]
-        value = items[1]
-        transformed_value = self.transform(value) if isinstance(value, Tree) else value
-        transformed_op = self.transform(op) if isinstance(op, Tree) else op
-        return Factor(transformed_op, transformed_value)
+        value_left = items[0]
+        value_right = items[1]
+        transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
+        transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
+        if(transformed_value_l == "+"):
+            transformed_attr =  Attribute(value=Call(func=Name("number", Version(0)),args=[1]), attr="*")
+        else:
+            transformed_attr =  Attribute(value=Call(func=Name("number", Version(0)),args=[-1]), attr="*")
+        return Call(func=transformed_attr, args=[transformed_value_r])
     
     # if文astの変換
     def if_stmt(self, items):
@@ -216,16 +212,6 @@ class LarkToCustomAST(Transformer):
 
     def parameters(self, items):
         return [item for item in items if item is not None]
-
-    # def funcdef(self, items):
-    #     name, params_tree, _, body = items
-    #     # 'params_tree' が Tree オブジェクトかどうかを確認
-    #     if isinstance(params_tree, Tree):
-    #         args = [self.transform(param) for param in params_tree.children if isinstance(param, Tree)]
-    #     else:
-    #         # 'params_tree' がリストの場合、直接イテレート
-    #         args = [self.transform(param) for param in params_tree if isinstance(param, Tree)]
-    #     return FunctionDef(name=name, args=args, body=self._flatten_list(body))
 
     def funcdef(self, items):
         name, params_tree, _, body = items

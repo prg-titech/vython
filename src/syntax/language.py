@@ -151,14 +151,6 @@ class ConstFalse(ASTNode):
     def __init__(self):
         super().__init__()
 
-class Number(ASTNode):
-    def __init__(self, number):
-        self.number = number
-
-class String(ASTNode):
-    def __init__(self, string):
-        self.string = string
-
 class CompOp(ASTNode):
     def __init__(self, op):
         self.op = op
