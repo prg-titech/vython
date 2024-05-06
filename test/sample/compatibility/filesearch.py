@@ -20,8 +20,8 @@ class Encryption!2:
     def __init__(self):
         pass
     def hash(self, s):
-        # return hasher2(s)
-        return hasher2(s).incompatible(Encryption, 2)
+        return hasher2(s)
+        # return hasher2(s).incompatible(Encryption, 2)
 
 #--------------------------------------------
 #-----------------  main  -------------------
@@ -39,10 +39,12 @@ target_file_name = "document"
 e_v2 = Encryption!2()
 encrypted_target_file_name = e_v2.hash(target_file_name)
 
-if(encrypted_file_name == encrypted_target_file_name):
-    result = True
-else:
-    result = False
+# if(encrypted_file_name == encrypted_target_file_name):
+#     result = True
+# else:
+#     result = False
+
+result = (encrypted_file_name == encrypted_target_file_name)
 
 # 結果を返す
 result

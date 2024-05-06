@@ -28,7 +28,8 @@
 # - 2134
 # "Hi"
 # True & 1
-1+2*3
+# False == False != True #->Trueが欲しい
+True | (1/0)
 #####
 
 # class A!1:

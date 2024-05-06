@@ -384,27 +384,38 @@ class Interpreter:
 
             # 関数本体の実行
             # 最後の式・文の評価結果(の値へのヒープインデックス)が最終的な返り値
-            call_instance_obj = self.heap.get(callable_obj.attributes["partial_args"][0])
-            if(call_instance_obj.type_tag in primitive_classes):
-                left_obj_index = local_env.get("left", None)
-                right_obj_index = local_env.get("right", None)
-                left_obj = self.heap.get(left_obj_index)
-                right_obj = self.heap.get(right_obj_index)
-                result_value = callable_obj.attributes["body"][0](left_obj.attributes["value"], right_obj.attributes["value"])
+            # 関数が特別なクラスに定義されたメソッドである場合
+            if(len((callable_obj.attributes["partial_args"]))):
+                call_instance_obj = self.heap.get(callable_obj.attributes["partial_args"][0])
+                if(call_instance_obj.type_tag in primitive_classes):
+                    left_obj_index = local_env.get("left", None)
+                    right_obj_index = local_env.get("right", None)
+                    left_obj = self.heap.get(left_obj_index)
+                    right_obj = self.heap.get(right_obj_index)
+                    result_value = callable_obj.attributes["body"][0](left_obj.attributes["value"], right_obj.attributes["value"])
 
-                # 互換性検査
-                checkCompatibility(left_obj.version_table, right_obj.version_table)
-                obj_vt = VersionTable("None", 0, False)
-                obj_vt.empty()
-                obj_vt.append(left_obj.version_table)
-                obj_vt.append(right_obj.version_table)
-                result_type_tag = callable_obj.version_table.vt[0][0]
+                    # 返るオブジェクトの型はvalueの型を見て決める
+                    if(isinstance(result_value,float)):
+                        result_type_tag = "number"
+                    elif(isinstance(result_value,str)):
+                        result_type_tag = "string"
+                    elif(isinstance(result_value,bool)):
+                        result_type_tag = "bool"
+                    else:
+                        raise TypeError("A value with unsupported type was returned")
+                    
+                    # 互換性検査
+                    checkCompatibility(left_obj.version_table, right_obj.version_table)
+                    obj_vt = VersionTable(result_type_tag, 0, False)
+                    obj_vt.append(left_obj.version_table)
+                    obj_vt.append(right_obj.version_table)
 
-                result_index = self.interpret(Call(func=Name(result_type_tag, Version(0)),args=[result_value]), env)
-                result_obj = self.heap.get(result_index)
-                result_obj.version_table = obj_vt
-                return result_index
-                
+                    result_index = self.interpret(Call(func=Name(result_type_tag, Version(0)),args=[result_value]), env)
+                    result_obj = self.heap.get(result_index)
+                    result_obj.version_table = obj_vt
+                    return result_index
+
+            # 関数が演算で無い場合   
             for statement in callable_obj.attributes["body"]:
                 result_index = self.interpret(statement, local_env)
 
@@ -529,9 +540,9 @@ class Interpreter:
         result_object = self.heap.get(result_index)
         # incompatibleが呼ばれた引数からclassとversionを取得。
         # バージョンはNumberとして保存されている。<-改善した方がいい？
-        print(node)
+        # print(node)
         c = node.args[0].id
-        v = int(node.args[1].number)
+        v = int(node.args[1].args[0])
         #VTの書き換え
         result_object.version_table.insert(c, v, True)
         #ヒープに再代入

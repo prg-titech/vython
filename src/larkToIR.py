@@ -53,11 +53,23 @@ class LarkToCustomAST(Transformer):
     def comp_op(self, items):
         value = items[0]
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
-        return CompOp(transformed_value)
+        match transformed_value:
+            case "==":
+                transformed_op = "__eq__"
+            case "!=":
+                transformed_op = "__ne__"
+            case ">":
+                transformed_op = "__gt__"
+            case "<":
+                transformed_op = "__lt__"
+            case "<=":
+                transformed_op = "__le__"
+            case ">=":
+                transformed_op = "__ge__"
+        return transformed_op
     
     def comparison(self, items):
         size = len(items)
-        print(size)
         if(size%2==0 | size<3):
             raise TypeError("Inappropriate form of comparison")
         if(size == 3):
@@ -68,8 +80,7 @@ class LarkToCustomAST(Transformer):
             transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
             transformed_op = self.transform(op) if isinstance(op, Tree) else op
             transformed_attr = Attribute(value=transformed_value_l, attr=transformed_op)
-            # argsには配列を入れるべきだが、入れていない。
-            return Call(func=transformed_attr, args=transformed_value_r)
+            return Call(func=transformed_attr, args=[transformed_value_r])
         else:
             value_left = items[0]
             op = items[1]
@@ -78,17 +89,10 @@ class LarkToCustomAST(Transformer):
             transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
             transformed_op = self.transform(op) if isinstance(op, Tree) else op
             transformed_attr = Attribute(value=transformed_value_l, attr=transformed_op)
-            # argsには配列を入れるべきだが、入れていない。
-            prev_and =  Call(func=transformed_attr, args=transformed_value_r)
-            attr_and =  Attribute(value=prev_and, attr="&")
-            # argsには配列を入れるべきだが、入れていない。
+            prev_and =  Call(func=transformed_attr, args=[transformed_value_r])
+            attr_and =  Attribute(value=prev_and, attr="__and__")
             items[0:2] = []
-            return Call(func=attr_and, args=self.comparison(items))
-
-        # for item in items:
-        #     transformed_value = self.transform(item) if isinstance(item, Tree) else item
-        #     transformed_values.append(transformed_value)
-        # return Comparison(transformed_values)
+            return Call(func=attr_and, args=[self.comparison(items)])
     
     def or_expr(self, items):
         value_left = items[0]
