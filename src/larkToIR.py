@@ -95,7 +95,7 @@ class LarkToCustomAST(Transformer):
         value_right = items[1]
         transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-        transformed_attr = Attribute(value=Boolean(transformed_value_l), attr="|")
+        transformed_attr = Attribute(value=Boolean(transformed_value_l), attr="__or__")
         return Call(func=transformed_attr, args=[Boolean(transformed_value_r)])
     
     def and_expr(self, items):
@@ -103,7 +103,7 @@ class LarkToCustomAST(Transformer):
         value_right = items[1]
         transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-        transformed_attr = Attribute(value=Boolean(transformed_value_l), attr="&")
+        transformed_attr = Attribute(value=Boolean(transformed_value_l), attr="__and__")
         return Call(func=transformed_attr, args=[Boolean(transformed_value_r)])
 
     def arith_expr(self, items):
@@ -113,6 +113,9 @@ class LarkToCustomAST(Transformer):
         transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
         transformed_op = self.transform(op) if isinstance(op, Tree) else op
+        match transformed_op:
+            case "+": transformed_op = "__add__"
+            case "-": transformed_op = "__sub__"
         transformed_attr = Attribute(value=transformed_value_l, attr=transformed_op)
         return Call(func=transformed_attr, args=[transformed_value_r])
 
@@ -123,6 +126,11 @@ class LarkToCustomAST(Transformer):
         transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
         transformed_op = self.transform(op) if isinstance(op, Tree) else op
+        match transformed_op:
+            case "*": transformed_op = "__mul__"
+            case "/": transformed_op = "__div__"
+            case "%": transformed_op = "__mod__"
+            case "//": transformed_op = "__floordiv__"
         transformed_attr = Attribute(value=transformed_value_l, attr=transformed_op)
         return Call(func=transformed_attr, args=[transformed_value_r])
     
@@ -132,9 +140,9 @@ class LarkToCustomAST(Transformer):
         transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
         if(transformed_value_l == "+"):
-            transformed_attr =  Attribute(value=Call(func=Name("number", Version(0)),args=[1]), attr="*")
+            transformed_attr =  Attribute(value=Call(func=Name("number", Version(0)),args=[1]), attr="__mul__")
         else:
-            transformed_attr =  Attribute(value=Call(func=Name("number", Version(0)),args=[-1]), attr="*")
+            transformed_attr =  Attribute(value=Call(func=Name("number", Version(0)),args=[-1]), attr="__mul__")
         return Call(func=transformed_attr, args=[transformed_value_r])
     
     # if文astの変換
