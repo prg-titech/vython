@@ -48,7 +48,11 @@ class LarkToCustomAST(Transformer):
     def number(self, items):
         value = items[0]
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
-        return Call(func=Name("number", Version(0)),args=[transformed_value.value])
+        if isinstance(transformed_value, Token):
+            match transformed_value.type:
+                case 'DEC_NUMBER': transformed_value = int(transformed_value.value)
+                case 'FLOAT_NUMBER': transformed_value = float(transformed_value.value)
+        return Call(func=Name("number", Version(0)),args=[transformed_value])
     
     def comp_op(self, items):
         value = items[0]
@@ -90,52 +94,69 @@ class LarkToCustomAST(Transformer):
             transformed_op = self.transform(op) if isinstance(op, Tree) else op
             transformed_attr = Attribute(value=transformed_value_l, attr=transformed_op)
             prev_and =  Call(func=transformed_attr, args=[transformed_value_r])
-            attr_and =  Attribute(value=prev_and, attr="__and__")
             items[0:2] = []
-            return Call(func=attr_and, args=[self.comparison(items)])
-    
-    def or_expr(self, items):
+            return BoolOp(And(), [prev_and, self.comparison(items)])
+        
+    def or_test(self, items):
         value_left = items[0]
         value_right = items[1]
         transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-        transformed_attr = Attribute(value=Boolean(transformed_value_l), attr="__or__")
-        return Call(func=transformed_attr, args=[Boolean(transformed_value_r)])
+        transformed_value_l = Attribute(value = transformed_value_l, attr = "__bool__")
+        transformed_value_r = Attribute(value = transformed_value_r, attr = "__bool__")
+        return BoolOp(Or(), [transformed_value_l, transformed_value_r])
     
-    def and_expr(self, items):
+    def and_test(self, items):
         value_left = items[0]
         value_right = items[1]
         transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-        transformed_attr = Attribute(value=Boolean(transformed_value_l), attr="__and__")
-        return Call(func=transformed_attr, args=[Boolean(transformed_value_r)])
+        transformed_value_l = Attribute(value = transformed_value_l, attr = "__bool__")
+        transformed_value_r = Attribute(value = transformed_value_r, attr = "__bool__")
+        return BoolOp(And(), [transformed_value_l, transformed_value_r])
 
     def arith_expr(self, items):
-        value_left = items[0]
-        op = items[1]
-        value_right = items[2]
-        transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
-        transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-        transformed_op = self.transform(op) if isinstance(op, Tree) else op
-        match transformed_op:
-            case "+": transformed_op = "__add__"
-            case "-": transformed_op = "__sub__"
-        transformed_attr = Attribute(value=transformed_value_l, attr=transformed_op)
+        # 要素数が適切かどうかのチェック
+        size = len(items)
+        if(size%2==0):
+            raise TypeError("Vython->IR: Inappropriate form of arith_expr")
+        
+        if(size == 1):
+            value = items[0]
+            transformed_value = self.transform(value) if isinstance(value, Tree) else value
+            return transformed_value
+        else:
+            value_right = items[size-1]
+            op = items[size-2]
+            transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
+            transformed_op = self.transform(op) if isinstance(op, Tree) else op
+            match transformed_op:
+                case "+": transformed_op = "__add__"
+                case "-": transformed_op = "__sub__"
+        transformed_attr = Attribute(value=self.arith_expr(items[:-2]), attr=transformed_op)
         return Call(func=transformed_attr, args=[transformed_value_r])
 
     def term(self, items):
-        value_left = items[0]
-        op = items[1]
-        value_right = items[2]
-        transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
-        transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-        transformed_op = self.transform(op) if isinstance(op, Tree) else op
-        match transformed_op:
-            case "*": transformed_op = "__mul__"
-            case "/": transformed_op = "__div__"
-            case "%": transformed_op = "__mod__"
-            case "//": transformed_op = "__floordiv__"
-        transformed_attr = Attribute(value=transformed_value_l, attr=transformed_op)
+        # 要素数が適切かどうかのチェック
+        size = len(items)
+        if(size%2==0):
+            raise TypeError("Vython->IR: Inappropriate form of arith_expr")
+        
+        if(size == 1):
+            value = items[0]
+            transformed_value = self.transform(value) if isinstance(value, Tree) else value
+            return transformed_value
+        else:
+            value_right = items[size-1]
+            op = items[size-2]
+            transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
+            transformed_op = self.transform(op) if isinstance(op, Tree) else op
+            match transformed_op:
+                case "*": transformed_op = "__mul__"
+                case "/": transformed_op = "__div__"
+                case "%": transformed_op = "__mod__"
+                case "//": transformed_op = "__floordiv__"
+        transformed_attr = Attribute(value=self.arith_expr(items[:-2]), attr=transformed_op)
         return Call(func=transformed_attr, args=[transformed_value_r])
     
     def factor(self, items):

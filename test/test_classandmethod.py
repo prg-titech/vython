@@ -13,7 +13,8 @@ def test():
     # 結果を検証
     assert isinstance(result, VObject)
     assert result.type_tag == "D"
-    init_method = result.attributes["__init__"]
-    assert init_method.type_tag == "function"
-    assert init_method.attributes["args"] == ["self"]
-    assert isinstance(init_method.attributes["body"][0], Pass)
+    # dunderメソッドを持ち運ばなくなったため
+    # init_method = result.attributes["__init__"]
+    # assert init_method.type_tag == "function"
+    # assert init_method.attributes["args"] == ["self"]
+    # assert isinstance(init_method.attributes["body"][0], Pass)

@@ -193,6 +193,7 @@ def resolve_heap_object(heap, index, resolved_indices=None):
     obj = index
     if(not isinstance(index, bool)):
         obj = heap.get(index)
+    
 
     resolved_indices.add(index)
 
@@ -200,11 +201,11 @@ def resolve_heap_object(heap, index, resolved_indices=None):
         resolved_attributes = {}
         for attr, value in obj.attributes.items():
             attr_name = attr.id if isinstance(attr, Name) else attr  # 属性名を文字列に変換
-
-            if isinstance(value, int) and value not in resolved_indices:
-                resolved_attributes[attr_name] = resolve_heap_object(
-                    heap, value, resolved_indices
-                )
+            if attr_name is not "value":
+                if isinstance(value, int) and value not in resolved_indices:
+                    resolved_attributes[attr_name] = resolve_heap_object(
+                        heap, value, resolved_indices
+                    )
             else:
                 resolved_attributes[attr_name] = value
         return VObject(obj.type_tag, obj.version_table, **resolved_attributes)

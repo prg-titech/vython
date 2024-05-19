@@ -15,7 +15,7 @@ class Fish!1:
         return a
 
 class Animal!1:
-    def make_it_move(animal):
+    def make_it_move(self, animal):
         return animal.move()
 
 bird = Bird!1()

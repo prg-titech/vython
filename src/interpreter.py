@@ -2,8 +2,10 @@ from src.syntax.semantics import *
 from src.syntax.language import *
 from src.compatibilitychecker import *
 from src.primitive_lib.Primitive_lib import *
+import re
 import copy
 
+special_classes = {"number","string","bool"}
 
 class Interpreter:
     def __init__(self, debug_mode=False):
@@ -51,8 +53,6 @@ class Interpreter:
         class_obj = VObject("class", VersionTable("bool", 0, False), name="bool", bases=[], body=boolean_class_body)
         heap_index = self.heap.allocate(class_obj)
         self.global_env.set("bool", Version(0), heap_index)
-
-
 
     def log_state(self, message, node, eval_depth, step_count, env=None, heap=None, result=None):
         step_info = f"[Step {step_count}]"
@@ -218,8 +218,6 @@ class Interpreter:
         evaluated_value_index = self.interpret(node.value, env)
         return evaluated_value_index
     
-    # TruthyかFalthyかを分類し、True,Falseに変換
-    def interpret_Boolean(self, node, env):
         obj_index = self.interpret(node.value)
         obj = self.heap.get(obj_index)
 
@@ -312,9 +310,12 @@ class Interpreter:
             type_tag = callable_obj.attributes["name"]
 
             # インスタンスに含まれるメソッドをクラス定義からコピー
+            # 特殊メソッドは除く
+            dunder_method_name = r'^__.*__$'
             instance_attributes = {
                 method_name: method_obj
                 for method_name, method_obj in callable_obj.attributes["body"].items()
+                if not bool(re.fullmatch(dunder_method_name, method_name))
             }
 
             # インスタンスのクラスとバージョンを環境のクラス定義から得る
@@ -351,32 +352,31 @@ class Interpreter:
                     self.interpret(statement, method_env)
 
             # primitive classだけ特別な値をattributesに配置
-            if(instance.type_tag == "number"):
-                instance.attributes["value"] = float(node.args[0])
-            elif(instance.type_tag == "string"):
-                instance.attributes["value"] = node.args[0]
-            elif(instance.type_tag == "bool"):
+            if instance.type_tag in special_classes:
                 instance.attributes["value"] = node.args[0]
 
             # オブジェクトが格納されているヒープへのindexを返す
             return heap_index
 
-        # 関数の評価, オブジェクトから属性参照で取り出されたメソッド呼び出しのケースを含む
+        # 関数オブジェクトの評価
+        # オブジェクトから属性参照で取り出されたメソッド呼び出しも含む
         elif callable_obj.type_tag == "function":
             # 新しいローカル環境を作成
             local_env = Environment(parent=env)
 
-            # 引数処理：仮引数に実引数を束縛する
+            # 引数処理
+            func_args = [
+                arg
+                for arg in callable_obj.attributes["args"]
+            ]
             # partial_argsが空でない場合 => この評価をメソッド呼び出しとする
-                # 仮引数の第一引数を、pariail_argsに保存された実引数で束縛する
-            func_args = []
-            if(len((callable_obj.attributes["partial_args"]))):
+            # 仮引数の第一引数を、pariail_argsに保存された実引数で束縛する
+            if(len(callable_obj.attributes["partial_args"])):
                 first_formal_arg_name = callable_obj.attributes["args"][0]
                 local_env.set(first_formal_arg_name, None, callable_obj.attributes["partial_args"][0])
-                # 引数リストから 先頭要素 を除外して、残りの引数を処理
-                func_args = [
-                    arg for arg in callable_obj.attributes["args"] if arg != callable_obj.attributes["args"][0]
-                ]
+                # 引数リストから 先頭要素 を消去
+                func_args = func_args[1:]
+            # 残りの仮引数を実引数で束縛する
             for arg_name, arg_value in zip(func_args, node.args):
                 if arg_value is not None:
                     evaluated_arg = self.interpret(arg_value, env)
@@ -384,90 +384,36 @@ class Interpreter:
 
             # 関数本体の実行
             # 最後の式・文の評価結果(の値へのヒープインデックス)が最終的な返り値
-            # 関数が特別なクラスに定義されたメソッドである場合
-            if(len((callable_obj.attributes["partial_args"]))):
+            if(len(callable_obj.attributes["partial_args"])):
                 call_instance_obj = self.heap.get(callable_obj.attributes["partial_args"][0])
-                if(call_instance_obj.type_tag in primitive_classes):
+                # 関数が特別なクラスに定義されたメソッドである場合
+                if(call_instance_obj.type_tag in special_classes):
                     left_obj_index = local_env.get("left", None)
                     right_obj_index = local_env.get("right", None)
                     left_obj = self.heap.get(left_obj_index)
                     right_obj = self.heap.get(right_obj_index)
-                    result_value = callable_obj.attributes["body"][0](left_obj.attributes["value"], right_obj.attributes["value"])
+                    result_obj = callable_obj.attributes["body"][0](left_obj.attributes["value"], right_obj.attributes["value"])
 
-                    # 返るオブジェクトの型はvalueの型を見て決める
-                    if(isinstance(result_value,float)):
-                        result_type_tag = "number"
-                    elif(isinstance(result_value,str)):
-                        result_type_tag = "string"
-                    elif(isinstance(result_value,bool)):
-                        result_type_tag = "bool"
-                    else:
-                        raise TypeError("A value with unsupported type was returned")
-                    
-                    # 互換性検査
+                    # 互換性検査 & VT書き換え
                     checkCompatibility(left_obj.version_table, right_obj.version_table)
-                    obj_vt = VersionTable(result_type_tag, 0, False)
-                    obj_vt.append(left_obj.version_table)
-                    obj_vt.append(right_obj.version_table)
+                    result_obj.version_table.append(left_obj.version_table)
+                    result_obj.version_table.append(right_obj.version_table)
 
-                    result_index = self.interpret(Call(func=Name(result_type_tag, Version(0)),args=[result_value]), env)
+                    result_index = self.heap.allocate(result_obj)
+                # それ以外のメソッド
+                else:
+                    for statement in callable_obj.attributes["body"]:
+                        result_index = self.interpret(statement, local_env)
                     result_obj = self.heap.get(result_index)
-                    result_obj.version_table = obj_vt
-                    return result_index
-
-            # 関数が演算で無い場合   
-            for statement in callable_obj.attributes["body"]:
-                result_index = self.interpret(statement, local_env)
-
-
-            # 属性参照によるメソッド呼び出しの場合のVT書き換え操作 & 演算の場合の書き換え操作と互換性検査
-            receiver_index = -1
-            receiver_vt = VersionTable("None", 0, False)
-            receiver_vt.empty()
-            receiver_object = VObject("None", receiver_vt)
-            if type(node.func).__name__ == "Attribute":
-                # レシーバーオブジェクトを取得するために一時的なインタプリタを作成し使用する
-                tmpInterpreter = Interpreter()
-                tmpInterpreter.heap = self.heap
-                tmpInterpreter.global_env = self.global_env
-                receiver_index = tmpInterpreter.interpret(node.func.value, env)
-                receiver_object = tmpInterpreter.heap.get(receiver_index)
-            # # 特別なクラスのメソッド呼び出しの場合 => 集合で表現している。
-            # if callable_obj.version_table.vt[0][0] in primitive_classes:
-            #     # 引数とレシーバーを取得
-            #     objsForOp_index = list(local_env.bindings.values())
-            #     length = len(objsForOp_index)             
-            #     # 互換性検査
-            #     for i in range(length):
-            #         vt1 = self.heap.get(objsForOp_index[i]).version_table
-            #         for j in range(length):
-            #             vt2 = self.heap.get(objsForOp_index[j]).version_table
-            #             if (j > i):
-            #                 checkCompatibility(vt1, vt2)
-            #     # 演算での評価結果のVTをレシーバーと引数オブジェクトのVTの結合で上書き(特別なクラスのメソッド呼び出し)
-            #     result_object = self.heap.get(result_index)
-            #     final_result_object_vt = VersionTable("None", 0, False)
-            #     final_result_object_vt.empty()
-            #     for objForOp_index in objsForOp_index:
-            #         objForOp = self.heap.get(objForOp_index)
-            #         final_result_object_vt.append(objForOp.version_table)
-            #     result_object.version_table = final_result_object_vt
-            #     # ヒープの同じ場所に代入
-            #     self.heap.insert(result_object, result_index)
-            # else:
-                # 評価結果のオブジェクトのVTにレシーバーオブジェクトのVTを結合(通常のメソッド呼び出し)
-                result_object = self.heap.get(result_index)
-                result_object.version_table.append(receiver_object.version_table)
-                # ヒープの同じ場所に代入
-                self.heap.insert(result_object, result_index)
+                    result_obj.version_table.append(call_instance_obj.version_table)
+                    self.heap.insert(result_obj, result_index)
+            # TOPレベル関数の実行
+            else:
+                for statement in callable_obj.attributes["body"]:
+                    result_index = self.interpret(statement, local_env)
             return result_index
-        
-        # NumberやStringオブジェクトから呼び出されるメソッド
-        elif callable_obj.type_tag == "binary_op":
-            # node.argsを評価せずに渡しているのは、and,or演算では評価する必要がない可能性があるため
-            result_index = self.calculate_binaryop(callable_obj,node.args)
-            return result_index
-        
+
+        # エラー 
         else:
             # type_tag が "class" でも "function" でもないなら不正な関数呼び出し
             raise TypeError(f"Attribute {callable_obj.type_tag} is not a callable method")
@@ -481,7 +427,19 @@ class Interpreter:
 
         # 属性名が正しく取得されているか確認
         attr_name = node.attr.id if isinstance(node.attr, Name) else node.attr
-        attr = obj.get_attribute(attr_name)
+
+        # 属性名がdunderである時 -> 特殊メソッドをクラス定義に取りにいく
+        dunder_pattern = r'^__.*__$'
+        if bool(re.fullmatch(dunder_pattern, attr_name)):
+            # バージョンを0にしているが良くない
+            heap_index = env.get(obj.type_tag, 0)
+            print(heap_index)
+            class_obj = self.heap.get(heap_index)
+            for method_name, method_obj in class_obj.attributes["body"].items():
+                if method_name == attr_name:
+                    attr = method_obj
+        else:
+            attr = obj.get_attribute(attr_name)
 
         if attr is None:
             raise AttributeError(
@@ -502,6 +460,64 @@ class Interpreter:
         # 属性が参照するオブジェクトのインデックスを返す
         else:
             return attr
+
+    # BoolOpの評価
+    def interpret_BoolOp(self, node, env):
+        op = node.op
+        nodes = node.values
+        node_l = nodes[0]
+        node_r = nodes[1]
+        obj_true = VObject("bool", VersionTable("bool", 0, False), value=True)
+        obj_false = VObject("bool", VersionTable("bool", 0, False), value=False)
+
+        # leftのbool値の計算
+        # NoneもTrueになってしまう
+        try:
+            func_l_index = self.interpret(node_l,env)
+            func_l = self.heap.get(func_l_index)
+            obj_l = self.heap.get(func_l.attributes["partial_args"][0])
+            bool_l = func_l.attributes["body"][0](obj_l)
+            left_vt = obj_l.version_table
+        except NameError as e:
+            bool_l = True
+            left_vt = VersionTable("None", 0, False).empty()
+        
+        if bool_l and isinstance(op, Or):
+            obj_true.version_table.append(left_vt)
+            result_index = self.heap.allocate(obj_true)
+            return result_index
+        elif (not bool_l) and isinstance(op, And):
+            obj_false.version_table.append(left_vt)
+            result_index = self.heap.allocate(obj_false)
+            return result_index
+        
+        # rightのbool値の計算
+        # NoneもTrueになってしまう
+        try:
+            func_r_index = self.interpret(node_r,env)
+            func_r = self.heap.get(func_r_index)
+            obj_r = self.heap.get(func_r.attributes["partial_args"][0])
+            bool_r = func_r.attributes["body"][0](obj_l)
+            right_vt = obj_r.version_table
+        except NameError as e:
+            bool_r = True
+            left_vt = VersionTable("None", 0, False).empty()
+        
+        if bool_r and isinstance(op, Or):
+            obj_true.version_table.append(left_vt)
+            obj_true.version_table.append(right_vt)
+            result_index = self.heap.allocate(obj_true)
+            return result_index
+        elif bool_l and isinstance(op, And):
+            obj_true.version_table.append(right_vt)
+            obj_true.version_table.append(left_vt)
+            result_index = self.heap.allocate(obj_true)
+            return result_index
+        else:
+            obj_false.version_table.append(right_vt)
+            obj_false.version_table.append(left_vt)
+            result_index = self.heap.allocate(obj_false)
+            return result_index
 
     # 名前(変数)の評価
     def interpret_Name(self, node, env):
@@ -549,8 +565,6 @@ class Interpreter:
         self.heap.insert(result_object, result_index)
 
         return result_index
-    
-    def calculate_binaryop(self, callable_obj, arg_node):
         left_obj=callable_obj.attributes["value"]
         op = callable_obj.attributes["operator"]
 

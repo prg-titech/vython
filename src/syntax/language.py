@@ -134,20 +134,28 @@ class Name(ASTNode):
         self.id = id
         self.version = version
 
-
 class NoneNode(ASTNode):
     def __init__(self):
         super().__init__()
-
-class Boolean(ASTNode):
-    def __init__(self, value):
-        self.value = value
 
 class ConstTrue(ASTNode):
     def __init__(self):
         super().__init__()
 
 class ConstFalse(ASTNode):
+    def __init__(self):
+        super().__init__()
+
+class BoolOp(ASTNode):
+    def __init__(self, op, values):
+        self.op = op
+        self.values = values
+
+class Or(ASTNode):
+    def __init__(self):
+        super().__init__()
+
+class And(ASTNode):
     def __init__(self):
         super().__init__()
 
@@ -159,17 +167,6 @@ class Comparison(ASTNode):
     # Pythonのsemanticに則ると、引数の数は可変なので、配列を入れる
     def __init__(self, comp_list):
         self.comp_list = comp_list
-
-
-class OrExpr(ASTNode):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
-class AndExpr(ASTNode):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
 
 class ArithExpr(ASTNode):
     def __init__(self, left, right, op):
