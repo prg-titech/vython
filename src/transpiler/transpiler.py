@@ -204,23 +204,6 @@ class Transpiler(Transformer):
                 transformed_comparators.append(transformed_comparator)
         return ast.Compare(left=transformed_value_l,ops=transformed_ops,comparators=transformed_comparators,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
-    # ビット演算だった
-    # def or_expr(self, items):
-    #     value_left = items[0]
-    #     value_right = items[1]
-    #     transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
-    #     transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-    #     transformed_values = [transformed_value_l,transformed_value_r]
-    #     return ast.BoolOp(op=ast.Or(), values=transformed_values,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-    
-    # def and_expr(self, items):
-    #     value_left = items[0]
-    #     value_right = items[1]
-    #     transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
-    #     transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-    #     transformed_values = [transformed_value_l,transformed_value_r]
-    #     return ast.BoolOp(op=ast.And(), values=transformed_values,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-    
     def or_test(self, items):
         value_left = items[0]
         value_right = items[1]
