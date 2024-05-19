@@ -29,15 +29,31 @@ pip uninstall vython # Uninstall
 ```
 
 ### Run
-`vython` で `test/sample/basic/classandmethod.py` をコンパイル・実行するには、以下を実行してください。
+`vython` 言語処理系はインタプリタとトランスパイラを提供しています。
+2つ目のコマンドライン引数で `vython` プログラムをどちらを使用して評価するかを指定できます。
+例えば、インタプリタを使用して `test/test_interpreter/sample/basic/classandmethod.py` をコンパイル・実行するには、以下を実行してください。
 ```sh
-vython test/sample/basic/classandmethod.py
+vython -i test/test_interpreter/sample/basic/classandmethod.py
 ```
-`vython` コンパイラはオプションで詳細な情報を出力可能です。
+トランスパイラを使用して `test/test_transpiler/sample/basic/classandmethod.py` をコンパイル・実行するには、以下を実行してください。
 ```sh
-vython --debug test/sample/basic/classandmethod.py | tee tmp.log # tmp.logと標準出力にログを出力
-vython -d test/sample/basic/classandmethod.py | tee tmp.log
+vython -t test/test_transpiler/sample/basic/classandmethod.py
 ```
+#### `vython`言語処理系を使用する際のオプション
+- `-d` `--debug` は実行時の詳細な情報を出力します。(インタプリタ & トランスパイラ)
+```sh
+vython -i --debug test/test_interpreter/sample/basic/classandmethod.py | tee tmp.log # tmp.logと標準出力にログを出力
+vython -t -d test/test_transpiler/sample/basic/classandmethod.py | tee tmp.log
+```
+- `--ast` はトランスパイル後のPython ASTを出力します。(トランスパイラ)
+```sh
+vython -t --ast test/test_transpiler/sample/basic/classandmethod.py
+```
+- `--wo` を使用するとバージョンの互換性検査機構を含まないPython ASTにトランスパイルされます。(トランスパイラ)
+```sh
+vython -t --wo test/test_transpiler/sample/basic/classandmethod.py
+```
+
 
 ### Test
 `test/` 以下のユニットテストを実行するには、以下を実行してください。
@@ -51,26 +67,35 @@ pytest test/
 ```
 project-name/
 ├── README.md
-├── src/                        # ソースコードが含まれるディレクトリ
-│   ├── __init__.py             # 初期化ファイル
-│   ├── run.py                  # Runner
-│   ├── compiler.py             # コンパイラパイプラインの統括
-│   ├── parser.py               # [Phase 1] パーサー
-│   ├── preprocess.py           # [Phase 2] 前処理
-│   ├── larkToIR.py             # [Phase 3] Lark構文解析結果から中間表現へのトランスパイラ
-│   ├── interpreter.py          # [Phase 4] インタープリタ
-│   ├── compatibilitychecker.py # バージョンテーブルを使った互換性検査器
-│   └── syntax/                 # Vython IRの構文に関するモジュールが含まれるディレクトリ
-│       ├── __init__.py         # 初期化ファイル
-│       ├── language.py         # Vython IRの構文定義
-│       ├── semantics.py        # Vython IR Interpreterの意味論的なオブジェクト（値、環境、ヒープなど）の定義
-│       └── lark-vython.lark    # Lark-vython 構文のEBNF定義
+├── src/                               # ソースコードが含まれるディレクトリ
+│     ├── __init__.py                  # 初期化ファイル
+│     ├── main.py                      # Runner
+│     │
+│     ├── interpreter/                 # インタプリタ実装ソースコードが含まれるディレクトリ
+│     │    ├── __init__.py             # 初期化ファイル
+│     │    ├── run.py                  # インタプリタのRunner
+│     │    ├── compiler.py             # コンパイラパイプラインの統括
+│     │    ├── parser.py               # [Phase 1] パーサー
+│     │    ├── preprocess.py           # [Phase 2] 前処理
+│     │    ├── larkToIR.py             # [Phase 3] Lark構文解析結果から中間表現へのトランスパイラ
+│     │    ├── interpreter.py          # [Phase 4] インタープリタ
+│     │    ├── compatibilitychecker.py # バージョンテーブルを使った互換性検査器
+│     │    └── syntax/                 # Vython IRの構文に関するモジュールが含まれるディレクトリ
+│     │        ├── __init__.py         # 初期化ファイル
+│     │        ├── language.py         # Vython IRの構文定義
+│     │        ├── semantics.py        # Vython IR Interpreterの意味論的なオブジェクト（値、環境、ヒープなど）の定義
+│     │        └── lark-vython.lark    # Lark-vython 構文のEBNF定義
+│     │
+│     ├── transpiler/                  # トランスパイラ実装ソースコードが含まれるディレクトリ
+│     │    ├──
+│     ...
 │
 └── test/                       # テストコードが含まれるディレクトリ
     ├── __init__.py             # 初期化ファイル
-    ├── sample/                 # サンプルプログラムが含まれるディレクトリ
-    │   ├── basic/              # 
-    │   ├── compatibility/      # 
+    ├── test_interpreter/       # インタプリタ用のテストコード & サンプルプログラムが含まれるディレクトリ
+    │   ├──     
+    │   ...
+    ├── test_transpiler/       # トランスパイラ用のテストコード & サンプルプログラムが含まれるディレクトリ
     │   ├── 
 ...
 ```
