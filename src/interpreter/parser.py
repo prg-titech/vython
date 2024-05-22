@@ -21,7 +21,7 @@ class Parser:
             grammar = file.read()
 
         parser = Lark(
-            grammar, parser="lalr", postlex=PythonIndenter(), start="file_input"
+            grammar, parser="lalr", postlex=PythonIndenter(), start="file_input", propagate_positions = False
         )
         ast = parser.parse(code)
 

@@ -2,6 +2,7 @@ from src.interpreter.syntax.semantics import *
 from src.interpreter.syntax.language import *
 from src.interpreter.compatibilitychecker import *
 from src.interpreter.primitive_lib.Primitive_lib import *
+from src.interpreter.lib.global_func import *
 import re
 import copy
 
@@ -53,6 +54,13 @@ class Interpreter:
         class_obj = VObject("class", VersionTable("bool", 0, False), name="bool", bases=[], body=boolean_class_body)
         heap_index = self.heap.allocate(class_obj)
         self.global_env.set("bool", Version(0), heap_index)
+
+        # global_funcの読み込み
+        for element in global_func_list:
+            func_def = element
+            func_name = element.attributes["name"]
+            heap_index = self.heap.allocate(func_def)
+            self.global_env.set(func_name,None,heap_index)
 
     def log_state(self, message, node, eval_depth, step_count, env=None, heap=None, result=None):
         step_info = f"[Step {step_count}]"
@@ -413,6 +421,23 @@ class Interpreter:
                     result_index = self.interpret(statement, local_env)
             return result_index
 
+        # 標準組み込み関数オブジェクトの評価
+        elif callable_obj.type_tag == "global_function":
+            # 実引数を評価し、bodyに適用
+            actual_args = []
+            for arg_value in node.args:
+                if arg_value is not None:
+                    evaluated_arg_index = self.interpret(arg_value, env)
+                    evaluated_arg = self.heap.get(evaluated_arg_index)
+                    actual_args.append(evaluated_arg)
+
+            result_obj = callable_obj.attributes["body"][0](*actual_args)
+            if result_obj is not None:
+                result_index = self.heap.allocate(result_obj)
+                return result_index
+            else:
+                return self.none_index
+
         # エラー 
         else:
             # type_tag が "class" でも "function" でもないなら不正な関数呼び出し
@@ -433,7 +458,6 @@ class Interpreter:
         if bool(re.fullmatch(dunder_pattern, attr_name)):
             # バージョンを0にしているが良くない
             heap_index = env.get(obj.type_tag, 0)
-            print(heap_index)
             class_obj = self.heap.get(heap_index)
             for method_name, method_obj in class_obj.attributes["body"].items():
                 if method_name == attr_name:
@@ -556,7 +580,6 @@ class Interpreter:
         result_object = self.heap.get(result_index)
         # incompatibleが呼ばれた引数からclassとversionを取得。
         # バージョンはNumberとして保存されている。<-改善した方がいい？
-        # print(node)
         c = node.args[0].id
         v = int(node.args[1].args[0])
         #VTの書き換え
