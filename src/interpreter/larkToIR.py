@@ -43,7 +43,8 @@ class LarkToCustomAST(Transformer):
     def string(self, items):
         value = items[0]
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
-        return Call(func=Name("string", Version(0)),args=[transformed_value.value])
+        transformed_str_value = str(transformed_value[1:-1])
+        return Call(func=Name("string", Version(0)),args=[transformed_str_value])
 
     def number(self, items):
         value = items[0]

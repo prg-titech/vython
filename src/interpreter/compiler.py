@@ -31,14 +31,14 @@ class Compiler:
             print(self.ir)
 
     def evaluate(self):
-        # output = io.StringIO()
-        # with contextlib.redirect_stdout(output): 
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output): 
             interpreter = Interpreter(debug_mode = self.debug_mode)
             result_index = interpreter.interpret(self.ir)
             self.heap = interpreter.heap
             self.result = resolve_heap_object(self.heap, result_index)
-        # captured_output = output.getvalue()
-        # self.output = captured_output
+        captured_output = output.getvalue()
+        self.output = captured_output
 
     def get_result(self):
         return self.result
