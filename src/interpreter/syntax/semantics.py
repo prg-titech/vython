@@ -67,19 +67,20 @@ class VersionTable():
     # APPEND
     def append(self, vt):
         # 以下は見やすくするために行うもの、結合の順序を気にするなら変えた方がいい
-        copy = vt.vt
-        for x in copy:
+        for x in vt.vt:
             cx = x[0]
             vx = x[1]
             bx = x[2]
+            is_same = False
             for y in self.vt:
                 cy = y[0]
                 vy = y[1]
                 by = y[2]
                 if((cx==cy) and (vx == vy) and (bx == by)):
-                    copy.remove(x)      
-        # 結合を返す
-        self.vt = self.vt + copy
+                    is_same = True
+                    break
+            if not is_same:
+                self.vt.extend([(cx,vx,bx)])    
         return
 
     #INSERT

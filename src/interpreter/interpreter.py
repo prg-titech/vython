@@ -225,32 +225,6 @@ class Interpreter:
     def interpret_Expr(self, node, env):
         evaluated_value_index = self.interpret(node.value, env)
         return evaluated_value_index
-    
-        obj_index = self.interpret(node.value)
-        obj = self.heap.get(obj_index)
-
-        # objがTruthyかFalthyかの分類：ここで明示的に分類
-        if((obj.type_tag=="bool") | (obj.type_tag=="number") | (obj.type_tag=="string")):
-            if(obj.attributes["value"]):
-                boolean_obj_index = self.interpret(Call(func=Name("bool", Version(0)),args=[True]), env)
-                boolean_obj = self.heap.get(boolean_obj_index)
-                boolean_obj.version_table.append(obj.version_table)
-                return boolean_obj_index
-            else:
-                boolean_obj_index = self.interpret(Call(func=Name("bool", Version(0)),args=[False]), env)
-                boolean_obj = self.heap.get(boolean_obj_index)
-                boolean_obj.version_table.append(obj.version_table)
-                return boolean_obj_index
-        elif(obj.type_tag=="None"):
-            boolean_obj_index = self.interpret(Call(func=Name("bool", Version(0)),args=[False]), env)
-            boolean_obj = self.heap.get(boolean_obj_index)
-            boolean_obj.version_table.append(obj.version_table)
-            return boolean_obj_index
-        else:
-            boolean_obj_index = self.interpret(Call(func=Name("bool", Version(0)),args=[True]), env)
-            boolean_obj = self.heap.get(boolean_obj_index)
-            boolean_obj.version_table.append(obj.version_table)
-            return boolean_obj_index
 
     # if文の評価
     def interpret_If(self, node, env):
