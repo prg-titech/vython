@@ -151,6 +151,15 @@ class BoolOp(ASTNode):
         self.op = op
         self.values = values
 
+class UnaryOp(ASTNode):
+    def __init__(self, op, value):
+        self.op = op
+        self.value = value
+
+class Not(ASTNode):
+    def __init__(self):
+        super().__init__()
+
 class Or(ASTNode):
     def __init__(self):
         super().__init__()

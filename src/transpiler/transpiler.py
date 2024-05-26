@@ -4,6 +4,7 @@ import copy
 
 global_func_paths = {"src/transpiler/lib/global_func/global_func.py"}
 calling_vt_init_path = "src/transpiler/lib/helper_func/__calling_vt_init__.py"
+calling_init_path = "src/transpiler/lib/helper_func/__calling_init__.py"
 calling_vt_append_path = "src/transpiler/lib/helper_func/__calling_vt_append__.py"
 
 fake_global_func_paths = {"src/transpiler/lib_tmp/global_func/global_func.py"}
@@ -32,6 +33,10 @@ class Transpiler(Transformer):
             with open(calling_vt_init_path,"r") as file:
                 calling_vt_init_code = file.read()
             self.calling_vt_init_ast = ast.parse(calling_vt_init_code).body
+            # 初期化関数の呼び出し
+            with open(calling_init_path,"r") as file:
+                calling_init_code = file.read()
+            self.calling_init_ast = ast.parse(calling_init_code).body
             # VT結合関数の呼び出し
             with open(calling_vt_append_path,"r") as file:
                 calliing_vt_append_code = file.read()
@@ -80,6 +85,7 @@ class Transpiler(Transformer):
         if not self.transpile_mode:
             wrapped_func_list = []
             # basesの中身を検査
+            is_init_exist = False
             for element in body:
                 if isinstance(element,ast.FunctionDef):
                     # initializeメソッドAST に VT初期化関数呼び出しAST を挿入
@@ -87,6 +93,7 @@ class Transpiler(Transformer):
                         new_init_ast = copy.deepcopy(self.calling_vt_init_ast)
                         new_init_ast[0].value.args[0].id = element.args.args[0].arg
                         element.body.append(new_init_ast)
+                        is_init_exist = True
                     # メソッドをラップし、VT書き換え関数呼び出しASTを挿入した新しいメソッドASTに変更する
                     else:
                         new_method_ast = copy.deepcopy(self.calling_vt_append_ast)
@@ -111,6 +118,9 @@ class Transpiler(Transformer):
 
             for element in wrapped_func_list:
                 body.append(element)
+            
+            if not is_init_exist:
+                body.append(self.calling_init_ast)
 
         return ast.ClassDef(name=class_name,bases=[],keywords=[],body=body,decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     

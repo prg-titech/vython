@@ -114,6 +114,12 @@ class LarkToCustomAST(Transformer):
         transformed_value_l = Attribute(value = transformed_value_l, attr = "__bool__")
         transformed_value_r = Attribute(value = transformed_value_r, attr = "__bool__")
         return BoolOp(And(), [transformed_value_l, transformed_value_r])
+    
+    def not_test(self, items):
+        value = items[0]
+        transformed_value = self.transform(value) if isinstance(value, Tree) else value
+        transformed_attr = Attribute(value = transformed_value, attr = "__bool__")
+        return UnaryOp(op=Not(), value=transformed_attr)
 
     def arith_expr(self, items):
         # 要素数が適切かどうかのチェック
@@ -160,15 +166,15 @@ class LarkToCustomAST(Transformer):
         return Call(func=transformed_attr, args=[transformed_value_r])
     
     def factor(self, items):
-        value_left = items[0]
-        value_right = items[1]
-        transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
-        transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-        if(transformed_value_l == "+"):
+        op = items[0]
+        value = items[1]
+        transformed_op = self.transform(op) if isinstance(op, Tree) else op
+        transformed_value = self.transform(value) if isinstance(value, Tree) else value
+        if(transformed_op == "+"):
             transformed_attr =  Attribute(value=Call(func=Name("number", Version(0)),args=[1]), attr="__mul__")
         else:
             transformed_attr =  Attribute(value=Call(func=Name("number", Version(0)),args=[-1]), attr="__mul__")
-        return Call(func=transformed_attr, args=[transformed_value_r])
+        return Call(func=transformed_attr, args=[transformed_value])
     
     # if文astの変換
     def if_stmt(self, items):

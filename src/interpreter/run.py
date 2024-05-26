@@ -42,4 +42,5 @@ def run(args):
     execute_phase("[Phase 3] Compile to IR", lambda: compiler.compile_to_ir())
     execute_phase("[Phase 4] Interpretation", lambda: compiler.evaluate())
 
-    print(f"[Result]\n  {compiler.get_result()}")
+    print(f"[Result]\n{compiler.get_result()}")
+    print(f"[Output]\n{compiler.get_output()}")

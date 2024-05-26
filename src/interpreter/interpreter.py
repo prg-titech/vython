@@ -336,18 +336,21 @@ class Interpreter:
             heap_index = self.heap.allocate(instance)
 
             # __init__メソッドが存在する場合は、それを実行
-            init_method_index = instance.get_attribute("__init__")
+            init_method_index = None
+            for method_name, method_obj in callable_obj.attributes["body"].items():
+                if method_name == '__init__':
+                    init_method_index = method_obj
             if init_method_index is not None:
                 init_method = self.heap.get(init_method_index)
                 # メソッド実行のための環境を作成
                 method_env = Environment(parent=env)
 
-                # selfを現在のインスタンスにバインド
-                method_env.set("self", None, heap_index)
-
                 # メソッド定義の引数リストの深いコピーを作成し、selfを除去
                 args_copy = copy.deepcopy(init_method.attributes["args"])
-                args_copy.pop(0)
+                first_arg = args_copy.pop(0)
+
+                # selfを現在のインスタンスにバインド
+                method_env.set(first_arg, None, heap_index)
 
                 # 引数を評価し、ローカル環境にセット
                 for arg_name, arg_value in zip(
@@ -521,25 +524,51 @@ class Interpreter:
             func_r_index = self.interpret(node_r,env)
             func_r = self.heap.get(func_r_index)
             obj_r = self.heap.get(func_r.attributes["partial_args"][0])
-            bool_r = func_r.attributes["body"][0](obj_l)
+            bool_r = func_r.attributes["body"][0](obj_r)
             right_vt = obj_r.version_table
         except NameError as e:
             bool_r = True
             left_vt = VersionTable("None", 0, False).empty()
         
-        if bool_r and isinstance(op, Or):
+        # バージョン検査
+        checkCompatibility(left_vt, right_vt)
+        
+        if bool_r:
             obj_true.version_table.append(left_vt)
             obj_true.version_table.append(right_vt)
-            result_index = self.heap.allocate(obj_true)
-            return result_index
-        elif bool_l and isinstance(op, And):
-            obj_true.version_table.append(right_vt)
-            obj_true.version_table.append(left_vt)
             result_index = self.heap.allocate(obj_true)
             return result_index
         else:
             obj_false.version_table.append(right_vt)
             obj_false.version_table.append(left_vt)
+            result_index = self.heap.allocate(obj_false)
+            return result_index
+
+    # 単項演算子(現在はnotのみ)の評価
+    def interpret_UnaryOp(self, node, env):
+        op = node.op
+        attr = node.value
+
+        obj_true = VObject("bool", VersionTable("bool", 0, False), value=True)
+        obj_false = VObject("bool", VersionTable("bool", 0, False), value=False)
+
+        # NoneもTrueになってしまう
+        try:
+            func_index = self.interpret(attr,env)
+            func_obj = self.heap.get(func_index)
+            original_obj = self.heap.get(func_obj.attributes["partial_args"][0])
+            original_obj_bool = func_obj.attributes["body"][0](original_obj)
+            original_obj_vt = original_obj.version_table
+        except NameError as e:
+            original_obj_bool = True
+            original_obj_vt = VersionTable("None", 0, False).empty()
+
+        if not original_obj_bool:
+            obj_true.version_table.append(original_obj_vt)
+            result_index = self.heap.allocate(obj_true)
+            return result_index
+        else:
+            obj_false.version_table.append(original_obj_vt)
             result_index = self.heap.allocate(obj_false)
             return result_index
 
@@ -558,8 +587,11 @@ class Interpreter:
 
     # リターン文の評価
     def interpret_Return(self, node, env):
-        # リターン文は引数の式の評価結果をそのまま返す
-        return self.interpret(node.value, env)
+        if(node.value is not None):
+            # リターン文は引数の式の評価結果をそのまま返す
+            return self.interpret(node.value, env)
+        else:
+            return self.none_index
 
     # パス文の評価
     def interpret_Pass(self, node, env):

@@ -264,4 +264,11 @@ class Primitive_Bool_v_0:
         append(result, left)
         append(result, right)
         return result
-print(-Primitive_Number_v_0(1))
+
+def fib(n):
+    if n <= Primitive_Number_v_0(2):
+        return Primitive_Number_v_0(1)
+    else:
+        return fib(n - Primitive_Number_v_0(1)) + fib(n - Primitive_Number_v_0(2))
+result = fib(Primitive_Number_v_0(10))
+print(result)

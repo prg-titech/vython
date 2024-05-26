@@ -4,6 +4,8 @@ from src.interpreter.syntax.semantics import *
 vts = VersionTable("string", 0, False)
 type_s = "string"
 string_member_list = [
+    # 連結演算
+    ["__add__", VObject("function", VersionTable("string", 0, False), name = "__and__", args = ["left", "right"], body = [(lambda left,right:VObject(type_s,vts,value=left+right))], partial_args = [])],
     # ==演算
     ["__eq__", VObject("function", VersionTable("string", 0, False), name = "__eq__", args = ["left", "right"], body = [(lambda left,right:VObject(type_s,vts,value=left==right))], partial_args = [])],
     # !=演算

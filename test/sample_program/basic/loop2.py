@@ -14,4 +14,4 @@ class A!1:
 a = A!1()
 fact_func = a.fact
 loop(10,fact_func)
-print(a.value)       
+print(a.value)

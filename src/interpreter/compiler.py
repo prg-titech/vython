@@ -2,6 +2,8 @@ from src.interpreter.parser import Parser
 from src.interpreter.larkToIR import LarkToCustomAST
 from src.interpreter.interpreter import Interpreter
 from src.interpreter.syntax.semantics import resolve_heap_object
+import io
+import contextlib
 
 class Compiler:
     def __init__(self, code, debug_mode=False):
@@ -9,6 +11,7 @@ class Compiler:
         self.code = code
         self.ast = None
         self.ir = None
+        self.output = None
         self.result = None
         self.heap = None
 
@@ -28,17 +31,34 @@ class Compiler:
             print(self.ir)
 
     def evaluate(self):
-        interpreter = Interpreter(debug_mode = self.debug_mode)
-        result_index = interpreter.interpret(self.ir)
-        self.heap = interpreter.heap
-        self.result = resolve_heap_object(self.heap, result_index)
+        # output = io.StringIO()
+        # with contextlib.redirect_stdout(output): 
+            interpreter = Interpreter(debug_mode = self.debug_mode)
+            result_index = interpreter.interpret(self.ir)
+            self.heap = interpreter.heap
+            self.result = resolve_heap_object(self.heap, result_index)
+        # captured_output = output.getvalue()
+        # self.output = captured_output
 
     def get_result(self):
         return self.result
+    
+    def get_output(self):
+        return self.output
 
+    # 結果を取得
     def get_result_fullpath(self):
         self.parse()
         self.compile_to_ir()
         self.evaluate()
         result = self.get_result()
         return result
+    
+    # printされた内容を取得
+    def get_output_fullpath(self):
+        self.parse()
+        self.compile_to_ir()
+        self.evaluate()
+        output = self.output
+        return output
+    
