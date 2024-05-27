@@ -1,6 +1,7 @@
 import ast
 import io
 import contextlib
+import time
 from src.transpiler.vython_parser import Parser
 from src.transpiler.transpiler import Transpiler
 
@@ -53,3 +54,30 @@ class Compiler:
         self.unparse()
         self.execute()
         return self.result
+    
+    # [評価用]: fullpathの各段階での実行時間だけを返す
+    def evaluate_time(self):
+        execution_time = dict()
+
+        start_time = time.time()
+        self.parse()
+        end_time = time.time()
+        execution_time["parse"] = end_time - start_time
+
+        start_time = time.time()
+        self.transpile()
+        end_time = time.time()
+        execution_time["transpile"] = end_time - start_time
+
+        start_time = time.time()
+        self.unparse()
+        end_time = time.time()
+        execution_time["unparse"] = end_time - start_time
+
+        start_time = time.time()
+        self.execute()
+        end_time = time.time()
+        execution_time["execute"] = end_time - start_time
+
+        return execution_time
+    

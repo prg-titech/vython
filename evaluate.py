@@ -22,18 +22,30 @@ def run():
         print(f"An error occurred while opening the file: {e}")
         sys.exit(1)
 
-    result = []
+    result_i = []
+    result_t = []
+    interpreter = IC(code, False)
+    transpiler = TC(code, False, False)
     if mode == "i":
-        interpreter = IC(code, False)
         for i in range(count):
-            result.append(interpreter.evaluate_time())
+            result_i.append(interpreter.evaluate_time())
+    elif mode == "t":
+        for i in range(count):
+            result_t.append(transpiler.evaluate_time())
+    elif mode == "both":
+        for i in range(count):
+            result_i.append(interpreter.evaluate_time())
+            result_t.append(transpiler.evaluate_time())
 
     with open('execution_time.csv', 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
         # ヘッダー行を書き出す
-        csv_writer.writerow(['Program', 'Execution Time'])
+        csv_writer.writerow(['Program', 'Execution Time', file_path, mode])
         # 実行時間を書き出す
-        for e in result:
+        for e in result_i:
             csv_writer.writerow(['sample_program', "{:.6f}".format(e["parse"]) , "{:.6f}".format(e["compile_to_ir"]), "{:.6f}".format(e["execute"])])
+        csv_writer.writerow([""])
+        for e in result_t:
+            csv_writer.writerow(['sample_program', "{:.6f}".format(e["parse"]) , "{:.6f}".format(e["transpile"]), "{:.6f}".format(e["unparse"]), "{:.6f}".format(e["execute"])])
 
 run()
