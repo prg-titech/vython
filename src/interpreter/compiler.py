@@ -4,6 +4,7 @@ from src.interpreter.interpreter import Interpreter
 from src.interpreter.syntax.semantics import resolve_heap_object
 import io
 import contextlib
+import time
 
 class Compiler:
     def __init__(self, code, debug_mode=False):
@@ -61,4 +62,25 @@ class Compiler:
         self.evaluate()
         output = self.output
         return output
+    
+    # [評価用]: fullpathの各段階での実行時間だけを返す
+    def evaluate_time(self):
+        execution_time = dict()
+
+        start_time = time.time()
+        self.parse()
+        end_time = time.time()
+        execution_time["parse"] = end_time - start_time
+
+        start_time = time.time()
+        self.compile_to_ir()
+        end_time = time.time()
+        execution_time["compile_to_ir"] = end_time - start_time
+
+        start_time = time.time()
+        self.evaluate()
+        end_time = time.time()
+        execution_time["execute"] = end_time - start_time
+
+        return execution_time
     

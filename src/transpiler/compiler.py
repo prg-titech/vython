@@ -9,6 +9,8 @@ class Compiler:
         self.debug_mode = debug_mode
         self.show_ast = show_ast
         self.transpile_mode = transpile_mode
+
+        # 評価時に使用するオブジェクト
         self.vythonCode = vythonCode
         self.vythonaAST = None
         self.pythonAST = None

@@ -12,6 +12,12 @@ def execute_phase(message, function):
     print(message)
     print(f"  --> Completed in {end_time-start_time:.4f} seconds")
 
+def just_execute_phase(message, function):
+    start_time = time.time()
+    function()
+    end_time = time.time()
+    return end_time - start_time
+
 def run(args):
     debug_mode = False
     show_ast = False

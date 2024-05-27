@@ -72,6 +72,7 @@ class Interpreter:
         indent = "|" * (eval_depth - 1)
 
         # 結果情報がある場合はresult, それ以外の場合はターゲットノードを出力
+        self.log_state_list 
         print(f"{indent} {step_info} {message}")
         if result_info:
             print(f"{indent} {result_info}")
