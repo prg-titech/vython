@@ -66,3 +66,12 @@ def incompat(self,value):
     cv_pair = re_match(self)
     insert(value,cv_pair[0],cv_pair[1],True)
     return
+
+def and_or_helper_1(b, left):
+    append(b, left)
+    return b
+
+def and_or_helper_2(b, left, right):
+    append(b, left)
+    append(b, right)
+    return b

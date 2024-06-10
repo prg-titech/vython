@@ -1,2 +1,4 @@
-c = 1
-print(c-1)
+x = True or 1/0
+print(x)
+# print(x.vt)
+

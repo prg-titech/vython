@@ -6,6 +6,8 @@ global_func_paths = {"src/transpiler/lib/global_func/global_func.py"}
 calling_vt_init_path = "src/transpiler/lib/helper_func/__calling_vt_init__.py"
 calling_init_path = "src/transpiler/lib/helper_func/__calling_init__.py"
 calling_vt_append_path = "src/transpiler/lib/helper_func/__calling_vt_append__.py"
+calling_and_suger_path = "src/transpiler/lib/helper_func/__calling_and_suger__.py"
+calling_or_suger_path = "src/transpiler/lib/helper_func/__calling_or_suger__.py"
 
 fake_global_func_paths = {"src/transpiler/lib_tmp/global_func/global_func.py"}
 
@@ -41,6 +43,14 @@ class Transpiler(Transformer):
             with open(calling_vt_append_path,"r") as file:
                 calliing_vt_append_code = file.read()
             self.calling_vt_append_ast = ast.parse(calliing_vt_append_code).body[0]
+            # and_testの糖衣構文の呼び出し
+            with open(calling_and_suger_path,"r") as file:
+                calling_and_suger_code = file.read()
+            self.calling_and_suger_ast = ast.parse(calling_and_suger_code).body[0]
+            # or_testの糖衣構文の呼び出し
+            with open(calling_or_suger_path,"r") as file:
+                calling_or_suger_code = file.read()
+            self.calling_or_suger_ast = ast.parse(calling_or_suger_code).body[0]
 
             # Primitiveクラスの定義をASTに変換
             primitive_class_asts = set()
@@ -133,7 +143,6 @@ class Transpiler(Transformer):
             self.transform(targets) if isinstance(targets, Tree) else targets
         )
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
-
         return ast.Assign(targets=[transformed_targets], value=transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     def expr_stmt(self, items):
@@ -219,16 +228,32 @@ class Transpiler(Transformer):
         value_right = items[1]
         transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-        transformed_values = [transformed_value_l,transformed_value_r]
-        return ast.BoolOp(op=ast.Or(), values=transformed_values,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        if not self.transpile_mode:
+            or_test_ast = self.calling_or_suger_ast
+            or_test_ast.value.test.args[0] = transformed_value_l
+            or_test_ast.value.body.args[1] = transformed_value_l
+            or_test_ast.value.orelse.args[0].args[0].args[0] = transformed_value_r
+            or_test_ast.value.orelse.args[1] = transformed_value_l
+            or_test_ast.value.orelse.args[2] = transformed_value_r
+            return or_test_ast.value
+        else:
+            return ast.BoolOp(ast.Or(), [transformed_value_l, transformed_value_r])
     
     def and_test(self, items):
         value_left = items[0]
         value_right = items[1]
         transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-        transformed_values = [transformed_value_l,transformed_value_r]
-        return ast.BoolOp(op=ast.And(), values=transformed_values,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        if not self.transpile_mode:
+            and_test_ast = self.calling_and_suger_ast
+            and_test_ast.value.test.args[0] = transformed_value_l
+            and_test_ast.value.body.args[1] = transformed_value_l
+            and_test_ast.value.orelse.args[0].args[0].args[0] = transformed_value_r
+            and_test_ast.value.orelse.args[1] = transformed_value_l
+            and_test_ast.value.orelse.args[2] = transformed_value_r
+            return and_test_ast.value
+        else:
+            return ast.BoolOp(ast.And(), [transformed_value_l, transformed_value_r])
 
     def not_test(self, items):
         value = items[0]
