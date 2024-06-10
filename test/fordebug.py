@@ -1,4 +1,5 @@
-x = True or 1/0
-print(x)
+class Test!1():
+    pass
+t = Test!1()
 # print(x.vt)
 

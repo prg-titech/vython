@@ -234,7 +234,7 @@ class Interpreter:
 
         # obj_testが真ならnode.thenを、偽ならnode.elifs,node,elseを、type-tag!=boolならTyepErrorを出す
         result = self.none_index
-        if(obj_test.type_tag != "bool"):         # testの評価値がbool出ない時
+        if(obj_test.type_tag != "bool"):         # testの評価値がboolでない時
             raise TypeError("boolean value is required in test of If_stmt")
         elif(obj_test.attributes["value"]):      # testの評価値がTrueの時
             for n in node.then_body:

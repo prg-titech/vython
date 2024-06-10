@@ -14,6 +14,7 @@ class Hash!2:
         if(s=="document"):
             result = 5405432
             incompat(self, result)
+            # result.incompatible(Hash, 2)
             return result
         else:
             return -1
@@ -30,6 +31,8 @@ target_file_name = "document"
 h_v2 = Hash!2()
 hashed_target_file_name = h_v2.hasher(target_file_name)
 
+print(hashed_file_name)
+print(hashed_target_file_name)
 result = (hashed_file_name == hashed_target_file_name)
 
 # 結果を出力

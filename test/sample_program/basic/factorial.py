@@ -6,5 +6,3 @@ def factorial(n):
 
 num = 4
 factorial(num)
-
-

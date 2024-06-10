@@ -246,7 +246,7 @@ class Transpiler(Transformer):
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
         if not self.transpile_mode:
             and_test_ast = self.calling_and_suger_ast
-            and_test_ast.value.test.args[0] = transformed_value_l
+            and_test_ast.value.test.operand.args[0] = transformed_value_l
             and_test_ast.value.body.args[1] = transformed_value_l
             and_test_ast.value.orelse.args[0].args[0].args[0] = transformed_value_r
             and_test_ast.value.orelse.args[1] = transformed_value_l
@@ -259,7 +259,7 @@ class Transpiler(Transformer):
         value = items[0]
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
         op = ast.Not()
-        return ast.UnaryOp(op,transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        return ast.Call(func=ast.Name(id='Primitive_Bool_v_0', ctx=ast.Load()), args=[ast.UnaryOp(op,transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)], keywords=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     def arith_expr(self, items):
         # 要素数が適切かどうかのチェック
