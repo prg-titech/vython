@@ -1,3 +1,6 @@
+# n個のバージョン情報を持つ値同士の演算の回数
+m = 2000
+
 # クラス定義
 class A!1:
     def __init__(self, v):
@@ -479,6 +482,126 @@ class H!10:
     def get_v(self):
         return self.v
 
+class I!1:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+
+class I!2:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+
+class I!3:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+
+class I!4:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+
+class I!5:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+    
+class I!6:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+    
+class I!7:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+
+class I!8:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+
+class I!9:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+
+class I!10:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+    
+class J!1:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+
+class J!2:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+
+class J!3:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+
+class J!4:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+
+class J!5:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+    
+class J!6:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+    
+class J!7:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+
+class J!8:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+
+class J!9:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+
+class J!10:
+    def __init__(self, v):
+        self.v = v
+    def get_v(self):
+        return self.v
+
 # 各バージョンのインスタンス作成
 ia1 = A!1(1)
 ia2 = A!2(1)
@@ -560,6 +683,26 @@ ih7 = H!7(1)
 ih8 = H!8(1)
 ih9 = H!9(1)
 ih10 = H!10(1)
+ii1 = I!1(1)
+ii2 = I!2(1)
+ii3 = I!3(1)
+ii4 = I!4(1)
+ii5 = I!5(1)
+ii6 = I!6(1)
+ii7 = I!7(1)
+ii8 = I!8(1)
+ii9 = I!9(1)
+ii10 = I!10(1)
+ij1 = J!1(1)
+ij2 = J!2(1)
+ij3 = J!3(1)
+ij4 = J!4(1)
+ij5 = J!5(1)
+ij6 = J!6(1)
+ij7 = J!7(1)
+ij8 = J!8(1)
+ij9 = J!9(1)
+ij10 = J!10(1)
 
 # 各バージョン情報を持つ値の作成
 va1 = ia1.get_v()
@@ -642,13 +785,32 @@ vh7 = ih7.get_v()
 vh8 = ih8.get_v()
 vh9 = ih9.get_v()
 vh10 = ih10.get_v()
+vi1 = ii1.get_v()
+vi2 = ii2.get_v()
+vi3 = ii3.get_v()
+vi4 = ii4.get_v()
+vi5 = ii5.get_v()
+vi6 = ii6.get_v()
+vi7 = ii7.get_v()
+vi8 = ii8.get_v()
+vi9 = ii9.get_v()
+vi10 = ii10.get_v()
+vj1 = ij1.get_v()
+vj2 = ij2.get_v()
+vj3 = ij3.get_v()
+vj4 = ij4.get_v()
+vj5 = ij5.get_v()
+vj6 = ij6.get_v()
+vj7 = ij7.get_v()
+vj8 = ij8.get_v()
+vj9 = ij9.get_v()
+vj10 = ij10.get_v()
 
-# n個のバージョン情報を持つ値の作成
-x = va1 + va2 + va3 + va4 + va5 + va6 + va7 + va8 + va9 + va10 + vb1 + vb2 + vb3 + vb4 + vb5 + vb6 + vb7 + vb8 + vb9 + vb10 + vc1 + vc2 + vc3 + vc4 + vc5 + vc6 + vc7 + vc8 + vc9 + vc10 + vd1 + vd2 + vd3 + vd4 + vd5 + vd6 + vd7 + vd8 + vd9 + vd10
-y = va1 + va2 + va3 + va4 + va5 + va6 + va7 + va8 + va9 + va10 + vb1 + vb2 + vb3 + vb4 + vb5 + vb6 + vb7 + vb8 + vb9 + vb10 + vc1 + vc2 + vc3 + vc4 + vc5 + vc6 + vc7 + vc8 + vc9 + vc10 + vd1 + vd2 + vd3 + vd4 + vd5 + vd6 + vd7 + vd8 + vd9 + vd10
+# 5個のバージョン情報を持つ値の作成
+x = (va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5) + (va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5) + (va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5) + (va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5) + (va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5)
+y = (va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5) + (va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5) + (va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5) + (va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5) + (va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5 + va1 + va2 + va3 + va4 + va5)
 
-# n個のバージョン情報を持つ値をm回演算する。ここで演算される全てのprimitiveオブジェクトはn個のバージョン情報を持つ
-m = 500
+# 5個のバージョン情報を持つ値をm回演算する。ここで演算される全てのprimitiveオブジェクトはn個のバージョン情報を持つ
 def loop(c, f, y):
     if(c > 0):
         f(y)

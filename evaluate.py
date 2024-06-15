@@ -10,6 +10,7 @@ from src.transpiler.compiler import Compiler as TC
 # 出力の切り捨て桁数
 floor_num = "{:.6f}"
 
+# コードを受け取りトランスパイラの評価モードで実行 -> csvに結果を出力し、平均実行時間だけを返す
 def evaluate_transpiler(transpile_mode, code, count, csv_writer):
     # トランスパイラインスタンスの作成と各種変数の設定
     transpiler = TC(code, transpile_mode, False)
@@ -47,6 +48,7 @@ def evaluate_transpiler(transpile_mode, code, count, csv_writer):
     # 実行時間の平均だけ返す
     return avg_t_execute
 
+# コードを受け取りインタプリタの評価モードで実行 -> csvに結果を出力し、平均実行時間だけを返す
 def evaluate_interpreter(mode, code, count, csv_writer):
     # インタプリタインスタンスの作成と各種変数の設定
     interpreter = IC(code, False)
@@ -75,12 +77,14 @@ def evaluate_interpreter(mode, code, count, csv_writer):
     avg_i_execute /= count
     csv_writer.writerow(['AVG_INTERPRETER', floor_num.format(avg_i_parse), floor_num.format(avg_i_ir), floor_num.format(avg_i_execute)])
 
+# フォルダーパス直下の全てのファイルのパスのリストを返す
 def get_file_path(folder_path):
     file_paths = glob.glob(os.path.join(folder_path, '*'))
     file_paths = [path for path in file_paths if os.path.isfile(path)]
     return file_paths
 
-def make_graph(data):
+# 散布図を作成
+def make_scatter_plot(data):
     # データセットを分割
     x_values, y_values = zip(*data)
 
@@ -98,6 +102,19 @@ def make_graph(data):
     # グラフを表示
     plt.show()
 
+# 棒グラフを作成
+def make_bar_graph(categories, values):
+    # 棒グラフを作成
+    plt.bar(categories, values)
+
+    # 説明情報の設定
+    plt.title('Measurement of the overhead of execution')
+    plt.xlabel('Number of version the value has')
+    plt.ylabel('total run time')
+
+    # グラフを表示
+    plt.show()
+
 def run():
     # 入力
     # 実行モード フォルダパス 実行回数
@@ -108,9 +125,14 @@ def run():
 
     # フォルダ直下の全てのファイルのパスを取得
     file_paths = get_file_path(folder_path)
+    file_paths.sort()
 
     # グラフに表示するデータを格納する配列
-    data = []
+    data_for_scatter_plot = []
+    data_for_bar_graph = [[],[]]
+
+    # 再帰回数上限の変更
+    sys.setrecursionlimit(2100)
 
     with open('execution_time.csv', 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
@@ -141,7 +163,9 @@ def run():
                     x = evaluate_transpiler(True, code, count, csv_writer)
                     # with version
                     y = evaluate_transpiler(False, code, count, csv_writer)
-                    data.append([x,y])
+                    data_for_scatter_plot.append([x,y])
+                    data_for_bar_graph[0].append(file_path[-6:-3])
+                    data_for_bar_graph[1].append(y)
                 case "both":
                     evaluate_interpreter(None, code, count, csv_writer)
                     # unversion
@@ -152,7 +176,10 @@ def run():
             csv_writer.writerow([])
             csv_writer.writerow([])
 
+            print(f"Evaluated: {file_path}")
+
     # グラフの描画
-    make_graph(data)
+    # make_scatter_plot(data_for_scatter_plot)
+    make_bar_graph(data_for_bar_graph[0], data_for_bar_graph[1])
 
 run()
