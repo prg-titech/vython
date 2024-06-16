@@ -7,6 +7,7 @@ class CommandError(Exception):
 
 def main():
     execute_mode = sys.argv[1]
+    sys.setrecursionlimit(2100)
     # コマンドライン引数の処理
     try:
         # インタプリタを使用して実行

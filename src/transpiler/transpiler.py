@@ -370,7 +370,7 @@ class Transpiler(Transformer):
         return ast.Call(func=func,args=args,keywords=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
     def version(self, items):
-        number = items[0][0]
+        number = items[0]
         return str(number)
 
     def getattr(self, items):

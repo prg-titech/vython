@@ -220,7 +220,7 @@ class LarkToCustomAST(Transformer):
         return Call(func=transformed_func, args=args)
 
     def version(self, items):
-        number = items[0][0]
+        number = items[0]
         return Version(version=number)
 
     def getattr(self, items):

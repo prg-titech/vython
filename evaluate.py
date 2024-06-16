@@ -1,9 +1,9 @@
-import time
 import csv
 import sys
 import os
 import glob
 import matplotlib.pyplot as plt
+import numpy as np
 from src.interpreter.compiler import Compiler as IC
 from src.transpiler.compiler import Compiler as TC
 
@@ -102,7 +102,7 @@ def make_scatter_plot(data):
     # グラフを表示
     plt.show()
 
-# 棒グラフを作成
+# with-versionの実行時間をまとめた棒グラフを作成
 def make_bar_graph(categories, values):
     # 棒グラフを作成
     plt.bar(categories, values)
@@ -115,21 +115,65 @@ def make_bar_graph(categories, values):
     # グラフを表示
     plt.show()
 
+# with/un-versionの実行時間をまとめた棒グラフと、with/unの比を表す折れ線グラフを作成
+def make_refined_bar_graph(categories, bar_data1, bar_data2, line_data):
+    # プロットの作成
+    (fig, ax1) = plt.subplots()
+
+    # X軸の位置
+    x = np.arange(len(categories))
+
+    width = 0.35
+
+    # 棒グラフ
+    bars1 = ax1.bar(x - width/2, bar_data1, width, label='Python Execution Time(s)')
+    bars2 = ax1.bar(x + width/2, bar_data2, width, label='Vython Execution Time(s)')
+
+    # Y軸のラベル
+    ax1.set_xlabel('Number of version the value has')
+    ax1.set_ylabel('average total run time(s)')
+    ax1.set_title('Execution Time and Vython/Python Ratio')
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(categories)
+    # ax1.legend(loc='upper left')
+
+    # 折れ線グラフ用のY軸
+    ax2 = ax1.twinx()
+    ax2.set_ylabel('Vython/Python Ratio')
+
+    # 折れ線グラフ
+    line = ax2.plot(x, line_data, color='tab:red', label='Vython/Python Ratio', marker='o')
+
+    # 凡例をまとめる
+    lines, labels = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(lines + lines2, labels + labels2, loc='upper left')
+
+    plt.show()
+
 def run():
     # 入力
     # 実行モード フォルダパス 実行回数
     input_array = input().split()
     mode = input_array[0]
-    folder_path = input_array[1]
+    path = input_array[1]
     count = int(input_array[2])
 
-    # フォルダ直下の全てのファイルのパスを取得
-    file_paths = get_file_path(folder_path)
-    file_paths.sort()
+    # pathがファイルを指しているかを確認
+    # ファイルパスの場合 -> そのファイルだけを評価
+    if os.path.isfile(path):
+        file_paths = [path]
+    # フォルダパスの場合 -> その直下のファイルを全て評価
+    else:
+        # フォルダ直下の全てのファイルのパスを取得
+        file_paths = get_file_path(path)
+        file_paths.sort()
 
     # グラフに表示するデータを格納する配列
     data_for_scatter_plot = []
-    data_for_bar_graph = [[],[]]
+    data_category = []
+    data_execution_time_with_version = []
+    data_execution_time_un_version = []
 
     # 再帰回数上限の変更
     sys.setrecursionlimit(2100)
@@ -139,6 +183,7 @@ def run():
 
         # ファイル数分以下を実行
         for file_path in file_paths:
+            data_category.append(file_path[-6:-3])
             # ファイルの読み込み
             try:
                 with open(file_path, "r") as file:
@@ -161,11 +206,11 @@ def run():
                 case "t":
                     # unversion
                     x = evaluate_transpiler(True, code, count, csv_writer)
+                    data_execution_time_un_version.append(x)
                     # with version
                     y = evaluate_transpiler(False, code, count, csv_writer)
+                    data_execution_time_with_version.append(y)
                     data_for_scatter_plot.append([x,y])
-                    data_for_bar_graph[0].append(file_path[-6:-3])
-                    data_for_bar_graph[1].append(y)
                 case "both":
                     evaluate_interpreter(None, code, count, csv_writer)
                     # unversion
@@ -180,6 +225,10 @@ def run():
 
     # グラフの描画
     # make_scatter_plot(data_for_scatter_plot)
-    make_bar_graph(data_for_bar_graph[0], data_for_bar_graph[1])
+    # make_bar_graph(data_category, data_execution_time_with_version)
+    data_with_un_ratio = []
+    for i in range(len(data_execution_time_with_version)):
+        data_with_un_ratio.append(data_execution_time_with_version[i]/data_execution_time_un_version[i])
+    make_refined_bar_graph(data_category, data_execution_time_un_version, data_execution_time_with_version, data_with_un_ratio)
 
 run()

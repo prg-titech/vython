@@ -164,3 +164,4 @@ cython_debug/
 output.py
 tmp.log
 execution_time.csv
+benchmark/benchmark_program

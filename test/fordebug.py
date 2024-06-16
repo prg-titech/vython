@@ -1,5 +1,2 @@
-class Test!1():
+class A!237:
     pass
-t = Test!1()
-# print(x.vt)
-
