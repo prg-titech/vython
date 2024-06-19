@@ -39,7 +39,7 @@ class Compiler:
 
     def execute(self):
         output = io.StringIO()
-        with contextlib.redirect_stdout(output): 
+        with contextlib.redirect_stdout(output):
             exec(self.pythonCode,globals())
         captured_output = output.getvalue()
         self.result = captured_output
@@ -55,8 +55,20 @@ class Compiler:
         self.execute()
         return self.result
     
+    # [評価用]: 評価用の特別な評価メソッド - evaluate_timeメソッドからしか使われない
+    def execute_for_evaluate(self, mode):
+        global_dict = globals()
+        start_time = time.time()
+        exec(self.pythonCode,global_dict)
+        end_time = time.time()
+        if mode == "gen-t":
+            start_time = time.time()
+            exec("main(m, f, y)",global_dict)
+            end_time = time.time()
+        return end_time - start_time
+    
     # [評価用]: fullpathの各段階での実行時間だけを返す
-    def evaluate_time(self):
+    def evaluate_time(self, mode):
         execution_time = dict()
 
         start_time = time.time()
@@ -74,10 +86,7 @@ class Compiler:
         end_time = time.time()
         execution_time["unparse"] = end_time - start_time
 
-        start_time = time.time()
-        self.execute()
-        end_time = time.time()
-        execution_time["execute"] = end_time - start_time
+        execution_time["execute"] = self.execute_for_evaluate(mode)
 
         return execution_time
     
