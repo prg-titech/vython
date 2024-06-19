@@ -3,6 +3,7 @@ import sys
 import os
 import glob
 import string
+import re
 import matplotlib.pyplot as plt
 import numpy as np
 from src.interpreter.compiler import Compiler as IC
@@ -10,6 +11,15 @@ from src.transpiler.compiler import Compiler as TC
 
 # 出力の切り捨て桁数
 floor_num = "{:.6f}"
+
+# ファイルパスを受け取り、グラフに表示する適切なカテゴリー名を返す
+def file_category_name(path):
+    get_file_name_pattern = r'.*/([^/]+)\.py$'
+    file_name = re.match(get_file_name_pattern, path).group(1)
+    if re.match(r'benchmark_.*$', file_name):
+        return file_name[-3:]
+    else:
+        return file_name
 
 # コードを受け取りトランスパイラの評価モードで実行 -> csvに結果を出力し、平均実行時間だけを返す
 def evaluate_transpiler(evaluate_mode, transpile_mode, code, count, csv_writer):
@@ -258,11 +268,15 @@ def run():
     # 実行モード フォルダパス 実行回数
     input_array = input().split()
     mode = input_array[0]
-    path = input_array[1]
-    count = int(input_array[2])
+    if mode == "gen-t":
+        count = int(input_array[1])
+    else:
+        path = input_array[1]
+        count = int(input_array[2])
 
     # 特殊な評価用プログラムを生成する上での要件
-    gen_code_requirements = [[2000,10,16,5],
+    gen_code_requirements = [[2000,10,16,1],
+                             [2000,10,16,5],
                              [2000,10,16,10],
                              [2000,10,16,20],
                              [2000,10,16,40],
@@ -294,7 +308,7 @@ def run():
 
         # ファイル数分以下を実行
         for file_path in file_paths:
-            data_category.append(file_path[-6:-3])
+            data_category.append(file_category_name(file_path))
             # ファイルの読み込み
             try:
                 with open(file_path, "r") as file:
