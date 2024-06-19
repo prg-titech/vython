@@ -311,14 +311,14 @@ project-name/
 
 【ToDo】最終的にGithubにpushするスクリプトは、SRC対応のものにする。
 
-<b>評価スクリプトで使用できる機能</b>
+### 評価スクリプトで使用できる機能
 1. プロジェクトルートで次のコマンドを打つ
 ```sh
 python3 evaluate.py
 ```
 
 2. 入力受付状態になるので、次の説明に従って入力を行う
-  - 評価用vythonプログラムを生成し、それらに対しトランスパイラを使用した評価を行う
+  - 特殊な評価用vythonプログラムを生成し、それらに対しトランスパイラを使用した評価
 
     評価用vythonプログラムを生成し、それぞれ10回評価する
     ```sh
@@ -329,12 +329,11 @@ python3 evaluate.py
     ・ 平均実行時間についてまとめたグラフ<br>
     ・ バージョン数と実行時間の比をまとめた散布図<br>
     【注意】<br>
-    ・生成される評価用vythonプログラムは`evaluate.py/run()`内の変数`gen_code_requirements`に渡す式で指定する<br>
+    ・生成する評価用vythonプログラムは`evaluate.py/run()`内の変数`gen_code_requirements`に渡す式で変更可能<br>
 
   - パスを指定し、その直下のファイル全てについて評価を行う
 
     - インタプリタを使用した評価
-
       test/sample_program/basic 以下の全てのvythonプログラムをそれぞれ10回評価するには、以下を入力
       ```sh
       nor-i test/sample_program/basic 10
@@ -343,14 +342,13 @@ python3 evaluate.py
       ・ 全ての評価を記録したcsvファイル<br>
 
     - トランスパイラを使用した評価
-
-    test/sample_program/basic 以下の全てのvythonプログラムをそれぞれ10回評価するには、以下を入力
+      test/sample_program/basic 以下の全てのvythonプログラムをそれぞれ10回評価するには、以下を入力
       ```sh
       nor-t test/sample_program/basic 10
       ```
       【出力】<br>
       ・ 全ての評価を記録したcsvファイル<br>
       ・ 平均実行時間についてまとめたグラフ<br>
-      
+
 <b>SRCに記載した評価を行う方法</b>
 確定次第追記
