@@ -89,43 +89,6 @@ python3 benchmark/main.py
 
 確定次第追記
 
-## Structure
-```
-project-name/
-├── README.md
-├── src/                               # ソースコードが含まれるディレクトリ
-│     ├── __init__.py                  # 初期化ファイル
-│     ├── main.py                      # Runner
-│     │
-│     ├── interpreter/                 # インタプリタ実装ソースコードが含まれるディレクトリ
-│     │    ├── __init__.py             # 初期化ファイル
-│     │    ├── run.py                  # インタプリタのRunner
-│     │    ├── compiler.py             # コンパイラパイプラインの統括
-│     │    ├── parser.py               # [Phase 1] パーサー
-│     │    ├── preprocess.py           # [Phase 2] 前処理
-│     │    ├── larkToIR.py             # [Phase 3] Lark構文解析結果から中間表現へのトランスパイラ
-│     │    ├── interpreter.py          # [Phase 4] インタープリタ
-│     │    ├── compatibilitychecker.py # バージョンテーブルを使った互換性検査器
-│     │    └── syntax/                 # Vython IRの構文に関するモジュールが含まれるディレクトリ
-│     │        ├── __init__.py         # 初期化ファイル
-│     │        ├── language.py         # Vython IRの構文定義
-│     │        ├── semantics.py        # Vython IR Interpreterの意味論的なオブジェクト（値、環境、ヒープなど）の定義
-│     │        └── lark-vython.lark    # Lark-vython 構文のEBNF定義
-│     │
-│     ├── transpiler/                  # トランスパイラ実装ソースコードが含まれるディレクトリ
-│     │    ├──
-│     ...
-│
-└── test/                       # テストコードが含まれるディレクトリ
-    ├── __init__.py             # 初期化ファイル
-    ├── test_interpreter/       # インタプリタ用のテストコード & サンプルプログラムが含まれるディレクトリ
-    │   ├──     
-    │   ...
-    ├── test_transpiler/       # トランスパイラ用のテストコード & サンプルプログラムが含まれるディレクトリ
-    │   ├── 
-...
-```
-
 ## Compiler Structure and TODO
 [src/compiler.py](https://github.com/prg-titech/vython/blob/master/src/compiler.py) に定義されています。
 ```
