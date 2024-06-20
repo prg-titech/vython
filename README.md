@@ -311,13 +311,15 @@ project-name/
 
 **ToDo**:  最終的にGithubにpushするスクリプトは、SRC対応のものにする。
 
-0. `benchmark/main.py` の benchmark setting を編集する
+### How to run (モード共通)
+0. `benchmark/main.py` の benchmark setting を以下にしたがって編集する
 1. プロジェクトルートで次のコマンドを打つ
 ```sh
 python3 benchmark/main.py
 ```
+2. 生成された`benchmark/log/result`に結果の`*.csv`とグラフの`*.png`を確認する
 
-### `gen-t`: オーバーヘッドの評価(トランスパイラ)
+### モード`gen-t`: オーバーヘッドの評価(トランスパイラ)
 - 【出力】
   - 全ての評価を記録したcsvファイル
   - 平均実行時間についてまとめたグラフ
@@ -326,11 +328,11 @@ python3 benchmark/main.py
 ### サンプルファイルの計算時間の評価
 - `dirpath_benrhcmarks`変数が示すディレクトリ以下のプログラムを用い、計算時間の評価を行う。
 
-#### `nor-i`: インタプリタを使用した評価
+#### モード`nor-i`: インタプリタを使用した評価
 - 【出力】
   - csvファイル
 
-#### `nor-t`: トランスパイラを使用した評価
+#### モード`nor-t`: トランスパイラを使用した評価
 - 【出力】
   - csvファイル
   - 各ベンチマークスートの平均実行時間を示すグラフ
