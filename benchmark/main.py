@@ -48,7 +48,7 @@ def run():
 
     match benchmark_mode:
         case "nor-i" | "nor-t":
-            file_paths = get_file_path(dirpath_benrhcmarks)
+            file_paths = get_file_path(dirpath_benchmarks)
         case "gen-t":
             allocate_vython_code(gen_code_requirements, source_path)
             file_paths = get_file_path(source_path)
