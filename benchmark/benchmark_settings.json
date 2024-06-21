@@ -1,0 +1,9 @@
+{
+  "benchmark_mode": "gen-t",
+  "num_iterations": 1,
+  "dirpath_benchmarks": "test/sample_program/basic",
+  "num_loop": 2000,
+  "num_base_names": 10,
+  "num_base_versions": 16,
+  "num_actual_versions_list": [1, 5, 10, 20, 40, 80, 160]
+}

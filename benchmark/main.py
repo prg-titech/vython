@@ -1,24 +1,37 @@
 import os
 import sys
+import json
 from datetime import datetime
 
 from evaluation import evaluate_files
 from code_generation import allocate_vython_code
 from utils import get_file_path, log
 
+##########################
+# Benchmark settings
+settings_path = "benchmark/benchmark_settings.json"
+##########################
+
+def load_settings(settings_path):
+    with open(settings_path, 'r') as file:
+        settings = json.load(file)
+    return settings
+
 def run():
+    settings = load_settings(settings_path)
+
     #########################################################
-    # Benchmark settings
-    benchmark_mode = "gen-t"
-    num_iterations = 1
-    dirpath_benrhcmarks = "test/sample_program/basic"
+    # Benchmark settings from the settings file
+    benchmark_mode = settings["benchmark_mode"]
+    num_iterations = settings["num_iterations"]
+    dirpath_benchmarks = settings["dirpath_benchmarks"]
 
     # Parameters for generating vython code
-    num_loop = 2000
-    num_base_names = 10
-    num_base_versions = 16
-    num_actual_versions_list = [1, 5, 10, 20, 40, 80, 160]
-    #########################################################    
+    num_loop = settings["num_loop"]
+    num_base_names = settings["num_base_names"]
+    num_base_versions = settings["num_base_versions"]
+    num_actual_versions_list = settings["num_actual_versions_list"]
+    #########################################################   
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     base_path = f"benchmark/log/{timestamp}"
