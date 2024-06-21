@@ -73,17 +73,29 @@ pytest test/
 **ToDo**:  最終的にGithubにpushするスクリプトは、SRC対応のものにする。
 
 ### How to run
-0. `benchmark/main.py` の benchmark setting を以下にしたがって編集する
-  - オーバーヘッドの評価
-    - モード`gen-t`: オーバーヘッドの評価(トランスパイラ)
-  - サンプルファイルの計算時間の評価
-    - モード`nor-i`: インタプリタを使用した評価
-    - モード`nor-t`: トランスパイラを使用した評価
+0. `benchmark/benchmark_settings.json` を以下にしたがって編集する
 1. プロジェクトルートで次のコマンドを打つ
 ```sh
 python3 benchmark/main.py
 ```
 2. 生成された`benchmark/log/result`に結果の`*.csv`とグラフの`*.png`を確認する
+
+#### ベンチマーク設定
+- `"benchmark_mode"`: ベンチマークモード
+  - オーバーヘッドの評価
+    - モード`gen-t`: オーバーヘッドの評価(トランスパイラ)
+  - サンプルファイルの計算時間の評価
+    - モード`nor-i`: インタプリタを使用した評価
+    - モード`nor-t`: トランスパイラを使用した評価
+- ベンチマークモード共通の設定
+  - `"num_iretations"`: ベンチマークを何回実行するか
+- モード`gen-t`の設定項目
+  - `"num_loop"`: 何回primitive演算を行うか
+  - `"num_base_names"`: 生成されるvythonファイルにおけるクラス名の種類数
+  - `"num_base_versions"`: 生成されるvythonファイルにおける各クラスのバージョン数
+  - `"num_actual_versions_list"`: (TODO: 埋める)
+- モード`nor-i`, `nor-t` の設定項目
+  - `"dirpath_benchmarks"`: `nor-i`と`nor-t`で使われるサンプルファイルのディレクトリ
 
 ### SRCに記載した評価を行う方法
 
