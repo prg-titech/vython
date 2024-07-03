@@ -13,7 +13,7 @@ class Compiler:
 
         # 評価時に使用するオブジェクト
         self.vythonCode = vythonCode
-        self.vythonaAST = None
+        self.vythonAST = None
         self.pythonAST = None
         self.pythonCode = None
         self.result = None
@@ -21,12 +21,12 @@ class Compiler:
     def parse(self):
         if self.debug_mode:
             print(f"File Content:\n{self.vythonCode}")
-        self.vythonaAST = Parser(debug_mode = False).parse(self.vythonCode)
+        self.vythonAST = Parser(debug_mode = False).parse(self.vythonCode)
         if self.debug_mode:
-            print(self.vythonaAST)
+            print(self.vythonAST)
     
     def transpile(self):
-        self.pythonAST = Transpiler(self.debug_mode, self.transpile_mode).transform(self.vythonaAST)
+        self.pythonAST = Transpiler(self.debug_mode, self.transpile_mode).transform(self.vythonAST)
         if self.show_ast:
             print(ast.dump(self.pythonAST,False,indent=4))
 
