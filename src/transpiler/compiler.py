@@ -3,13 +3,25 @@ import io
 import contextlib
 import time
 from src.transpiler.vython_parser import Parser
-from src.transpiler.transpiler import Transpiler
+from src.transpiler.transpiler.transpiler_to_vython import TranspilerToVython
+from src.transpiler.transpiler.transpiler_to_python import TranspilerToPython
+from src.transpiler.transpiler.transpiler_to_vtinit import TranspilerToVTInit
+from src.transpiler.transpiler.transpiler_to_vtcheck import TranspilerToVTCheck
+from src.transpiler.transpiler.transpiler_to_vt_synt import TranspilerToVTSynt
 
 class Compiler:
-    def __init__(self, vythonCode, transpile_mode, show_ast, debug_mode=False, ):
+    def __init__(self, vythonCode, transpile_mode, show_ast=False, debug_mode=False, ):
+        # デバッグ用
         self.debug_mode = debug_mode
         self.show_ast = show_ast
+
+        # コンパイルオプション
         self.transpile_mode = transpile_mode
+        # - python
+        # - vt-init
+        # - vt-synt
+        # - vt-check
+        # - vython
 
         # 評価時に使用するオブジェクト
         self.vythonCode = vythonCode
@@ -26,7 +38,17 @@ class Compiler:
             print(self.vythonAST)
     
     def transpile(self):
-        self.pythonAST = Transpiler(self.debug_mode, self.transpile_mode).transform(self.vythonAST)
+        # transpile_modeに応じたTranspilerのディスパッチ
+        match self.transpile_mode:
+            case "vython": transpiler = TranspilerToVython(self.debug_mode)
+            case "python": transpiler = TranspilerToPython(self.debug_mode)
+            case "vt-init": transpiler = TranspilerToVTInit(self.debug_mode)
+            case "vt-check": transpiler = TranspilerToVTCheck(self.debug_mode)
+            case "vt-synt": transpiler = TranspilerToVTSynt(self.debug_mode)
+            # どれにも当てはまらない場合はvythonで実行
+            case _: transpiler = TranspilerToVython(self.debug_mode)
+
+        self.pythonAST = transpiler.transform(self.vythonAST)
         if self.show_ast:
             print(ast.dump(self.pythonAST,False,indent=4))
 

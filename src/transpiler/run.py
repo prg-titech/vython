@@ -21,8 +21,28 @@ def just_execute_phase(message, function):
 def run(args):
     debug_mode = False
     show_ast = False
-    transpile_mode = False
+    transpile_mode = "vython"
     file_path = None
+
+    # transpile_modeはコマンドラインの第二引数に来ることを想定
+    # 指定されていないかったらデフォルトで"vython"のままとする
+    match args[0]:
+        case "vython": 
+            transpile_mode = "vython"
+            args = args[1:]
+        case "python": 
+            transpile_mode = "python"
+            args = args[1:]
+        case "vt-init": 
+            transpile_mode = "vt-init"
+            args = args[1:]
+        case "vt-check": 
+            transpile_mode = "vt-check"
+            args = args[1:]
+        case "vt-synt": 
+            transpile_mode = "vt-synt"
+            args = args[1:]
+        case _: pass
 
     try:
         for arg in args:
