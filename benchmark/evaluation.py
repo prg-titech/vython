@@ -6,41 +6,56 @@ from utils import file_category_name, log
 from src.interpreter.compiler import Compiler as IC
 from src.transpiler.compiler import Compiler as TC
 from plotting import make_refined_bar_graph, make_scatter_plot
+from benchmark_settings import BenchmarkSettings
 import numpy as np
 
-def evaluate_transpiler(evaluate_mode, transpile_mode, code, count, csv_writer):
-    log(f"Evaluating transpiler with transpile_mode={transpile_mode}")
-    transpiler = TC(code, transpile_mode, False)
-    avg_t_parse = avg_t_transpile = avg_t_unparse = avg_t_execute = 0
-    execution_times = []
+def evaluate_transpiler(benchmark_target, comparison_strategy, code, count, csv_writer):
 
-    if transpile_mode:
-        csv_writer.writerow(['UNVERSION_TRANSPILER', 'parse', 'transpile', 'unparse', 'execute'])
-    else:
-        csv_writer.writerow(['WITHVERSION_TRANSPILER', 'parse', 'transpile', 'unparse', 'execute'])
+    match comparison_strategy:
+        case "all":
+            transpile_modes = ["vython","python","vt-init","vt-check","vt-synt"]
+        case "v&p":
+            transpile_modes = ["vython","python"]
+        case _:
+            transpile_modes = []
 
-    for i in range(count):
-        result_i = transpiler.evaluate_time(evaluate_mode)
-        csv_writer.writerow([f"{result_i['parse']:.6f}" , f"{result_i['transpile']:.6f}", f"{result_i['unparse']:.6f}", f"{result_i['execute']:.6f}"])
-        avg_t_parse += result_i["parse"]
-        avg_t_transpile += result_i["transpile"]
-        avg_t_unparse += result_i["unparse"]
-        avg_t_execute += result_i["execute"]
-        execution_times.append(result_i['execute'])
+    # この関数が返すオブジェクト
+    result = dict()
+
+    for transpile_mode in transpile_modes:
+        log(f"Evaluating transpiler with transpile_mode={transpile_mode}")
+        transpiler = TC(code, transpile_mode)
+        avg_t_parse = avg_t_transpile = avg_t_unparse = avg_t_execute = 0
+        execution_times = []
+
+        csv_writer.writerow(['transpile_mode = ' + transpile_mode])
+        csv_writer.writerow(['parse', 'transpile', 'unparse', 'execute'])
+
+        for i in range(count):
+            evaluate_times = transpiler.evaluate_time(benchmark_target)
+            csv_writer.writerow([f"{evaluate_times['parse']:.6f}" , f"{evaluate_times['transpile']:.6f}", f"{evaluate_times['unparse']:.6f}", f"{evaluate_times['execute']:.6f}"])
+            avg_t_parse += evaluate_times["parse"]
+            avg_t_transpile += evaluate_times["transpile"]
+            avg_t_unparse += evaluate_times["unparse"]
+            avg_t_execute += evaluate_times["execute"]
+            execution_times.append(evaluate_times['execute'])
     
-    avg_t_parse /= count
-    avg_t_transpile /= count
-    avg_t_unparse /= count
-    avg_t_execute /= count
-    csv_writer.writerow(['AVG_TRANSPIER', f"{avg_t_parse:.6f}", f"{avg_t_transpile:.6f}", f"{avg_t_unparse:.6f}", f"{avg_t_execute:.6f}"])
+        avg_t_parse /= count
+        avg_t_transpile /= count
+        avg_t_unparse /= count
+        avg_t_execute /= count
+        csv_writer.writerow(['AVG', f"{avg_t_parse:.6f}", f"{avg_t_transpile:.6f}", f"{avg_t_unparse:.6f}", f"{avg_t_execute:.6f}"])
 
-    std_dev = np.std(execution_times)
-    sem = std_dev / np.sqrt(count)
+        std_dev = np.std(execution_times)
+        sem = std_dev / np.sqrt(count)
 
-    log(f"Completed transpiler evaluation: avg_execute_time={avg_t_execute:.6f}, sem={sem:.6f}")
-    return (avg_t_execute, sem)
+        log(f"Completed transpiler evaluation: avg_execute_time={avg_t_execute:.6f}, sem={sem:.6f}")
 
-def evaluate_interpreter(mode, code, count, csv_writer):
+        result[transpile_mode] = (avg_t_execute, sem)
+
+    return result
+
+def evaluate_interpreter(code, count, csv_writer):
     log("Evaluating interpreter")
     interpreter = IC(code, False)
     avg_i_parse = avg_i_ir = avg_i_execute = 0
@@ -57,16 +72,15 @@ def evaluate_interpreter(mode, code, count, csv_writer):
     avg_i_parse /= count
     avg_i_ir /= count
     avg_i_execute /= count
-    csv_writer.writerow(['AVG_INTERPRETER', f"{avg_i_parse:.6f}", f"{avg_i_ir:.6f}", f"{avg_i_execute:.6f}"])
+    csv_writer.writerow(['AVG', f"{avg_i_parse:.6f}", f"{avg_i_ir:.6f}", f"{avg_i_execute:.6f}"])
 
     log(f"Completed interpreter evaluation: avg_execute_time={avg_i_execute:.6f}")
 
-def evaluate_files(file_paths, mode, count, result_path):
+def evaluate_files(file_paths, settings, result_path):
+    benchmark_processor = settings.processor
+    num_iterations = settings.num_iteration
+
     data_category = []
-    data_execution_time_with_version = []
-    data_execution_time_un_version = []
-    data_sem_with_version = []
-    data_sem_un_version = []
 
     with open(os.path.join(result_path, 'execution_time.csv'), 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
@@ -83,17 +97,21 @@ def evaluate_files(file_paths, mode, count, result_path):
                 log(f"An error occurred while opening the file: {e}")
                 sys.exit(1)
 
-            csv_writer.writerow(['Program', file_path, ': Execution Time in', mode])
+            csv_writer.writerow(['Program', file_path, ': Execution Time in', benchmark_processor])
             csv_writer.writerow([])
 
-            match mode:
-                case "nor-i":
-                    evaluate_interpreter(None, code, count, csv_writer)
-                case "nor-t" | "gen-t":
-                    x = evaluate_transpiler(mode, True, code, count, csv_writer)
+            match benchmark_processor:
+                case "interpreter":
+                    evaluate_interpreter(code, num_iterations, csv_writer)
+                case "transpiler":
+                    comparison_strategy = settings.comparison_strategy
+                    benchmark_target = settings.benchmark_target
+                    x = evaluate_transpiler(benchmark_target, comparison_strategy, code, num_iterations, csv_writer)
+                    # 今日はここまで実装した
+
                     data_execution_time_un_version.append(x[0])
                     data_sem_un_version.append(x[1])
-                    y = evaluate_transpiler(mode, False, code, count, csv_writer)
+                    y = evaluate_transpiler(benchmark_target, comparison_strategy, code, num_iterations, csv_writer)
                     data_execution_time_with_version.append(y[0])
                     data_sem_with_version.append(y[1])
 
