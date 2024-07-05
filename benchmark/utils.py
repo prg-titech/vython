@@ -13,7 +13,7 @@ def file_category_name(path):
     else:
         return file_name
 
-def get_file_path(path):
+def get_file_paths(path):
     log(f"Getting file paths from {path}")
     if os.path.isfile(path):
         return [path]
