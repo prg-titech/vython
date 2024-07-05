@@ -83,7 +83,7 @@ class Compiler:
         start_time = time.time()
         exec(self.pythonCode,global_dict)
         end_time = time.time()
-        if mode == "gen-t":
+        if mode == "generate":
             start_time = time.time()
             exec("main(m, f, y)",global_dict)
             end_time = time.time()
