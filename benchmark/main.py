@@ -7,6 +7,7 @@ from evaluation import evaluate_files
 from code_generation import allocate_vython_code
 from utils import get_file_paths, log
 from benchmark_settings import BenchmarkSettings
+from plotting import make_refined_bar_graph
 
 ##########################
 # Benchmark settings
@@ -40,7 +41,17 @@ def run():
             file_paths = get_file_paths(source_path)
 
     sys.setrecursionlimit(2500)
-    evaluate_files(file_paths, settings, result_path)
+    evaluation_data = evaluate_files(file_paths, settings, result_path)
+
+    # generate graph
+    match settings.processor:
+        case "transpiler":
+            make_refined_bar_graph(evaluation_data, result_path)
+        case "interpreter":
+            pass
+        case _:
+            pass
+
     log("Evaluation completed.")
 
 if __name__ == "__main__":

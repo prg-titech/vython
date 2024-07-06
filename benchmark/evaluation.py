@@ -59,28 +59,36 @@ def evaluate_interpreter(code, count, csv_writer):
     log("Evaluating interpreter")
     interpreter = IC(code, False)
     avg_i_parse = avg_i_ir = avg_i_execute = 0
+    execution_times = []
 
     csv_writer.writerow(['INTERPRETER', 'parse', 'compile_to_ir', 'execute'])
 
     for i in range(count):
-        result_i = interpreter.evaluate_time()
-        csv_writer.writerow([f"{result_i['parse']:.6f}" , f"{result_i['compile_to_ir']:.6f}", f"{result_i['execute']:.6f}"])
-        avg_i_parse += result_i["parse"]
-        avg_i_ir += result_i["compile_to_ir"]
-        avg_i_execute += result_i["execute"]
+        evaluate_times = interpreter.evaluate_time()
+        csv_writer.writerow([f"{evaluate_times['parse']:.6f}" , f"{evaluate_times['compile_to_ir']:.6f}", f"{evaluate_times['execute']:.6f}"])
+        avg_i_parse += evaluate_times["parse"]
+        avg_i_ir += evaluate_times["compile_to_ir"]
+        avg_i_execute += evaluate_times["execute"]
+        execution_times.append(evaluate_times['execute'])
     
     avg_i_parse /= count
     avg_i_ir /= count
     avg_i_execute /= count
     csv_writer.writerow(['AVG', f"{avg_i_parse:.6f}", f"{avg_i_ir:.6f}", f"{avg_i_execute:.6f}"])
 
+    std_dev = np.std(execution_times)
+    sem = std_dev / np.sqrt(count)
+
     log(f"Completed interpreter evaluation: avg_execute_time={avg_i_execute:.6f}")
+
+    return (avg_i_execute, sem)
 
 def evaluate_files(file_paths, settings, result_path):
     benchmark_processor = settings.processor
-    num_iterations = settings.num_iteration
+    num_iterations = settings.num_iterations
 
     data_category = []
+    data_execution_time = []
 
     with open(os.path.join(result_path, 'execution_time.csv'), 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
@@ -102,25 +110,19 @@ def evaluate_files(file_paths, settings, result_path):
 
             match benchmark_processor:
                 case "interpreter":
-                    evaluate_interpreter(code, num_iterations, csv_writer)
+                    execution_time_dict = evaluate_interpreter(code, num_iterations, csv_writer)
                 case "transpiler":
                     comparison_strategy = settings.comparison_strategy
                     benchmark_target = settings.benchmark_target
-                    x = evaluate_transpiler(benchmark_target, comparison_strategy, code, num_iterations, csv_writer)
-                    # 今日はここまで実装した
-
-                    data_execution_time_un_version.append(x[0])
-                    data_sem_un_version.append(x[1])
-                    y = evaluate_transpiler(benchmark_target, comparison_strategy, code, num_iterations, csv_writer)
-                    data_execution_time_with_version.append(y[0])
-                    data_sem_with_version.append(y[1])
+                    execution_time_dict = evaluate_transpiler(benchmark_target, comparison_strategy, code, num_iterations, csv_writer)
+            
+            data_execution_time.append(execution_time_dict)
 
             csv_writer.writerow([])
             csv_writer.writerow([])
 
             log(f"Evaluated: {file_path}")
 
-    data_with_un_ratio = [data_execution_time_with_version[i] / data_execution_time_un_version[i] for i in range(len(data_execution_time_with_version))]
-    make_refined_bar_graph(data_category, data_execution_time_un_version, data_execution_time_with_version, data_with_un_ratio, data_sem_un_version, data_sem_with_version, result_path)
-    if mode == "gen-t":
-        make_scatter_plot(list(zip(data_category, data_with_un_ratio)), result_path)
+
+    return list(zip(data_category,data_execution_time))
+
