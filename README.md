@@ -49,9 +49,14 @@ vython -t -d test/test_transpiler/sample/basic/classandmethod.py | tee tmp.log
 ```sh
 vython -t --ast test/test_transpiler/sample/basic/classandmethod.py
 ```
-- `--wo` を使用するとバージョンの互換性検査機構を含まないPython ASTにトランスパイルされます。(トランスパイラ)
+- `-t` の**直後**で以下に示すオプションを使用すると、`vython`の提案言語機構のON,OFFを選択したトランスパイルができます。(トランスパイラ) 
+  - `vython`  : 全ての提案言語機構がON
+  - `python`  : 全ての提案言語機構がOFF
+  - `vt-init` : オブジェクトに自身のバージョン情報だけを持たせる
+  - `vt-synt` : オブジェクトが自身のバージョン情報を持ち、他のオブジェクトの計算でそれらが合成される
+  - `vt-check`: オブジェクトが自身のバージョン情報を持ち、他のオブジェクトとの互換性検査が行われる
 ```sh
-vython -t --wo test/test_transpiler/sample/basic/classandmethod.py
+vython -t python --wo test/test_transpiler/sample/basic/classandmethod.py
 ```
 
 
@@ -60,15 +65,14 @@ vython -t --wo test/test_transpiler/sample/basic/classandmethod.py
 ```sh
 pytest test/
 ```
-`test/sample` にサンプルのpythonファイルが入っています。
-新しいサンプルやテストケースを積極的に追加してください。
+`test/sample_program` にサンプルの`vython`プログラムファイルが入っています。
 
 
 
 ## Benchmarking / Evaluation
 <b>注意</b>
 1. グラフ生成など、フルで評価スクリプトを使えるのはトランスパイラの評価のみです。
-2. 評価スクリプトは、汎用的ではないので細かい仕様は各々の環境でハードコーディングをする必要があります。
+2. 汎用的ではないので細かい仕様は各々の環境でハードコーディングをする必要があります。
 
 **ToDo**:  最終的にGithubにpushするスクリプトは、SRC対応のものにする。
 
@@ -81,21 +85,26 @@ python3 benchmark/main.py
 2. 生成された`benchmark/log/result`に結果の`*.csv`とグラフの`*.png`を確認する
 
 #### ベンチマーク設定
-- `"benchmark_mode"`: ベンチマークモード
-  - primitive演算のオーバーヘッドの評価
-    - モード`gen-t`: トランスパイラ
-  - サンプルファイルの計算時間の評価
-    - モード`nor-i`: インタプリタ
-    - モード`nor-t`: トランスパイラ
 - ベンチマークモード共通の設定
-  - `"num_iretations"`: ベンチマークを何回実行するか
-- モード`gen-t`の設定項目
-  - `"num_loop"`: 何回primitive演算を行うか
-  - `"num_base_names"`: 生成されるvythonファイルにおけるクラス名の種類数
-  - `"num_base_versions"`: 生成されるvythonファイルにおける各クラスのバージョン数
-  - `"num_actual_versions_list"`: (TODO: 埋める)
-- モード`nor-i`, `nor-t` の設定項目
-  - `"dirpath_benchmarks"`: `nor-i`と`nor-t`で使われるサンプルファイルのディレクトリ
+  - `"processor"`       : どちらの言語処理系を利用した測定を行うか
+    - モード`interpreter`: インタプリタで測定
+    - モード`transpiler` : トランスパイラで測定
+  - `"benchmark_target"`: 測定するプログラムは何を用いるか
+    - モード`sample`  : 事前に用意したプログラムを用いる
+    - モード`generate`: ベンチマーク用のプログラムを生成して用いる 
+  - `"num_iretations"`  : ベンチマークを何回実行するか
+- `"processor": transpiler`時の追加設定項目
+  - `"comparison_strategy"`: 使用する言語機構を切り替えた測定が可能
+    - モード`all`: 切り替えられる全てのケースで測定 
+    - モード`v&p`: 全ての言語機構を使用(vython)と、全て使用しない(python)の二つで測定
+- `"benchmark_target": generate`時の追加設定項目
+  - `"num_loop"`                 : 何回primitive演算を行うか
+  - `"num_base_names"`           : 生成されるvythonファイルにおけるクラス名の種類数
+  - `"num_base_versions"`        : 生成されるvythonファイルにおける各クラスのバージョン数
+  - `"num_interval_num_versions"`: 実際に使用するバージョン数を決定する引数
+    - モード`geometric`: 使用するバージョン数は、1,2,4,...
+- `"benchmark_target": sample`時の追加設定項目
+  - `"path_benchmarks"`: 測定するプログラムのファイルパス or 測定するプログラムの集合を直下に含むディレクトリパス
 
 ### SRCに記載した評価を行う方法
 

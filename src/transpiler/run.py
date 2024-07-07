@@ -50,8 +50,6 @@ def run(args):
                 debug_mode = True
             elif arg == "--ast":
                 show_ast = True
-            elif arg == "--wo":
-                transpile_mode = True
             else:
                 if file_path is not None:
                     print("Too many arguments. Please specify only one file name.")
