@@ -147,32 +147,7 @@ python3 benchmark/main.py
 - Vython-IR AST: [`src/syntax/language.py`](https://github.com/prg-titech/vython/blob/master/src/syntax/language.py)で定義されたコア言語のAST
 
 ### TODO
-- [Phase 2] は無視してよい。算術プリミティブ値・演算のIntオブジェクト・メソッドへのコンパイルを定義しているが、未検証故に未使用。
-- バグ修正は出来るだけ後回しにすること。1日で実装したためバグが取り切れていないが、少なくとも `test/samples/*` 以下の初期サンプルはすべて正常に評価できる。
-
-#### Step 1: ASTのバージョン対応
-- [x] 済。
-
-#### Step 2: バージョンテーブル対応
-- [ ] `VersionTable` を定義 @ [`src/syntax/semantics.py`](https://github.com/prg-titech/vython/blob/master/src/syntax/semantics.py)
-  - 内部メソッドとしてバージョンテーブル操作用のヘルパー関数を定義
-    - 必要なヘルパー関数で原子的なものを特定して実装。`union`? `modify`?
-  - `VObject` クラスにバージョンテーブル用の属性を追加
-- [ ] `VersionTable` 整合性検査を定義 @ [`src/compatibilitychecker.py`](https://github.com/prg-titech/vython/blob/master/src/compatibilitychecker.py)
-  - オブジェクトへの参照(変数)のリストを受け取り、それらのバージョンテーブルを用い、整合性・互換性・一貫性チェックを行う。
-
-#### Step 3: Interpreterのバージョン対応
-- [x] （済）変数管理を名前とバージョンの組で行うように変更
-- [ ] バージョンテーブルの処理をインタプリタに追加 @ [`src/interpreter.py`](https://github.com/prg-titech/vython/blob/master/src/interpreter.py)
-  - `VersionTable` 整合性検査の処理
-    - Vython-IR に整合性検査を行うための特別なASTノードを追加(メソッド形式？関数形式？)
-    - 対応するASTノードの評価をインタプリタに実装
-    - `incompatible` はメソッドとして既にAST・評価規則が追加されている。同じような追加実装をすればよい。
-  - `VObject` の `VersionTable` を計算する処理
-    - `VObject` を生成する式の評価に、返り値の `VersionTable` を計算する処理を追加
-- [ ] `incompatible` メソッドの処理
-  - （済）Vython IRに `incompatible` に対応するASTノード `CallIncompatible` を追加 @ [`src/syntax/language.py`](https://github.com/prg-titech/vython/blob/master/src/syntax/language.py)
-  - Vython AST `CallIncompatible(value=obj)`のinterpret規則にバージョンテーブル処理を追加 @ [`src/interpreter.py`](https://github.com/prg-titech/vython/blob/master/src/interpreter.py)
+必要があれば適宜追加
 
 ## Syntax
 ### Vython Program
