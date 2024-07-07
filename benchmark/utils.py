@@ -6,8 +6,8 @@ def log(message):
     print(f"[LOG] {message}")
 
 def file_category_name(path):
-    get_file_name_pattern = r'.*/([^/]+)\.py$'
-    file_name = re.match(get_file_name_pattern, path).group(1)
+    base_name = os.path.basename(path)
+    file_name, _ = os.path.splitext(base_name)
     if re.match(r'benchmark_.*$', file_name):
         return file_name[-3:]
     else:

@@ -1,11 +1,11 @@
 {
   "processor": "transpiler",
   "benchmark_target": "generate",
-  "num_iterations": 5,
+  "num_iterations": 10,
 
   "num_loop": 2000,
-  "num_base_names": 10,
-  "num_base_versions": 16,
+  "num_base_names": 8,
+  "num_base_versions": 8,
   "interval_num_versions": "geometric",
 
   "comparison_strategy": "all"

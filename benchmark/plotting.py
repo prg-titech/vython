@@ -14,15 +14,6 @@ def make_scatter_plot(data, output_path):
     plt.savefig(os.path.join(output_path, 'scatter_plot.png'))
     plt.show()
 
-def make_bar_graph(categories, values, output_path):
-    log("Creating bar graph")
-    plt.bar(categories, values)
-    plt.title('Measurement of the overhead of execution')
-    plt.xlabel('Number of version the value has')
-    plt.ylabel('total run time')
-    plt.savefig(os.path.join(output_path, 'bar_graph.png'))
-    plt.show()
-
 def make_refined_bar_graph(evaluation_data, output_path):
 
     log("Creating refined bar graph")
@@ -32,6 +23,12 @@ def make_refined_bar_graph(evaluation_data, output_path):
     sem_datas = []
     bar_datas = []
     num_evaluated_file = len(evaluation_data)
+
+    color_dict = {"vython": "red",
+                  "python": "green",
+                  "vt-init": "blue",
+                  "vt-synt": "orange",
+                  "vt-check": "purple"}
 
     for i in range(num_evaluated_file):
         sem_datas_per_file = dict()
@@ -62,7 +59,7 @@ def make_refined_bar_graph(evaluation_data, output_path):
 
     (fig, ax1) = plt.subplots()
     x = np.arange(len(categories))
-    width = 0.35
+    width = 0.8
 
     error_bars = []
     t_value = 1.96
@@ -78,9 +75,10 @@ def make_refined_bar_graph(evaluation_data, output_path):
 
     
     for i in range(len(bar_datas)):
+        file_name = categories[i]
         x_alignment = get_good_x_alignment(width/len(bar_datas[i]),x[i],len(bar_datas[i]))
         for index, (transpile_mode,value) in enumerate(bar_datas[i].items()):
-            bar = ax1.bar(x_alignment[index], bar_datas[i][transpile_mode], width/len(bar_datas[i]), yerr=error_bars[i][transpile_mode], label=f'Execution Time in {transpile_mode}(s)')
+            bar = ax1.bar(x_alignment[index], bar_datas[i][transpile_mode], width/len(bar_datas[i]), yerr=error_bars[i][transpile_mode], label=f'{transpile_mode}', color = color_dict[transpile_mode])
 
     ax1.set_xlabel('Number of version the value has')
     ax1.set_ylabel('average total run time(s)')
@@ -94,14 +92,19 @@ def make_refined_bar_graph(evaluation_data, output_path):
     line_datas = []
     for bar_datas_per_file in bar_datas:
         for p in list(zip(bar_datas_per_file["vython"],bar_datas_per_file["python"])):
-            line_datas.append(p[0]/p[1])
+            # pythonの実行が早すぎるときがあるので
+            if(p[1]==0):
+                line_datas.append(p[0]/0.000001)
+            else:
+                line_datas.append(p[0]/p[1])
 
     line = ax2.plot(x, line_datas, color='tab:red', label='Vython/Python Ratio', marker='o')
     
-    lines, labels = ax1.get_legend_handles_labels()
+    custom_legend = [plt.Line2D([0], [0], color=color, lw=4) for index, (transpile_mode,color) in enumerate(color_dict.items())]
+    custom_label = [transpile_mode for index, (transpile_mode,color) in enumerate(color_dict.items())]
     lines2, labels2 = ax2.get_legend_handles_labels()
-    # ファイルが多い時に散らかるため、下はコメント
-    # ax2.legend(lines + lines2, labels + labels2, loc='upper left')
+    ax1.legend(custom_legend, custom_label, loc='upper left')
+    ax2.legend(lines2, labels2, loc='upper right')
 
     plt.savefig(os.path.join(output_path, 'refined_bar_graph.png'))
     plt.show()
