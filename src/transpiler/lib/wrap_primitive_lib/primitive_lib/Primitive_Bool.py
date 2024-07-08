@@ -1,7 +1,6 @@
 class Primitive_Bool_v_0():
     def __init__(self, value):
         self.value = value
-        __vt_init__(self)
     
     def __repr__(self):
         return f"{self.value}"
@@ -25,7 +24,5 @@ class Primitive_Bool_v_0():
             # 比較
             case "eq": result = Primitive_Bool_v_0(left.value == right.value)
             case "ne": result = Primitive_Bool_v_0(left.value != right.value)
-        append(result,left)
-        append(result,right)
         return result
     

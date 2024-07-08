@@ -1,7 +1,6 @@
 class Primitive_String_v_0():
     def __init__(self, value):
         self.value = value
-        __vt_init__(self)
 
     def __repr__(self):
         return f"{self.value}"
@@ -43,6 +42,4 @@ class Primitive_String_v_0():
             case "gt": result = Primitive_Bool_v_0(left.value > right.value)
             case "le": result = Primitive_Bool_v_0(left.value <= right.value)
             case "ge": result = Primitive_Bool_v_0(left.value >= right.value)
-        append(result,left)
-        append(result,right)
         return result

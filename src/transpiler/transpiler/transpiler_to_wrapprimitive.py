@@ -2,17 +2,11 @@ from lark import Token, Transformer, Tree
 import ast
 import copy
 
-global_func_paths = {"src/transpiler/lib/vython_lib/global_func/global_func_sets.py"}
-calling_vt_init_path = "src/transpiler/lib/vython_lib/helper_func/__calling_vt_init__.py"
-calling_init_path = "src/transpiler/lib/vython_lib/helper_func/__calling_init__.py"
-calling_vt_append_path = "src/transpiler/lib/vython_lib/helper_func/__calling_vt_append__.py"
-calling_and_suger_path = "src/transpiler/lib/vython_lib/helper_func/__calling_and_suger__.py"
-calling_or_suger_path = "src/transpiler/lib/vython_lib/helper_func/__calling_or_suger__.py"
-
-primitive_classes = {"src/transpiler/lib/wo_synt_lib/primitive_lib/Primitive_Bool.py","src/transpiler/lib/wo_synt_lib/primitive_lib/Primitive_String.py","src/transpiler/lib/wo_synt_lib/primitive_lib/Primitive_Number.py"}
+global_func_paths = {"src/transpiler/lib/python_lib/global_func.py"}
+primitive_classes = {"src/transpiler/lib/wo_synt_lib/wrap_primitive_lib/Primitive_Bool.py","src/transpiler/lib/wrap_primitive_lib/primitive_lib/Primitive_String.py","src/transpiler/lib/wrap_primitive_lib/primitive_lib/Primitive_Number.py"}
 
 # larkToIRを参考に実装する
-class TranspilerToVTCheck(Transformer):
+class TranspilerToPython(Transformer):
     def __init__(self, debug_mode):
         self.debug_mode = debug_mode
         
@@ -25,46 +19,12 @@ class TranspilerToVTCheck(Transformer):
         # トランスパイラインスタンスの属性として保持
         self.global_func_asts = global_func_asts
 
-        # 各メソッド、演算定義の前後に挿入されるヘルパ関数の呼び出しをASTに変換
-        # VT初期化関数の呼び出し
-        with open(calling_vt_init_path,"r") as file:
-            calling_vt_init_code = file.read()
-        self.calling_vt_init_ast = ast.parse(calling_vt_init_code).body
-        # 初期化関数の呼び出し
-        with open(calling_init_path,"r") as file:
-            calling_init_code = file.read()
-        self.calling_init_ast = ast.parse(calling_init_code).body
-        # VT結合関数の呼び出し
-        with open(calling_vt_append_path,"r") as file:
-            calliing_vt_append_code = file.read()
-        self.calling_vt_append_ast = ast.parse(calliing_vt_append_code).body[0]
-        # and_testの糖衣構文の呼び出し
-        with open(calling_and_suger_path,"r") as file:
-            calling_and_suger_code = file.read()
-        self.calling_and_suger_ast = ast.parse(calling_and_suger_code).body[0]
-        # or_testの糖衣構文の呼び出し
-        with open(calling_or_suger_path,"r") as file:
-            calling_or_suger_code = file.read()
-        self.calling_or_suger_ast = ast.parse(calling_or_suger_code).body[0]
-
-        # Primitiveクラスの定義をASTに変換
-        primitive_class_asts = set()
-        for primitive_class in primitive_classes:
-            with open(primitive_class,"r") as file:
-                primitive_class_code = file.read()
-            primitive_class_asts.add(ast.parse(primitive_class_code))
-        # トランスパイラインスタンスの属性として保持
-        self.primitive_class_asts = primitive_class_asts
-        
     def file_input(self, items):
         body = self._flatten_list(items)
 
-        # Primitiveクラスを挿入
-        for primitive_class_ast in self.primitive_class_asts:
-            body.insert(0,primitive_class_ast)
         # グローバル関数を挿入
         for global_func_ast in self.global_func_asts:
-            body.insert(0,global_func_ast)
+            body.insert(0, global_func_ast)
 
         return ast.Module(body=body,type_ignores=[])
 
@@ -72,18 +32,6 @@ class TranspilerToVTCheck(Transformer):
         name, version, bases, body = items[0], items[1], [], self._flatten_list(items[3:])
         # バージョンの情報もクラス名が持つ
         class_name = str(name) + "_v_" + str(version)
-
-        # basesの中身を検査
-        is_init_exist = False
-        for element in body:
-            if isinstance(element,ast.FunctionDef):
-                # initializeメソッドAST に VT初期化関数呼び出しAST を挿入
-                if(element.name == "__init__"):
-                    element = insert_vt_init_into_init_method(self.calling_vt_init_ast, element)
-                    is_init_exist = True
-            
-        if not is_init_exist:
-            body.append(self.calling_init_ast)
 
         return ast.ClassDef(name=class_name,bases=[],keywords=[],body=body,decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
@@ -173,32 +121,21 @@ class TranspilerToVTCheck(Transformer):
         value_right = items[1]
         transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-        or_test_ast = self.calling_or_suger_ast
-        or_test_ast.value.test.args[0] = transformed_value_l
-        or_test_ast.value.body.args[1] = transformed_value_l
-        or_test_ast.value.orelse.args[0].args[0].args[0] = transformed_value_r
-        or_test_ast.value.orelse.args[1] = transformed_value_l
-        or_test_ast.value.orelse.args[2] = transformed_value_r
-        return or_test_ast.value
+        
+        return ast.BoolOp(ast.Or(), [transformed_value_l, transformed_value_r])
     
     def and_test(self, items):
         value_left = items[0]
         value_right = items[1]
         transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-        and_test_ast = self.calling_and_suger_ast
-        and_test_ast.value.test.operand.args[0] = transformed_value_l
-        and_test_ast.value.body.args[1] = transformed_value_l
-        and_test_ast.value.orelse.args[0].args[0].args[0] = transformed_value_r
-        and_test_ast.value.orelse.args[1] = transformed_value_l
-        and_test_ast.value.orelse.args[2] = transformed_value_r
-        return and_test_ast.value
+        
+        return ast.BoolOp(ast.And(), [transformed_value_l, transformed_value_r])
 
     def not_test(self, items):
         value = items[0]
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
-        op = ast.Not()
-        return ast.Call(func=ast.Name(id='Primitive_Bool_v_0', ctx=ast.Load()), args=[ast.UnaryOp(op,transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)], keywords=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        return ast.UnaryOp(ast.Not(), transformed_value)
 
     def arith_expr(self, items):
         # 要素数が適切かどうかのチェック
@@ -368,14 +305,6 @@ class TranspilerToVTCheck(Transformer):
             elif item is not None:
                 flattened.append(item)
         return flattened
-
-
-# ASTを変換する際の補助関数
-def insert_vt_init_into_init_method(calling_vt_init_ast, element):
-    tmp_ast = copy.deepcopy(calling_vt_init_ast)
-    tmp_ast[0].value.args[0].id = element.args.args[0].arg
-    element.body.append(tmp_ast)
-    return element
 
 def make_if_ast(elif_list, else_body):
         if len(elif_list) == 0:

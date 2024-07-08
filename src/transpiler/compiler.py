@@ -6,7 +6,7 @@ from src.transpiler.vython_parser import Parser
 from src.transpiler.transpiler.transpiler_to_vython import TranspilerToVython
 from src.transpiler.transpiler.transpiler_to_python import TranspilerToPython
 from src.transpiler.transpiler.transpiler_to_vtinit import TranspilerToVTInit
-from src.transpiler.transpiler.transpiler_to_vtcheck import TranspilerToVTCheck
+from src.transpiler.transpiler.transpiler_to_wrapprimitive import TranspilerToWrapPrimitive
 from src.transpiler.transpiler.transpiler_to_vt_synt import TranspilerToVTSynt
 
 class Compiler:
@@ -40,11 +40,11 @@ class Compiler:
     def transpile(self):
         # transpile_modeに応じたTranspilerのディスパッチ
         match self.transpile_mode:
-            case "vython": transpiler = TranspilerToVython(self.debug_mode)
             case "python": transpiler = TranspilerToPython(self.debug_mode)
+            case "warp_primitive": transpiler = TranspilerToWrapPrimitive(self.debug_mode)
             case "vt-init": transpiler = TranspilerToVTInit(self.debug_mode)
-            case "vt-check": transpiler = TranspilerToVTCheck(self.debug_mode)
             case "vt-synt": transpiler = TranspilerToVTSynt(self.debug_mode)
+            case "vython": transpiler = TranspilerToVython(self.debug_mode)
             # どれにも当てはまらない場合はvythonで実行
             case _: transpiler = TranspilerToVython(self.debug_mode)
 

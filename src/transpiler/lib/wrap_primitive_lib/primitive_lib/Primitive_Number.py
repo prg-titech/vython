@@ -1,7 +1,6 @@
 class Primitive_Number_v_0():
     def __init__(self, value):
         self.value = value
-        __vt_init__(self)
     
     def __repr__(self):
         return f"{self.value}"
@@ -63,13 +62,10 @@ class Primitive_Number_v_0():
             case "gt": result = Primitive_Bool_v_0(left.value > right.value)
             case "le": result = Primitive_Bool_v_0(left.value <= right.value)
             case "ge": result = Primitive_Bool_v_0(left.value >= right.value)
-        append(result,left)
-        append(result,right)
         return result
     
     def unary(self,op):
         match op:
             case "neg": result = Primitive_Number_v_0(-self.value)
             case "pos": result = Primitive_Number_v_0(self.value)
-        append(result,self)
         return result
