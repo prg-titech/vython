@@ -67,19 +67,19 @@ class Compiler:
     def evaluate_time(self):
         execution_time = dict()
 
-        start_time = time.time()
+        start_time = time.perf_counter()
         self.parse()
-        end_time = time.time()
+        end_time = time.perf_counter()
         execution_time["parse"] = end_time - start_time
 
-        start_time = time.time()
+        start_time = time.perf_counter()
         self.compile_to_ir()
-        end_time = time.time()
+        end_time = time.perf_counter()
         execution_time["compile_to_ir"] = end_time - start_time
 
-        start_time = time.time()
+        start_time = time.perf_counter()
         self.evaluate()
-        end_time = time.time()
+        end_time = time.perf_counter()
         execution_time["execute"] = end_time - start_time
 
         return execution_time

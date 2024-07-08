@@ -14,21 +14,27 @@ def make_scatter_plot(data, output_path):
     plt.savefig(os.path.join(output_path, 'scatter_plot.png'))
     plt.show()
 
-def make_refined_bar_graph(evaluation_data, output_path):
+def make_refined_bar_graph(evaluation_data, comparision_strategy, output_path):
 
     log("Creating refined bar graph")
 
     categories = []
-    num_bar_type = len(evaluation_data)
     sem_datas = []
     bar_datas = []
     num_evaluated_file = len(evaluation_data)
 
-    color_dict = {"vython": "red",
-                  "python": "green",
-                  "vt-init": "blue",
-                  "vt-synt": "orange",
-                  "vt-check": "purple"}
+    match comparision_strategy:
+        case "all":
+            color_dict = {"python": "green",
+                        "vython": "red",
+                        "vt-init": "blue",
+                        "vt-synt": "orange",
+                        "vt-check": "purple"}
+            show_order = ["python","vt-init","vt-check","vt-synt","vython"]
+        case "v&p":
+            color_dict = {"python": "green",
+                        "vython": "red"}
+            show_order = ["python","vython"]
 
     for i in range(num_evaluated_file):
         sem_datas_per_file = dict()
@@ -77,7 +83,8 @@ def make_refined_bar_graph(evaluation_data, output_path):
     for i in range(len(bar_datas)):
         file_name = categories[i]
         x_alignment = get_good_x_alignment(width/len(bar_datas[i]),x[i],len(bar_datas[i]))
-        for index, (transpile_mode,value) in enumerate(bar_datas[i].items()):
+        for index in range(len(show_order)):
+            transpile_mode = show_order[index]
             bar = ax1.bar(x_alignment[index], bar_datas[i][transpile_mode], width/len(bar_datas[i]), yerr=error_bars[i][transpile_mode], label=f'{transpile_mode}', color = color_dict[transpile_mode])
 
     ax1.set_xlabel('Number of version the value has')
@@ -85,28 +92,57 @@ def make_refined_bar_graph(evaluation_data, output_path):
     ax1.set_title('Execution Time')
     ax1.set_xticks(x)
     ax1.set_xticklabels(categories)
-
-    ax2 = ax1.twinx()
-    ax2.set_ylabel('Vython/Python Ratio')
-
-    line_datas = []
-    for bar_datas_per_file in bar_datas:
-        for p in list(zip(bar_datas_per_file["vython"],bar_datas_per_file["python"])):
-            # pythonの実行が早すぎるときがあるので
-            if(p[1]==0):
-                line_datas.append(p[0]/0.000001)
-            else:
-                line_datas.append(p[0]/p[1])
-
-    line = ax2.plot(x, line_datas, color='tab:red', label='Vython/Python Ratio', marker='o')
     
     custom_legend = [plt.Line2D([0], [0], color=color, lw=4) for index, (transpile_mode,color) in enumerate(color_dict.items())]
     custom_label = [transpile_mode for index, (transpile_mode,color) in enumerate(color_dict.items())]
-    lines2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(custom_legend, custom_label, loc='upper left')
-    ax2.legend(lines2, labels2, loc='upper right')
 
     plt.savefig(os.path.join(output_path, 'refined_bar_graph.png'))
+    plt.show()
+
+def make_line_graph(evaluation_data, comparision_strategy, output_path):
+    log("Creating line graph")
+
+    file_names = []
+    line_datas = dict()
+    num_evaluated_file = len(evaluation_data)
+    
+    match comparision_strategy:
+        case "all":
+            color_dict = {"vython": "red",
+                        "vt-init": "blue",
+                        "vt-synt": "orange",
+                        "vt-check": "purple"}
+            transpile_modes = ["vt-init","vt-check","vt-synt","vython"]
+        case "v&p":
+            color_dict = {"vython": "red"}
+            transpile_modes = ["vython"]
+
+    for transpile_mode in transpile_modes:
+        line_datas[transpile_mode] = []
+    
+    for i in range(num_evaluated_file):
+        evaluation_data_per_file = evaluation_data[i]
+        evaluation_times_dict = evaluation_data_per_file[1]
+        if(evaluation_times_dict["python"][0] == 0):
+            py_avg_time = 0.000001
+        else:
+            py_avg_time = evaluation_times_dict["python"][0]
+        file_names.append(evaluation_data_per_file[0])
+
+        for transpile_mode in transpile_modes:
+            line_datas[transpile_mode].append(evaluation_times_dict[transpile_mode][0] / py_avg_time)
+
+    (fig, ax1) = plt.subplots()
+    x = np.arange(len(file_names))
+
+    for transpile_mode in transpile_modes:
+        line = ax1.plot(x, line_datas[transpile_mode], color=color_dict[transpile_mode], label=f'{transpile_mode}/python Ratio', marker='o')
+
+    lines,labels = ax1.get_legend_handles_labels()
+    ax1.legend(lines, labels, loc='upper left')
+    
+    plt.savefig(os.path.join(output_path, 'line_graph.png'))
     plt.show()
 
 def get_good_x_alignment(width, x, size):

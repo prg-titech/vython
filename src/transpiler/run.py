@@ -6,16 +6,16 @@ class CommandError(Exception):
     pass
 
 def execute_phase(message, function):
-    start_time = time.time()
+    start_time = time.perf_counter()
     function()
-    end_time = time.time()
+    end_time = time.perf_counter()
     print(message)
     print(f"  --> Completed in {end_time-start_time:.4f} seconds")
 
 def just_execute_phase(message, function):
-    start_time = time.time()
+    start_time = time.perf_counter()
     function()
-    end_time = time.time()
+    end_time = time.perf_counter()
     return end_time - start_time
 
 def run(args):

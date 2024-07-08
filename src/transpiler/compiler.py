@@ -80,32 +80,32 @@ class Compiler:
     # [評価用]: 評価用の特別な評価メソッド - evaluate_timeメソッドからしか使われない
     def execute_for_evaluate(self, mode):
         global_dict = globals()
-        start_time = time.time()
+        start_time = time.perf_counter()
         exec(self.pythonCode,global_dict)
-        end_time = time.time()
+        end_time = time.perf_counter()
         if mode == "generate":
-            start_time = time.time()
+            start_time = time.perf_counter()
             exec("main(m, f, y)",global_dict)
-            end_time = time.time()
+            end_time = time.perf_counter()
         return end_time - start_time
     
     # [評価用]: fullpathの各段階での実行時間だけを返す
     def evaluate_time(self, mode):
         execution_time = dict()
 
-        start_time = time.time()
+        start_time = time.perf_counter()
         self.parse()
-        end_time = time.time()
+        end_time = time.perf_counter()
         execution_time["parse"] = end_time - start_time
 
-        start_time = time.time()
+        start_time = time.perf_counter()
         self.transpile()
-        end_time = time.time()
+        end_time = time.perf_counter()
         execution_time["transpile"] = end_time - start_time
 
-        start_time = time.time()
+        start_time = time.perf_counter()
         self.unparse()
-        end_time = time.time()
+        end_time = time.perf_counter()
         execution_time["unparse"] = end_time - start_time
 
         execution_time["execute"] = self.execute_for_evaluate(mode)
