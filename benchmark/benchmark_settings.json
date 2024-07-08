@@ -1,9 +1,12 @@
 {
   "processor": "transpiler",
-  "benchmark_target": "sample",
+  "benchmark_target": "generate",
   "num_iterations": 10,
 
-  "path_benchmarks": "test/sample_program/basic/fib.py",
+  "num_loop": 2000,
+  "num_base_names": 10,
+  "num_base_versions": 16,
+  "interval_num_versions": "geometric",
 
   "comparison_strategy": "all"
 }
