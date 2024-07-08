@@ -3,7 +3,7 @@ import ast
 import copy
 
 global_func_paths = {"src/transpiler/lib/python_lib/global_func.py"}
-primitive_classes = {"src/transpiler/lib/wo_synt_lib/wrap_primitive_lib/Primitive_Bool.py","src/transpiler/lib/wrap_primitive_lib/primitive_lib/Primitive_String.py","src/transpiler/lib/wrap_primitive_lib/primitive_lib/Primitive_Number.py"}
+primitive_classes = {"src/transpiler/lib/wrap_primitive_lib/primitive_lib/Primitive_Bool.py","src/transpiler/lib/wrap_primitive_lib/primitive_lib/Primitive_String.py","src/transpiler/lib/wrap_primitive_lib/primitive_lib/Primitive_Number.py"}
 
 # larkToIRを参考に実装する
 class TranspilerToWrapPrimitive(Transformer):
@@ -19,9 +19,21 @@ class TranspilerToWrapPrimitive(Transformer):
         # トランスパイラインスタンスの属性として保持
         self.global_func_asts = global_func_asts
 
+        # Primitiveクラスの定義をASTに変換
+        primitive_class_asts = set()
+        for primitive_class in primitive_classes:
+            with open(primitive_class,"r") as file:
+                primitive_class_code = file.read()
+            primitive_class_asts.add(ast.parse(primitive_class_code))
+        # トランスパイラインスタンスの属性として保持
+        self.primitive_class_asts = primitive_class_asts
+
     def file_input(self, items):
         body = self._flatten_list(items)
 
+        # Primitiveクラスを挿入
+        for primitive_class_ast in self.primitive_class_asts:
+            body.insert(0,primitive_class_ast)
         # グローバル関数を挿入
         for global_func_ast in self.global_func_asts:
             body.insert(0, global_func_ast)
