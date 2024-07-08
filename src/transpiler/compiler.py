@@ -20,7 +20,7 @@ class Compiler:
         # - python
         # - vt-init
         # - vt-synt
-        # - vt-check
+        # - wrap-primitive
         # - vython
 
         # 評価時に使用するオブジェクト
@@ -41,7 +41,7 @@ class Compiler:
         # transpile_modeに応じたTranspilerのディスパッチ
         match self.transpile_mode:
             case "python": transpiler = TranspilerToPython(self.debug_mode)
-            case "warp_primitive": transpiler = TranspilerToWrapPrimitive(self.debug_mode)
+            case "warp-primitive": transpiler = TranspilerToWrapPrimitive(self.debug_mode)
             case "vt-init": transpiler = TranspilerToVTInit(self.debug_mode)
             case "vt-synt": transpiler = TranspilerToVTSynt(self.debug_mode)
             case "vython": transpiler = TranspilerToVython(self.debug_mode)

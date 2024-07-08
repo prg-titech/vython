@@ -29,8 +29,8 @@ def make_refined_bar_graph(evaluation_data, comparision_strategy, output_path):
                         "vython": "red",
                         "vt-init": "blue",
                         "vt-synt": "orange",
-                        "vt-check": "purple"}
-            show_order = ["python","vt-init","vt-check","vt-synt","vython"]
+                        "wrap-primitive": "purple"}
+            show_order = ["python","wrap-primitive","vt-init","vt-synt","vython"]
         case "v&p":
             color_dict = {"python": "green",
                         "vython": "red"}
@@ -112,8 +112,8 @@ def make_line_graph(evaluation_data, comparision_strategy, output_path):
             color_dict = {"vython": "red",
                         "vt-init": "blue",
                         "vt-synt": "orange",
-                        "vt-check": "purple"}
-            transpile_modes = ["vt-init","vt-check","vt-synt","vython"]
+                        "wrap-primitive": "purple"}
+            transpile_modes = ["vt-init","wrap-primitive","vt-synt","vython"]
         case "v&p":
             color_dict = {"vython": "red"}
             transpile_modes = ["vython"]

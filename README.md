@@ -52,9 +52,9 @@ vython -t --ast test/test_transpiler/sample/basic/classandmethod.py
 - `-t` の**直後**で以下に示すオプションを使用すると、`vython`の提案言語機構のON,OFFを選択したトランスパイルができます。(トランスパイラ) 
   - `vython`  : 全ての提案言語機構がON
   - `python`  : 全ての提案言語機構がOFF
+  - `wrap-primitive`: primitiveな値を専用のクラスでラップする
   - `vt-init` : オブジェクトに自身のバージョン情報だけを持たせる
   - `vt-synt` : オブジェクトが自身のバージョン情報を持ち、他のオブジェクトの計算でそれらが合成される
-  - `vt-check`: オブジェクトが自身のバージョン情報を持ち、他のオブジェクトとの互換性検査が行われる
 ```sh
 vython -t python --wo test/test_transpiler/sample/basic/classandmethod.py
 ```

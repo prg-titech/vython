@@ -13,9 +13,9 @@ def evaluate_transpiler(benchmark_target, comparison_strategy, code, count, csv_
 
     match comparison_strategy:
         case "all":
-            transpile_modes = ["vython","python","vt-init","vt-check","vt-synt"]
+            transpile_modes = ["python","wrap-primitive","vt-init","vt-synt","vython"]
         case "v&p":
-            transpile_modes = ["vython","python"]
+            transpile_modes = ["python","vython"]
         case _:
             transpile_modes = []
 

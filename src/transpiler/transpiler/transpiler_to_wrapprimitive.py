@@ -6,7 +6,7 @@ global_func_paths = {"src/transpiler/lib/python_lib/global_func.py"}
 primitive_classes = {"src/transpiler/lib/wo_synt_lib/wrap_primitive_lib/Primitive_Bool.py","src/transpiler/lib/wrap_primitive_lib/primitive_lib/Primitive_String.py","src/transpiler/lib/wrap_primitive_lib/primitive_lib/Primitive_Number.py"}
 
 # larkToIRを参考に実装する
-class TranspilerToPython(Transformer):
+class TranspilerToWrapPrimitive(Transformer):
     def __init__(self, debug_mode):
         self.debug_mode = debug_mode
         

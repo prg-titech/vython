@@ -9,7 +9,7 @@ calling_vt_append_path = "src/transpiler/lib/vython_lib/helper_func/__calling_vt
 calling_and_suger_path = "src/transpiler/lib/vython_lib/helper_func/__calling_and_suger__.py"
 calling_or_suger_path = "src/transpiler/lib/vython_lib/helper_func/__calling_or_suger__.py"
 
-primitive_classes = {"src/transpiler/lib/wo_check_lib/primitive_lib/Primitive_Bool.py","src/transpiler/lib/wo_check_lib/primitive_lib/Primitive_String.py","src/transpiler/lib/wo_check_lib/primitive_lib/Primitive_Number.py"}
+primitive_classes = {"src/transpiler/lib/vt_synt_lib/primitive_lib/Primitive_Bool.py","src/transpiler/lib/vt_synt_lib/primitive_lib/Primitive_String.py","src/transpiler/lib/vt_synt_lib/primitive_lib/Primitive_Number.py"}
 
 # larkToIRを参考に実装する
 class TranspilerToVTSynt(Transformer):

@@ -36,8 +36,8 @@ def run(args):
         case "vt-init": 
             transpile_mode = "vt-init"
             args = args[1:]
-        case "vt-check": 
-            transpile_mode = "vt-check"
+        case "wrap-primitive": 
+            transpile_mode = "wrap-primitive"
             args = args[1:]
         case "vt-synt": 
             transpile_mode = "vt-synt"
