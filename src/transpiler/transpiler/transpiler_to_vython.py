@@ -188,7 +188,7 @@ class TranspilerToVython(Transformer):
         transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
         # 糖衣として実装
-        or_test_ast = self.calling_or_suger_ast
+        or_test_ast = copy.deepcopy(self.calling_or_suger_ast)
         or_test_ast.value.test.args[0] = transformed_value_l
         or_test_ast.value.body.args[1] = transformed_value_l
         or_test_ast.value.orelse.args[0].args[0].args[0] = transformed_value_r
@@ -202,7 +202,7 @@ class TranspilerToVython(Transformer):
         transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
         transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
         # 糖衣として実装
-        and_test_ast = self.calling_and_suger_ast
+        and_test_ast = copy.deepcopy(self.calling_and_suger_ast)
         and_test_ast.value.test.operand.args[0] = transformed_value_l
         and_test_ast.value.body.args[1] = transformed_value_l
         and_test_ast.value.orelse.args[0].args[0].args[0] = transformed_value_r
