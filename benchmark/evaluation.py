@@ -55,6 +55,48 @@ def evaluate_transpiler(benchmark_target, comparison_strategy, code, count, csv_
 
     return result
 
+def evaluate_transpiler_only_execution(benchmark_target, comparison_strategy, code, count, csv_writer):
+    match comparison_strategy:
+        case "all":
+            transpile_modes = ["python","wrap-primitive","vt-init","vt-synt","vython"]
+        case "v&p":
+            transpile_modes = ["python","vython"]
+        case _:
+            transpile_modes = []
+
+    # この関数が返すオブジェクト
+    result = dict()
+
+    for transpile_mode in transpile_modes:
+        log(f"Evaluating transpiler with transpile_mode={transpile_mode}")
+        transpiler = TC(code, transpile_mode)
+        transpiler.parse()
+        transpiler.transpile()
+        transpiler.unparse()
+
+        avg_t_execute = 0
+        execution_times = []
+
+        csv_writer.writerow(['Execution Time in transpile_mode = ' + transpile_mode])
+
+        for i in range(count):
+            execution_time = transpiler.execute_for_evaluate(benchmark_target)
+            csv_writer.writerow([f"{execution_time:.6f}"])
+            avg_t_execute += execution_time
+            execution_times.append(execution_time)
+    
+        avg_t_execute /= count
+        csv_writer.writerow(['AVG', f"{avg_t_execute:.6f}"])
+
+        std_dev = np.std(execution_times)
+        sem = std_dev / np.sqrt(count)
+
+        log(f"Completed transpiler evaluation: avg_execute_time={avg_t_execute:.6f}, sem={sem:.6f}")
+
+        result[transpile_mode] = (avg_t_execute, sem)
+
+    return result
+
 def evaluate_interpreter(code, count, csv_writer):
     log("Evaluating interpreter")
     interpreter = IC(code, False)
@@ -114,7 +156,7 @@ def evaluate_files(file_paths, settings, result_path):
                 case "transpiler":
                     comparison_strategy = settings.comparison_strategy
                     benchmark_target = settings.benchmark_target
-                    execution_time_dict = evaluate_transpiler(benchmark_target, comparison_strategy, code, num_iterations, csv_writer)
+                    execution_time_dict = evaluate_transpiler_only_execution(benchmark_target, comparison_strategy, code, num_iterations, csv_writer)
             
             data_execution_time.append(execution_time_dict)
 

@@ -97,7 +97,7 @@ def make_refined_bar_graph(evaluation_data, comparision_strategy, output_path):
     custom_label = [transpile_mode for index, (transpile_mode,color) in enumerate(color_dict.items())]
     ax1.legend(custom_legend, custom_label, loc='upper left')
 
-    plt.savefig(os.path.join(output_path, 'refined_bar_graph.png'))
+    plt.savefig(os.path.join(output_path, 'refined_bar_graph.pdf'),format='pdf')
     plt.show()
 
 def make_line_graph(evaluation_data, comparision_strategy, output_path):
@@ -109,13 +109,13 @@ def make_line_graph(evaluation_data, comparision_strategy, output_path):
     
     match comparision_strategy:
         case "all":
-            color_dict = {"vython": "red",
-                        "vt-init": "blue",
-                        "vt-synt": "orange",
-                        "wrap-primitive": "purple"}
+            line_style_dict = {"vython": ["red",'-','o'],
+                               "vt-init": ["blue",'--','x'],
+                               "vt-synt": ["orange",'-.','s'],
+                               "wrap-primitive": ["purple",':','d']}
             transpile_modes = ["vt-init","wrap-primitive","vt-synt","vython"]
         case "v&p":
-            color_dict = {"vython": "red"}
+            line_style_dict = {"vython": ["red",'-','o']}
             transpile_modes = ["vython"]
 
     for transpile_mode in transpile_modes:
@@ -133,16 +133,28 @@ def make_line_graph(evaluation_data, comparision_strategy, output_path):
         for transpile_mode in transpile_modes:
             line_datas[transpile_mode].append(evaluation_times_dict[transpile_mode][0] / py_avg_time)
 
-    (fig, ax1) = plt.subplots()
+    (fig, ax1) = plt.subplots(figsize=(8,4))
     x = np.arange(len(file_names))
 
     for transpile_mode in transpile_modes:
-        line = ax1.plot(x, line_datas[transpile_mode], color=color_dict[transpile_mode], label=f'{transpile_mode}/python Ratio', marker='o')
+        line = ax1.plot(x, 
+                        line_datas[transpile_mode], 
+                        color=line_style_dict[transpile_mode][0],
+                        linestyle=line_style_dict[transpile_mode][1],
+                        label=f'{transpile_mode}/python Ratio',
+                        marker=line_style_dict[transpile_mode][2])
+
+    # 軸とグラフの説明
+    ax1.set_xlabel('Number of version handled: []', fontsize=12)
+    ax1.set_ylabel('Ratio of average execution time to python: []', fontsize=12)
+    # ax1.set_title('Change of Ratio in Average Execution Time to Python\nrelative to the number of version handled', fontsize=16)
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(file_names)
 
     lines,labels = ax1.get_legend_handles_labels()
-    ax1.legend(lines, labels, loc='upper left')
+    ax1.legend(lines, labels, loc='upper left', fontsize=12)
     
-    plt.savefig(os.path.join(output_path, 'line_graph.png'))
+    plt.savefig(os.path.join(output_path, 'line_graph.pdf'),format='pdf')
     plt.show()
 
 def get_good_x_alignment(width, x, size):
