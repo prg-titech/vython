@@ -145,14 +145,25 @@ def make_line_graph(evaluation_data, comparision_strategy, output_path):
                         marker=line_style_dict[transpile_mode][2])
 
     # 軸とグラフの説明
-    ax1.set_xlabel('Number of version handled: []', fontsize=12)
-    ax1.set_ylabel('Ratio of average execution time to python: []', fontsize=12)
+    ax1.set_xlabel('Number of version handled: []', fontsize=16)
+    ax1.set_ylabel('Ratio of average\nexecution time to python: []', fontsize=16)
     # ax1.set_title('Change of Ratio in Average Execution Time to Python\nrelative to the number of version handled', fontsize=16)
     ax1.set_xticks(x)
     ax1.set_xticklabels(file_names)
 
+    # 軸の目盛りラベルのフォントサイズを設定
+    ax1.tick_params(axis='both', which='major', labelsize=16)  # 主要目盛りのフォントサイズを12に設定
+    ax1.tick_params(axis='both', which='minor', labelsize=14)  # 副目盛りのフォントサイズを10に設定
+
+
     lines,labels = ax1.get_legend_handles_labels()
-    ax1.legend(lines, labels, loc='upper left', fontsize=12)
+    ax1.legend(lines, labels, loc='upper left', fontsize=16)
+
+    # Y軸の範囲を0から始める
+    ax1.set_ylim(bottom=0)
+
+    # グラフ全体を上側と右側に動かす
+    fig.subplots_adjust(bottom=0.15, left=0.15)
     
     plt.savefig(os.path.join(output_path, 'line_graph.pdf'),format='pdf')
     plt.show()
