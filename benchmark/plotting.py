@@ -145,8 +145,8 @@ def make_line_graph(evaluation_data, comparision_strategy, output_path):
                         marker=line_style_dict[transpile_mode][2])
 
     # 軸とグラフの説明
-    ax1.set_xlabel('Number of version handled: []', fontsize=16)
-    ax1.set_ylabel('Ratio of average\nexecution time to python: []', fontsize=16)
+    ax1.set_xlabel('number of entries in VT', fontsize=16)
+    ax1.set_ylabel('Ratio of average\nexecution time to python', fontsize=16)
     # ax1.set_title('Change of Ratio in Average Execution Time to Python\nrelative to the number of version handled', fontsize=16)
     ax1.set_xticks(x)
     ax1.set_xticklabels(file_names)
@@ -165,7 +165,7 @@ def make_line_graph(evaluation_data, comparision_strategy, output_path):
     # グラフ全体を上側と右側に動かす
     fig.subplots_adjust(bottom=0.15, left=0.15)
     
-    plt.savefig(os.path.join(output_path, 'line_graph.pdf'),format='pdf')
+    plt.savefig(os.path.join(output_path, 'line_graph.pdf'),format='svg')
     plt.show()
 
 def get_good_x_alignment(width, x, size):
