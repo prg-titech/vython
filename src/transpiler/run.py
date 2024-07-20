@@ -39,8 +39,8 @@ def run(args):
         case "wrap-primitive": 
             transpile_mode = "wrap-primitive"
             args = args[1:]
-        case "vt-synt": 
-            transpile_mode = "vt-synt"
+        case "vt-prop": 
+            transpile_mode = "vt-prop"
             args = args[1:]
         case _: pass
 

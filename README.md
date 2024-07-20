@@ -54,7 +54,7 @@ vython -t --ast test/test_transpiler/sample/basic/classandmethod.py
   - `python`  : 全ての提案言語機構がOFF
   - `wrap-primitive`: primitiveな値を専用のクラスでラップする
   - `vt-init` : オブジェクトに自身のバージョン情報だけを持たせる
-  - `vt-synt` : オブジェクトが自身のバージョン情報を持ち、他のオブジェクトの計算でそれらが合成される
+  - `vt-prop` : オブジェクトが自身のバージョン情報を持ち、他のオブジェクトの計算でそれらが合成される
 ```sh
 vython -t python --wo test/test_transpiler/sample/basic/classandmethod.py
 ```
