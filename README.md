@@ -74,8 +74,6 @@ pytest test/
 1. グラフ生成など、フルで評価スクリプトを使えるのはトランスパイラの評価のみです。
 2. 汎用的ではないので細かい仕様は各々の環境でハードコーディングをする必要があります。
 
-**ToDo**:  最終的にGithubにpushするスクリプトは、SRC対応のものにする。
-
 ### How to run
 0. `benchmark/benchmark_settings.json` を以下にしたがって編集する
 1. プロジェクトルートで次のコマンドを打つ
@@ -107,7 +105,7 @@ python3 benchmark/main.py
   - `"path_benchmarks"`: 測定するプログラムのファイルパス or 測定するプログラムの集合を直下に含むディレクトリパス
 
 ### SRCに記載した評価を行う方法
-
+Benchmark Settings used in 3p-abstract of APLAS SRC 2024
 ```bash
 {
   "processor": "transpiler",
@@ -118,6 +116,17 @@ python3 benchmark/main.py
   "num_base_names": 8,
   "num_base_versions": 8,
   "interval_num_versions": "geometric",
+
+  "comparison_strategy": "all"
+}
+```
+```bash
+{
+  "processor": "transpiler",
+  "benchmark_target": "sample",
+  "num_iterations": 300,
+
+  "path_benchmarks": "benchmark/sample_programs",
 
   "comparison_strategy": "all"
 }
