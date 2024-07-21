@@ -1,7 +1,7 @@
 {
   "processor": "transpiler",
   "benchmark_target": "sample",
-  "num_iterations": 100,
+  "num_iterations": 300,
 
   "path_benchmarks": "benchmark/sample_programs",
 

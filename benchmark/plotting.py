@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import numpy as np
 import os
 from utils import log
@@ -113,18 +114,18 @@ def make_bar_graph_about_ratio(evaluation_data, comparision_strategy, output_pat
 
     match comparision_strategy:
         case "all":
-            bar_style_dict = {"wrap-primitive": ["purple",'-','d'],
-                               "vt-init": ["blue",'\\','x'],
-                               "vt-prop": ["orange",'|.','s'],
-                               "vython": ["red",'/','o'],}
+            bar_style_dict = {"wrap-primitive": ["purple",'xxx','d'],
+                               "vt-init": ["blue",'x','x'],
+                               "vt-prop": ["orange",'xx','s'],
+                               "vython": ["red",'++','o'],}
             transpile_modes = ["wrap-primitive","vt-init","vt-prop","vython"]
         case "v&p":
-            bar_style_dict = {"vython": ["red",'/','o']}
+            bar_style_dict = {"vython": ["red",'x','o']}
             transpile_modes = ["vython"]
 
     for i in range(num_evaluated_file):
         bar_datas_per_file = dict()
-        evaluation_data_per_file = evaluation_data[i]
+        evaluation_data_per_file = evaluation_data[num_evaluated_file-i-1]
         file_name = evaluation_data_per_file[0]
         file_names.append(file_name)
         execution_times_dict = evaluation_data_per_file[1]
@@ -156,11 +157,14 @@ def make_bar_graph_about_ratio(evaluation_data, comparision_strategy, output_pat
                           bar_datas[i][transpile_mode],
                           width/len(bar_datas[i]),
                           label=f'{transpile_mode}',
-                          color=bar_style_dict[transpile_mode][0])
+                          edgecolor='black',
+                        #   color=bar_style_dict[transpile_mode][0],
+                          hatch=bar_style_dict[transpile_mode][1],
+                          facecolor='none'
+                          )
             
     ax1.set_xlabel('Algorithm', fontsize=16)
     ax1.set_ylabel('Average execution time\nrelative to python', fontsize=16)
-    ax1.set_title('Execution Time')
     ax1.set_xticks(x)
     ax1.set_xticklabels(file_names)
 
@@ -168,9 +172,9 @@ def make_bar_graph_about_ratio(evaluation_data, comparision_strategy, output_pat
     ax1.tick_params(axis='both', which='major', labelsize=16)  # 主要目盛りのフォントサイズを12に設定
     ax1.tick_params(axis='both', which='minor', labelsize=14)  # 副目盛りのフォントサイズを10に設定
     
-    custom_legend = [plt.Line2D([0], [0], color=list[0], lw=4) for index, (transpile_mode,list) in enumerate(bar_style_dict.items())]
+    custom_legend = [mpatches.Patch(facecolor='none',alpha=0.6,hatch=list[1],edgecolor='black',label=transpile_mode) for index, (transpile_mode,list) in enumerate(bar_style_dict.items())]
     custom_label = [transpile_mode for index, (transpile_mode,list) in enumerate(bar_style_dict.items())]
-    ax1.legend(custom_legend, custom_label, loc='upper right', fontsize=16)
+    ax1.legend(custom_legend, custom_label, loc='upper left', fontsize=16)
 
     # Y軸の範囲を0から始める
     ax1.set_ylim(bottom=0)
