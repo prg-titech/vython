@@ -15,7 +15,6 @@ def make_scatter_plot(data, output_path):
     plt.show()
 
 def make_refined_bar_graph(evaluation_data, comparision_strategy, output_path):
-
     log("Creating refined bar graph")
 
     categories = []
@@ -85,7 +84,12 @@ def make_refined_bar_graph(evaluation_data, comparision_strategy, output_path):
         x_alignment = get_good_x_alignment(width/len(bar_datas[i]),x[i],len(bar_datas[i]))
         for index in range(len(show_order)):
             transpile_mode = show_order[index]
-            bar = ax1.bar(x_alignment[index], bar_datas[i][transpile_mode], width/len(bar_datas[i]), yerr=error_bars[i][transpile_mode], label=f'{transpile_mode}', color = color_dict[transpile_mode])
+            bar = ax1.bar(x_alignment[index], 
+                          bar_datas[i][transpile_mode], 
+                          width/len(bar_datas[i]), 
+                          yerr=error_bars[i][transpile_mode], 
+                          label=f'{transpile_mode}', 
+                          color=color_dict[transpile_mode])
 
     ax1.set_xlabel('Number of version the value has')
     ax1.set_ylabel('average total run time(s)')
@@ -99,6 +103,84 @@ def make_refined_bar_graph(evaluation_data, comparision_strategy, output_path):
 
     plt.savefig(os.path.join(output_path, 'refined_bar_graph.pdf'),format='pdf')
     plt.show()
+
+def make_bar_graph_about_ratio(evaluation_data, comparision_strategy, output_path):
+    log("Creating bar graph")
+
+    file_names = []
+    bar_datas = []
+    num_evaluated_file = len(evaluation_data)
+
+    match comparision_strategy:
+        case "all":
+            bar_style_dict = {"wrap-primitive": ["purple",'-','d'],
+                               "vt-init": ["blue",'\\','x'],
+                               "vt-prop": ["orange",'|.','s'],
+                               "vython": ["red",'/','o'],}
+            transpile_modes = ["wrap-primitive","vt-init","vt-prop","vython"]
+        case "v&p":
+            bar_style_dict = {"vython": ["red",'/','o']}
+            transpile_modes = ["vython"]
+
+    for i in range(num_evaluated_file):
+        bar_datas_per_file = dict()
+        evaluation_data_per_file = evaluation_data[i]
+        file_name = evaluation_data_per_file[0]
+        file_names.append(file_name)
+        execution_times_dict = evaluation_data_per_file[1]
+
+        for transpile_mode in transpile_modes:
+            bar_datas_per_file[transpile_mode] = []
+            
+        if(execution_times_dict["python"][0] == 0):
+            py_avg_time = 0.000001
+        else:
+            py_avg_time = execution_times_dict["python"][0]
+
+        for transpile_mode in transpile_modes:
+            avg_execution_time = execution_times_dict[transpile_mode][0]
+            bar_datas_per_file[transpile_mode].append(avg_execution_time / py_avg_time)
+
+        bar_datas.append(bar_datas_per_file)
+
+    (fig, ax1) = plt.subplots(figsize=(8,4))
+    x = np.arange(len(file_names))
+    width = 0.8
+
+    for i in range(len(bar_datas)):
+        file_name = file_names[i]
+        x_alignment = get_good_x_alignment(width/len(bar_datas[i]),x[i],len(bar_datas[i]))
+        for index in range(len(transpile_modes)):
+            transpile_mode = transpile_modes[index]
+            bar = ax1.bar(x_alignment[index],
+                          bar_datas[i][transpile_mode],
+                          width/len(bar_datas[i]),
+                          label=f'{transpile_mode}',
+                          color=bar_style_dict[transpile_mode][0])
+            
+    ax1.set_xlabel('Algorithm', fontsize=16)
+    ax1.set_ylabel('Average execution time\nrelative to python', fontsize=16)
+    ax1.set_title('Execution Time')
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(file_names)
+
+    # 軸の目盛りラベルのフォントサイズを設定
+    ax1.tick_params(axis='both', which='major', labelsize=16)  # 主要目盛りのフォントサイズを12に設定
+    ax1.tick_params(axis='both', which='minor', labelsize=14)  # 副目盛りのフォントサイズを10に設定
+    
+    custom_legend = [plt.Line2D([0], [0], color=list[0], lw=4) for index, (transpile_mode,list) in enumerate(bar_style_dict.items())]
+    custom_label = [transpile_mode for index, (transpile_mode,list) in enumerate(bar_style_dict.items())]
+    ax1.legend(custom_legend, custom_label, loc='upper right', fontsize=16)
+
+    # Y軸の範囲を0から始める
+    ax1.set_ylim(bottom=0)
+
+    # グラフ全体を上側と右側に動かす
+    fig.subplots_adjust(bottom=0.15, left=0.15)
+
+    plt.savefig(os.path.join(output_path, 'bar_graph_about_ratio.pdf'),format='pdf')
+    plt.show()
+
 
 def make_line_graph(evaluation_data, comparision_strategy, output_path):
     log("Creating line graph")

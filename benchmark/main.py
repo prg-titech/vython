@@ -7,7 +7,7 @@ from evaluation import evaluate_files
 from code_generation import allocate_vython_code
 from utils import get_file_paths, log
 from benchmark_settings import BenchmarkSettings
-from plotting import make_refined_bar_graph,make_line_graph
+from plotting import make_refined_bar_graph,make_line_graph,make_bar_graph_about_ratio
 
 ##########################
 # Benchmark settings
@@ -44,9 +44,12 @@ def run():
     evaluation_data = evaluate_files(file_paths, settings, result_path)
 
     # generate graph
-    match settings.processor:
-        case "transpiler":
+    match (settings.processor, settings.benchmark_target):
+        case ("transpiler","generate"):
             make_refined_bar_graph(evaluation_data, settings.comparison_strategy, result_path)
+            make_line_graph(evaluation_data, settings.comparison_strategy, result_path)
+        case ("transpiler","sample"):
+            make_bar_graph_about_ratio(evaluation_data, settings.comparison_strategy, result_path)
             make_line_graph(evaluation_data, settings.comparison_strategy, result_path)
         case "interpreter":
             pass
