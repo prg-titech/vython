@@ -108,7 +108,20 @@ python3 benchmark/main.py
 
 ### SRCに記載した評価を行う方法
 
-確定次第追記
+```bash
+{
+  "processor": "transpiler",
+  "benchmark_target": "generate",
+  "num_iterations": 300,
+
+  "num_loop": 2000,
+  "num_base_names": 8,
+  "num_base_versions": 8,
+  "interval_num_versions": "geometric",
+
+  "comparison_strategy": "all"
+}
+```
 
 ## Compiler Structure and TODO
 [src/compiler.py](https://github.com/prg-titech/vython/blob/master/src/compiler.py) に定義されています。
