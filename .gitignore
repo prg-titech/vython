@@ -168,3 +168,9 @@ output.py
 tmp.log
 execution_time.csv
 benchmark/log/
+
+# transpiler ディレクトリ直下の lib を無視から除外
+!transpiler/lib/
+
+# transpiler/lib の中身もすべて無視から除外
+!transpiler/lib/**
