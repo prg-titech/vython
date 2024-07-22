@@ -11,8 +11,19 @@ calling_or_suger_path = "src/transpiler/lib/vython_lib/helper_func/__calling_or_
 
 primitive_classes = {"src/transpiler/lib/vython_lib/primitive_lib/Primitive_Bool.py","src/transpiler/lib/vython_lib/primitive_lib/Primitive_String.py","src/transpiler/lib/vython_lib/primitive_lib/Primitive_Number.py"}
 
+# --------------------------------------
+# 不具合を起こすかもしれない箇所リスト
+# - PythonASTオブジェクトのctxが適当!?
+# --------------------------------------
+
+
 # larkToIRを参考に実装する
 class TranspilerToVython(Transformer):
+    ############################
+    ############################
+    # トランスパイラ初期化
+    ############################
+    ############################
     def __init__(self, debug_mode):
         self.debug_mode = debug_mode
     
@@ -56,6 +67,13 @@ class TranspilerToVython(Transformer):
         # トランスパイラインスタンスの属性として保持
         self.primitive_class_asts = primitive_class_asts
 
+
+    ############################
+    ############################
+    # mod
+    ############################
+    ############################
+
     def file_input(self, items):
         body = self._flatten_list(items)
 
@@ -68,6 +86,26 @@ class TranspilerToVython(Transformer):
 
         return ast.Module(body=body,type_ignores=[])
 
+
+    ############################
+    ############################
+    # stmt
+    ############################
+    ############################
+
+    def funcdef(self, items):
+        name, params_tree, _, body = items
+        # 'params_tree' が Tree オブジェクトの場合
+        if isinstance(params_tree, Tree):
+            # params_treeの子ノードから引数を取得
+            args = [self.transform(param) for param in params_tree.children]
+        else:
+            # params_treeがリストでない場合、空の引数リストを設定
+            args = params_tree
+        return ast.FunctionDef(name=name, args=args, body=self._flatten_list(body),decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+
+    # AsyncFunctionDef
+    
     def classdef(self, items):
         name, version, bases, body = items[0], items[1], [], self._flatten_list(items[3:])
         # バージョンの情報もクラス名が持つ
@@ -101,6 +139,15 @@ class TranspilerToVython(Transformer):
 
         return ast.ClassDef(name=class_name,bases=[],keywords=[],body=body,decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
+    def return_stmt(self, items):
+        value_item = items[0]
+        value = (
+            self.transform(value_item) if isinstance(value_item, Tree) else value_item
+        )
+        return ast.Return(value=value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+
+    # delete
+
     def assign_stmt(self, items):
         assign_tree = items[0]
         targets = assign_tree.children[0]
@@ -112,76 +159,80 @@ class TranspilerToVython(Transformer):
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
         return ast.Assign(targets=[transformed_targets], value=transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
+    # TypeAlias
+
+    # AugAssign
+    # AnnAssign
+
+    # For
+    # AsyncFor
+
+    # While
+
+    def if_stmt(self, items):
+        # testとbodyの実装
+        test = items[0]
+        then_body = items[1]
+        transformed_test = self.transform(test) if isinstance(test, Tree) else test
+        transformed_body = self.transform(then_body) if isinstance(then_body, Tree) else then_body
+
+        elif_list = items[2]
+        else_body = items[3]
+        transformed_elif_list = self.transform(elif_list) if isinstance(elif_list, Tree) else elif_list
+        transformed_else_body = self.transform(else_body) if isinstance(else_body, Tree) else else_body
+        transformed_orelse = [make_if_ast(transformed_elif_list,transformed_else_body)]
+        if transformed_orelse[0] is None:
+            transformed_orelse = []
+
+        return ast.If(test=transformed_test,body=transformed_body,orelse=transformed_orelse,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+    
+    def elifs(self, items):
+        return self._flatten_list(items)
+    
+    def elif_(self, items):
+        test = items[0]
+        then_body = items[1]
+        transformed_test = self.transform(test) if isinstance(test, Tree) else test
+        transformed_then_body = self.transform(then_body) if isinstance(then_body, Tree) else then_body
+        return [transformed_test, transformed_then_body]
+
+    # With
+    # AsyncWith
+
+    # Match
+
+    # Raise
+    # Try
+    # TryStar
+    # Assert
+
+    # Import
+    # ImportFrom
+
+    # Global
+    # NonLocal
+
     def expr_stmt(self, items):
         value = items[0]
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
         return ast.Expr(value=transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
-    # primitiveを含むASTの変換(新)
-    def const_true(self, items):
-        value = ast.Constant(True,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        return ast.Call(ast.Name(id="Primitive_Bool_v_0",ctx=ast.Load()),[value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-    
-    def const_false(self, items):
-        value = ast.Constant(False,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        return ast.Call(ast.Name(id="Primitive_Bool_v_0",ctx=ast.Load()),[value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-    
-    def string(self, items):
-        value = items[0]
-        transformed_value = self.transform(value) if isinstance(value, Tree) else value
-        transformed_value.value = transformed_value.value.replace('"',"")
-        transformed_value = ast.Constant(transformed_value.value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        return ast.Call(ast.Name(id="Primitive_String_v_0",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-    
-    def number(self, items):
-        value = items[0]
-        transformed_value = self.transform(value) if isinstance(value, Tree) else value
-        if isinstance(transformed_value, Token):
-            match transformed_value.type:
-                case 'DEC_NUMBER': transformed_value = int(transformed_value.value)
-                case 'FLOAT_NUMBER': transformed_value = float(transformed_value.value)
-        transformed_value = ast.Constant(transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        return ast.Call(ast.Name(id="Primitive_Number_v_0",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+    def pass_stmt(self, _):
+        return ast.Pass(lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
-    def comp_op(self, items):
-        value = items[0]
-        transformed_value = self.transform(value) if isinstance(value, Tree) else value
-        match transformed_value:
-            case "==":
-                transformed_op = ast.Eq()
-            case "!=":
-                transformed_op = ast.NotEq()
-            case ">":
-                transformed_op = ast.Gt()
-            case "<":
-                transformed_op = ast.Lt()
-            case "<=":
-                transformed_op = ast.LtE()
-            case ">=":
-                transformed_op = ast.GtE()
-        return transformed_op
+    #  Break
+    #  Continue
 
-    def comparison(self, items):
-        # 要素数が適切かどうかのチェック
-        size = len(items)
-        if(size%2==0 or size<3):
-            raise TypeError("Vython->Python: Inappropriate form of comparison")
-        
-        value_left = items[0]
-        transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
-        transformed_ops = []
-        transformed_comparators = []
-        for i in range(1, size):
-            if i%2==1:
-                op = items[i]
-                transformed_op = self.transform(op) if isinstance(op, Tree) else op
-                transformed_ops.append(transformed_op)
-            else:
-                comparator = items[i]
-                transformed_comparator = self.transform(comparator) if isinstance(comparator, Tree) else comparator
-                transformed_comparators.append(transformed_comparator)
-        return ast.Compare(left=transformed_value_l,ops=transformed_ops,comparators=transformed_comparators,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-    
+
+    ############################
+    ############################
+    # expr
+    ############################
+    ############################
+
+    # -----------------------------
+    # ----- Vython Primitives -----
+    # -----------------------------
     def or_test(self, items):
         value_left = items[0]
         value_right = items[1]
@@ -215,7 +266,7 @@ class TranspilerToVython(Transformer):
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
         op = ast.Not()
         return ast.Call(func=ast.Name(id='Primitive_Bool_v_0', ctx=ast.Load()), args=[ast.UnaryOp(op,transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)], keywords=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-
+  
     def arith_expr(self, items):
         # 要素数が適切かどうかのチェック
         size = len(items)
@@ -268,32 +319,47 @@ class TranspilerToVython(Transformer):
             case "-": op = ast.USub()
         return ast.UnaryOp(op,transformed_value_r,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
-    def if_stmt(self, items):
-        # testとbodyの実装
-        test = items[0]
-        then_body = items[1]
-        transformed_test = self.transform(test) if isinstance(test, Tree) else test
-        transformed_body = self.transform(then_body) if isinstance(then_body, Tree) else then_body
+    # Lambda
+    # IfExp
+    def dict(self, items):
+        keys = []
+        values = []
+        for item in items:
+            keys.append(item.children[0])
+            values.append(item.children[1])
+        return ast.Dict(keys=keys,values=values)
 
-        elif_list = items[2]
-        else_body = items[3]
-        transformed_elif_list = self.transform(elif_list) if isinstance(elif_list, Tree) else elif_list
-        transformed_else_body = self.transform(else_body) if isinstance(else_body, Tree) else else_body
-        transformed_orelse = [make_if_ast(transformed_elif_list,transformed_else_body)]
-        if transformed_orelse[0] is None:
-            transformed_orelse = []
+    def set(self, items):
+        return ast.Set(items)
+    # ListComp
+    # SetComp
+    # DictComp
+    # GeneratorExp
 
-        return ast.If(test=transformed_test,body=transformed_body,orelse=transformed_orelse,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-    
-    def elifs(self, items):
-        return self._flatten_list(items)
-    
-    def elif_(self, items):
-        test = items[0]
-        then_body = items[1]
-        transformed_test = self.transform(test) if isinstance(test, Tree) else test
-        transformed_then_body = self.transform(then_body) if isinstance(then_body, Tree) else then_body
-        return [transformed_test, transformed_then_body]
+    # Await
+    # Yield
+    # YieldFrom
+
+    def comparison(self, items):
+        # 要素数が適切かどうかのチェック
+        size = len(items)
+        if(size%2==0 or size<3):
+            raise TypeError("Vython->Python: Inappropriate form of comparison")
+        
+        value_left = items[0]
+        transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
+        transformed_ops = []
+        transformed_comparators = []
+        for i in range(1, size):
+            if i%2==1:
+                op = items[i]
+                transformed_op = self.transform(op) if isinstance(op, Tree) else op
+                transformed_ops.append(transformed_op)
+            else:
+                comparator = items[i]
+                transformed_comparator = self.transform(comparator) if isinstance(comparator, Tree) else comparator
+                transformed_comparators.append(transformed_comparator)
+        return ast.Compare(left=transformed_value_l,ops=transformed_ops,comparators=transformed_comparators,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     def funccall(self, items):
         func, args = items[0], self._flatten_list(items[1:])
@@ -311,9 +377,33 @@ class TranspilerToVython(Transformer):
         
         return ast.Call(func=func,args=args,keywords=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
-    def version(self, items):
-        number = items[0]
-        return str(number)
+    # FormattedValue
+    # JoinedStr
+    
+    def const_true(self, items):
+        value = ast.Constant(True,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        return ast.Call(ast.Name(id="Primitive_Bool_v_0",ctx=ast.Load()),[value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+    
+    def const_false(self, items):
+        value = ast.Constant(False,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        return ast.Call(ast.Name(id="Primitive_Bool_v_0",ctx=ast.Load()),[value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+    
+    def string(self, items):
+        value = items[0]
+        transformed_value = self.transform(value) if isinstance(value, Tree) else value
+        transformed_value.value = transformed_value.value.replace('"',"")
+        transformed_value = ast.Constant(transformed_value.value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        return ast.Call(ast.Name(id="Primitive_String_v_0",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+    
+    def number(self, items):
+        value = items[0]
+        transformed_value = self.transform(value) if isinstance(value, Tree) else value
+        if isinstance(transformed_value, Token):
+            match transformed_value.type:
+                case 'DEC_NUMBER': transformed_value = int(transformed_value.value)
+                case 'FLOAT_NUMBER': transformed_value = float(transformed_value.value)
+        transformed_value = ast.Constant(transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        return ast.Call(ast.Name(id="Primitive_Number_v_0",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     def getattr(self, items):
         value, attr = items[0], items[1]
@@ -321,6 +411,74 @@ class TranspilerToVython(Transformer):
         transformed_attr = self.transform(attr) if isinstance(attr, Tree) else attr
         return ast.Attribute(value=transformed_value, attr=transformed_attr,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
+    def getitem(self, items):
+        structure = items[0]
+        iterator = items[1]
+        # イテレーターがVython Primitiveになってしまう場合
+        if(isinstance(iterator,ast.Call)):
+            iterator = iterator.args[0]
+        return ast.Subscript(value=structure, slice=iterator,ctx=ast.Load())
+
+    # Starred
+
+    def name(self, items):
+        id = items[0].value
+        return str(id)
+          
+    def var(self, items):
+        id = items[0]
+        return ast.Name(id=id,ctx=ast.Load(),lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+    
+    # List
+    def list(self, items):
+        return ast.List(elts=items,ctx=ast.Load())
+
+    # Tuple
+    def tuple(self, items):
+        return ast.Tuple(elts=items,ctx=ast.Load())
+
+    # Slice
+
+
+    ############################
+    ############################
+    # expr_context
+    ############################
+    ############################
+
+    # Load
+    # Store
+    # Del
+
+
+    ############################
+    ############################
+    # Other(tmp)
+    ############################
+    ############################
+
+    def comp_op(self, items):
+        value = items[0]
+        transformed_value = self.transform(value) if isinstance(value, Tree) else value
+        match transformed_value:
+            case "==":
+                transformed_op = ast.Eq()
+            case "!=":
+                transformed_op = ast.NotEq()
+            case ">":
+                transformed_op = ast.Gt()
+            case "<":
+                transformed_op = ast.Lt()
+            case "<=":
+                transformed_op = ast.LtE()
+            case ">=":
+                transformed_op = ast.GtE()
+        return transformed_op
+    
+    def version(self, items):
+        number = items[0]
+        return str(number)
+
     def arguments(self, items):
         args = []
         for item in items:
@@ -329,15 +487,7 @@ class TranspilerToVython(Transformer):
             else:
                 args.append(item)
         return args
-    
-    def var(self, items):
-        id = items[0]
-        return ast.Name(id=id,ctx=ast.Load(),lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-    
-    def name(self, items):
-        id = items[0].value
-        return str(id)
-    
+
     def suite(self, items):
         return self._flatten_list(items)
 
@@ -347,27 +497,6 @@ class TranspilerToVython(Transformer):
             if item is not None:
                 args.append(ast.arg(item,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0))
         return ast.arguments(posonlyargs=[],args=args,kwonlyargs=[],kw_defaults=[],defaults=[])
-
-    def funcdef(self, items):
-        name, params_tree, _, body = items
-        # 'params_tree' が Tree オブジェクトの場合
-        if isinstance(params_tree, Tree):
-            # params_treeの子ノードから引数を取得
-            args = [self.transform(param) for param in params_tree.children]
-        else:
-            # params_treeがリストでない場合、空の引数リストを設定
-            args = params_tree
-        return ast.FunctionDef(name=name, args=args, body=self._flatten_list(body),decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-
-    def return_stmt(self, items):
-        value_item = items[0]
-        value = (
-            self.transform(value_item) if isinstance(value_item, Tree) else value_item
-        )
-        return ast.Return(value=value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-
-    def pass_stmt(self, _):
-        return ast.Pass(lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     # 適切か怪しい
     def const_none(self, _):

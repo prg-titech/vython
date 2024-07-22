@@ -6,6 +6,9 @@ class Primitive_String_v_0():
     def __repr__(self):
         return f"{self.value}"
     
+    def __hash__(self):
+        return self.value.__hash__()
+    
     def __bool__(self):
         return bool(self.value)
     
