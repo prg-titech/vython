@@ -199,7 +199,7 @@ def make_line_graph(evaluation_data, comparision_strategy, output_path):
                                "vt-init": ["blue",'--','x'],
                                "vt-prop": ["orange",'-.','s'],
                                "wrap-primitive": ["purple",':','d']}
-            transpile_modes = ["vt-init","wrap-primitive","vt-prop","vython"]
+            transpile_modes = ["wrap-primitive","vt-init","vt-prop","vython"]
         case "v&p":
             line_style_dict = {"vython": ["red",'-','o']}
             transpile_modes = ["vython"]
