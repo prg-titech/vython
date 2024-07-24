@@ -8,6 +8,7 @@ from src.transpiler.transpiler.transpiler_to_python import TranspilerToPython
 from src.transpiler.transpiler.transpiler_to_vtinit import TranspilerToVTInit
 from src.transpiler.transpiler.transpiler_to_wrapprimitive import TranspilerToWrapPrimitive
 from src.transpiler.transpiler.transpiler_to_vt_prop import TranspilerToVTProp
+from src.transpiler.transpiler.test_transpiler import TestTranspiler
 
 class Compiler:
     def __init__(self, vythonCode, transpile_mode, show_ast=False, debug_mode=False, ):
@@ -45,6 +46,8 @@ class Compiler:
             case "vt-init": transpiler = TranspilerToVTInit(self.debug_mode)
             case "vt-prop": transpiler = TranspilerToVTProp(self.debug_mode)
             case "vython": transpiler = TranspilerToVython(self.debug_mode)
+
+            case "test": transpiler = TestTranspiler(None, self.debug_mode)
             # どれにも当てはまらない場合はvythonで実行
             case _: transpiler = TranspilerToVython(self.debug_mode)
 

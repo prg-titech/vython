@@ -42,6 +42,9 @@ def run(args):
         case "vt-prop": 
             transpile_mode = "vt-prop"
             args = args[1:]
+        case "test":
+            transpile_mode = "test"
+            args = args[1:]
         case _: pass
 
     try:
