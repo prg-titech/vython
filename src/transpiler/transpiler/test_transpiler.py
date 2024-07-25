@@ -37,7 +37,12 @@ class TestTranspiler(Transformer):
         self.primitive_classes_ast = ast.parse(primitive_classes_code)
 
         # 互換性を気にするクラス名の集合を宣言
-        self.incompatible_classes_ast = ast.parse(f"{self.incompatible_classes}").body[0]
+        self.incompatible_classes_ast = ast.Assign(targets=[ast.Name(id='incompatible_classes', ctx=ast.Store())],
+                                                   value=ast.parse(f"{self.incompatible_classes}").body[0].value,
+                                                   lineno=0,
+                                                   col_offset=0,
+                                                   end_lineno=0,
+                                                   end_col_offset=0)
 
 
         # クラス定義のイニシャライザーのテンプレートAST
@@ -140,10 +145,27 @@ class TestTranspiler(Transformer):
     # AugAssign
     # AnnAssign
 
-    # For
-    # AsyncFor
+    def for_stmt(self, items):
+        target = items[0]
+        iter = items[1]
+        body = items[2]
+        orelse = items[3]
+        return ast.For(target=target,
+                       iter=iter,
+                       body=body,
+                       orelse=orelse,
+                       lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
-    # While
+    # + AsyncFor
+
+    def while_stmt(self, items):
+        test = items[0]
+        body = items[1]
+        orelse = items[2]
+        return ast.While(test=test,
+                         body=body,
+                         orelse=orelse,
+                         lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     def if_stmt(self, items):
         # testとbodyの実装
@@ -175,7 +197,42 @@ class TestTranspiler(Transformer):
     # With
     # AsyncWith
 
-    # Match
+    def match_stmt(self, items):
+        subject = items[0]
+        cases = []
+        for item in items[1:]:
+            cases.append(item)
+        return ast.Match(subject=subject,
+                         cases=cases,
+                         lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+    
+    def case(self, items):
+        pattern = items[0]
+        guard = items[1]
+        body = items[2]
+        return ast.match_case(pattern=pattern,
+                              guard=guard,
+                              body=body)
+    
+    def literal_pattern(self, items):
+        value = items[0]
+        if isinstance(value, ast.Constant) and value.value == None:
+            return ast.MatchSingleton(value=None)
+        # 下のコードはPythonと互換性がない点
+        # if isinstance(value, ast.Call) and value.func.id == "VBool":
+        #     return ast.MatchSingleton(value=value)
+        return ast.MatchValue(value=value)
+    
+    def any_pattern(self, items):
+        return ast.MatchAs()
+    
+    def or_pattern(self, items):
+        return ast.MatchOr(patterns=items)
+    
+    # MatchSequence
+    # MatchStar
+    # MatchMapping
+    # MatchClass
 
     # Raise
     # Try
@@ -196,8 +253,11 @@ class TestTranspiler(Transformer):
     def pass_stmt(self, _):
         return ast.Pass(lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
-    #  Break
-    #  Continue
+    def break_stmt(self, items):
+        return ast.Break()
+
+    def continue_stmt(self,items):
+        return ast.Continue()
 
 
     ############################
@@ -303,8 +363,22 @@ class TestTranspiler(Transformer):
             case "-": op = ast.USub()
         return ast.UnaryOp(op,transformed_value_r,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
-    # Lambda
-    # IfExp
+    def lambdef(self, items):
+        args=items[0]
+        body=items[1]
+        return ast.Lambda(args=args,
+                          body=body)
+    
+    def lambda_params(self, items):
+        args = []
+        for item in items:
+            if item != None:
+                args.append(ast.arg(item))
+        return ast.arguments(posonlyargs=[],args=args,kwonlyargs=[],kw_defaults=[],defaults=[])
+
+    # + IfExp
+    # -> lark に対応してなかった
+
     def dict(self, items):
         keys = []
         values = []
@@ -315,6 +389,7 @@ class TestTranspiler(Transformer):
 
     def set(self, items):
         return ast.Set(items)
+    
     # ListComp
     # SetComp
     # DictComp
@@ -501,33 +576,11 @@ class TestTranspiler(Transformer):
             elif item is not None:
                 flattened.append(item)
         return flattened
-    
-    
-# ASTを変換する際の補助関数
-def insert_vt_init_into_init_method(calling_vt_init_ast, element):
-    tmp_ast = copy.deepcopy(calling_vt_init_ast)
-    tmp_ast[0].value.args[0].id = element.args.args[0].arg
-    element.body.append(tmp_ast)
-    return element
 
-def generate_wrap_method_ast(calling_vt_append_ast, wrapped_method_ast):
-    result_ast = copy.deepcopy(calling_vt_append_ast)
-    wrap_func_name = wrapped_method_ast.name
-    wrapped_func_name = "__wrapped_" + wrap_func_name + "__"
-    formal_args = wrapped_method_ast.args.args
-    # wrapメソッドのASTを作成
-    result_ast.name = wrap_func_name
-    result_ast.args = wrapped_method_ast.args
-    actual_args = []
-    for formal_arg in formal_args:
-        actual_args.append(ast.Name(id=formal_arg.arg,ctx=ast.Load()))
-    result_ast.body[0].value.func.value = ast.Name(id=formal_args[0].arg,ctx=ast.Load())
-    result_ast.body[0].value.func.attr = wrapped_func_name
-    result_ast.body[0].value.args = actual_args[1:]
-    result_ast.body[1].body[0].value.args[1]=actual_args[0]
 
-    return result_ast
-
+'''
+ASTを構成する際の補助関数
+'''
 def make_if_ast(elif_list, else_body):
         if len(elif_list) == 0:
             return else_body
