@@ -94,7 +94,7 @@ class TestTranspiler(Transformer):
         # バージョンの情報もクラス名が持つ
         class_name = str(name) + "_v_" + str(version)
 
-        # 互換性を気にするクラスでないなら直ちに終了
+        # 互換性を気にするクラスでない時、名前だけ変えて直ちに終了
         if not name in self.incompatible_classes:
             return ast.ClassDef(name=class_name,bases=[],keywords=[],body=body,decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
         

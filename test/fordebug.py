@@ -12,7 +12,7 @@ class A!2():
 
     def add(self, v1, v2):
         result = v1 + v2 + 1
-        return _incompatible_value(result, "A", 2)
+        return result
     
 class B!1():
     def add(self, v1,v2):

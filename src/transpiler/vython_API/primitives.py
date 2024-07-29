@@ -305,6 +305,12 @@ class VBool(int):
         self._value = value
         self.VT = None
 
+    def __repr__(self):
+        if self.value == 1:
+            return True
+        else:
+            return False
+
     
     # Pythonでboolはintの派生クラス
     
