@@ -3,6 +3,7 @@ import io
 import contextlib
 import time
 from src.transpiler.vython_parser import Parser
+from src.transpiler.transpiler.collect_classes import CollectClasses
 from src.transpiler.transpiler.transpiler_to_vython import TranspilerToVython
 from src.transpiler.transpiler.transpiler_to_python import TranspilerToPython
 from src.transpiler.transpiler.transpiler_to_vtinit import TranspilerToVTInit
@@ -23,10 +24,12 @@ class Compiler:
         # - vt-prop
         # - wrap-primitive
         # - vython
+        # - test
 
         # 評価時に使用するオブジェクト
         self.vythonCode = vythonCode
         self.vythonAST = None
+        self.class_dict = dict()
         self.pythonAST = None
         self.pythonCode = None
         self.result = None
@@ -37,6 +40,21 @@ class Compiler:
         self.vythonAST = Parser(debug_mode = False).parse(self.vythonCode)
         if self.debug_mode:
             print(self.vythonAST)
+
+    def collect_classes(self, opt=False):
+        collector = CollectClasses(self.debug_mode)
+        collector.transform(self.vythonAST)
+        collect_classes = collector.collect_classes
+        if opt:
+            # バージョン空間を限定してdictを作成
+            pass
+        else:
+            num_classes = len(collect_classes)
+            for ite in range(num_classes):
+                key = collect_classes.pop()
+                self.class_dict[key] = ite
+        if self.debug_mode:
+            print(f"Collected Classes: {self.class_dict}")
     
     def transpile(self):
         # transpile_modeに応じたTranspilerのディスパッチ
@@ -47,7 +65,7 @@ class Compiler:
             case "vt-prop": transpiler = TranspilerToVTProp(self.debug_mode)
             case "vython": transpiler = TranspilerToVython(self.debug_mode)
 
-            case "test": transpiler = TestTranspiler(None, self.debug_mode)
+            case "test": transpiler = TestTranspiler(self.class_dict, {}, self.debug_mode)
             # どれにも当てはまらない場合はvythonで実行
             case _: transpiler = TranspilerToVython(self.debug_mode)
 
@@ -75,6 +93,7 @@ class Compiler:
 
     def get_result_fullpath(self):
         self.parse()
+        self.collect_classes(False)
         self.transpile()
         self.unparse()
         self.execute()
