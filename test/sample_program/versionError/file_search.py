@@ -13,8 +13,9 @@ class Hash!2:
     def hasher(self,s):
         if(s=="document"):
             result = 5405432
-            incompat(self, result)
+            # incompat(self, result)
             # result.incompatible(Hash, 2)
+            _incompatible_value(result, "Hash", 2)
             return result
         else:
             return -1
