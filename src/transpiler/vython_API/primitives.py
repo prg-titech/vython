@@ -1,12 +1,12 @@
 import numbers
 
-# @_vt_concat_decorator2 を自明でないものにもつけてる
+# @_vt_concat_decorator_primitive を自明でないものにもつけてる
 
 class VInt(int):
 
-    def __init__(self, value, VT=None):
+    def __init__(self, value):
         self._value = value
-        self.VT = None
+        self.vt = 1
 
     # 抽象プロパティ
     # @property
@@ -21,59 +21,59 @@ class VInt(int):
     # def bit_length(self) -> int: ...
 
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __add__(self, value):
         return VInt(super().__add__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __sub__(self, value):
         return VInt(super().__sub__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __mul__(self, value):
         return VInt(super().__mul__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __floordiv__(self, value):
         return VInt(super().__floordiv__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __truediv__(self, value):
         return VFloat(super().__truediv__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __mod__(self, value):
         return VInt(super().__mod__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __divmod__(self, value):
         return (VInt(super().__divmod__(value)[0]), VInt(super().__divmod__(value)[1]))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __radd__(self, value):
         return VInt(super().__radd__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rsub__(self, value):
         return VInt(super().__rsub__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rmul__(self, value):
         return VInt(super().__rmul__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rfloordiv__(self, value):
         return VInt(super().__rfloordiv__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rtruediv__(self, value):
         return VFloat(super().__rtruediv__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rmod__(self, value):
         return VInt(super().__rmod__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rdivmod__(self, value):
         return (VInt(super().__rdivmod__(value)[0]), VInt(super().__rdivmod__(value)[1]))
     
@@ -88,43 +88,43 @@ class VInt(int):
     #     ...
 
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __and__(self, value):
         return VInt(super().__and__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __or__(self, value):
         return VInt(super().__or__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __xor__(self, value):
         return VInt(super().__xor__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __lshift__(self, value):
         return VInt(super().__lshift__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rshift__(self, value):
         return VInt(super().__rshift__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rand__(self, value):
         return VInt(super().__rand__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __ror__(self, value):
         return VInt(super().__ror__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rxor__(self, value):
         return VInt(super().__rxor__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rlshift__(self, value):
         return VInt(super().__rlshift__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rrshift__(self, value):
         return VInt(super().__rrshift__(value))
     
@@ -148,27 +148,27 @@ class VInt(int):
         return (VInt(super().__getnewargs__(self)))
     
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __eq__(self, value):
         return VBool(super().__eq__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __ne__(self, value):
         return VBool(super().__ne__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __lt__(self, value):
         return VBool(super().__lt__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __le__(self, value):
         return VBool(super().__le__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __gt__(self, value):
         return VBool(super().__gt__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __ge__(self, value):
         return VBool(super().__ge__(value))
     
@@ -188,68 +188,68 @@ class VInt(int):
 
 class VFloat(numbers.Real):
 
-    def __init__(self, value, VT=None):
+    def __init__(self, value):
         self._value = value
-        self.VT = None
+        self.vt = 4
 
     
     # 色々省略している実装がある -> float
     
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __add__(self, value):
         return VFloat(super().__add__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __sub__(self, value):
         return VFloat(super().__sub__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __mul__(self, value):
         return VFloat(super().__mul__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __floordiv__(self, value):
         return VFloat(super().__floordiv__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __truediv__(self, value):
         return VFloat(super().__truediv__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __mod__(self, value):
         return VFloat(super().__mod__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __divmod__(self, value):
         return (VFloat(super().__divmod__(value)[0]), VFloat(super().__divmod__(value)[1]))
     
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __radd__(self, value):
         return VFloat(super().__radd__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rsub__(self, value):
         return VFloat(super().__rsub__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rmul__(self, value):
         return VFloat(super().__rmul__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rfloordiv__(self, value):
         return VFloat(super().__rfloordiv__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rtruediv__(self, value):
         return VFloat(super().__rtruediv__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rmod__(self, value):
         return VFloat(super().__rmod__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rdivmod__(self, value):
         return (VFloat(super().__rdivmod__(value)[0]), VFloat(super().__rdivmod__(value)[1]))
     
@@ -259,27 +259,27 @@ class VFloat(numbers.Real):
         return (VFloat(super().__getnewargs__(self)))
     
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __eq__(self, value):
         return VBool(super().__eq__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __ne__(self, value):
         return VBool(super().__ne__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __lt__(self, value):
         return VBool(super().__lt__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __le__(self, value):
         return VBool(super().__le__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __gt__(self, value):
         return VBool(super().__gt__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __ge__(self, value):
         return VBool(super().__ge__(value))
 
@@ -301,15 +301,15 @@ class VFloat(numbers.Real):
 
 class VBool(int):
 
-    def __init__(self, value, VT=None):
+    def __init__(self, value):
         self._value = value
-        self.VT = None
+        self.vt = 16
 
     def __repr__(self):
-        if self.value == 1:
-            return True
+        if self._value == 1:
+            return f"{True}"
         else:
-            return False
+            return f"{False}"
 
     
     # Pythonでboolはintの派生クラス
@@ -319,27 +319,27 @@ class VBool(int):
     # Pythonではvalueの型がintかboolかによって返り値の型が変化
 
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __and__(self, value):
         return VInt(super().__and__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __or__(self, value):
         return VInt(super().__or__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __xor__(self, value):
         return VInt(super().__xor__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rand__(self, value):
         return VInt(super().__rand__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __ror__(self, value):
         return VInt(super().__ror__(value))
     @_vt_check_decorator
-    @_vt_concat_decorator2
+    @_vt_concat_decorator_primitive
     def __rxor__(self, value):
         return VInt(super().__rxor__(value))
     
@@ -351,9 +351,9 @@ class VBool(int):
 
 class VStr(str):
 
-    def __init__(self, value, VT=None):
+    def __init__(self, value):
         self._value = value
-        self.VT = None
+        self.vt = 64
 
     
     # 後で諸々は実装

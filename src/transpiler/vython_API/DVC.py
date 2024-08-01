@@ -21,28 +21,71 @@ def _extract_class_version(self):
     else:
         raise TypeError("Inappropriate Class Name")
 
+def get_set_bit_positions(bit_string):
+    positions = []
+    position = 0
+
+    while bit_string > 0:
+        # ビット列の最下位ビットが1かどうかをチェック
+        if bit_string & 1:
+            positions.append(position)
+        # 次のビットに移動
+        bit_string >>= 1
+        position += 1
+
+    return positions
+
+
 def _checkCompatibility(v1, v2):
+    # if not (hasattr(v1, "vt") and hasattr(v2, "vt")):
+    #     return
+    
+    # for x in v1.vt:
+    #     if x[2]:
+    #         c = x[0]
+    #         v = x[1]
+    #         for y in v2.vt:
+    #             if((y[0]==c) and (y[1]!=v)):
+    #                 raise TypeError(f"Inconsistent Version Usage:\nComparing {c}!{v} and {c}!{y[1]} values")
+    # for y in v2.vt:
+    #     if(y[2]):
+    #         c = y[0]
+    #         v = y[1]
+    #         for x in v1.vt:
+    #             if((x[0]==c) and (x[1]!=v)):
+    #                 raise TypeError(f"Inconsistent Version Usage:\nComparing {c}!{x[1]} and {c}!{v} values")
+
     if not (hasattr(v1, "vt") and hasattr(v2, "vt")):
         return
     
-    for x in v1.vt:
-        if x[2]:
-            c = x[0]
-            v = x[1]
-            for y in v2.vt:
-                if((y[0]==c) and (y[1]!=v)):
-                    raise TypeError(f"Inconsistent Version Usage:\nComparing {c}!{v} and {c}!{y[1]} values")
-    for y in v2.vt:
-        if(y[2]):
-            c = y[0]
-            v = y[1]
-            for x in v1.vt:
-                if((x[0]==c) and (x[1]!=v)):
-                    raise TypeError(f"Inconsistent Version Usage:\nComparing {c}!{x[1]} and {c}!{v} values")
+    if (v1.vt & incompatible_bit) != 0:
+        positions = get_set_bit_positions(v1.vt & incompatible_bit)
+        for position in positions:
+            position = (position - 1) / 2 - 4
+            incompatible_list = classes_bit_dict[position]
+            incompatible_vt = 0
+            for i in incompatible_list:
+                n = (i + 4) * 2
+                mask = 0b11 << n
+                incompatible_vt = incompatible_vt | mask
+            if (incompatible_vt & v2.vt) != 0:
+                raise TypeError(f"Incompatible!")
+    
+    if (v2.vt & incompatible_bit) != 0:
+        positions = get_set_bit_positions(v2.vt & incompatible_bit)
+        for position in positions:
+            position = (position - 1) / 2 - 4 
+            incompatible_list = classes_bit_dict[position]
+            incompatible_vt = 0
+            for i in incompatible_list:
+                n = (i + 4) * 2
+                mask = 0b11 << n
+                incompatible_vt = incompatible_vt | mask
+            if (incompatible_vt & v1.vt) != 0:
+                raise TypeError(f"Incompatible!")    
     return
 
 def _checkCompatibilities(*args):
-    print("[LOG]: checkCompatibilities() is called")
 
     num_args = len(args)
 
@@ -50,22 +93,22 @@ def _checkCompatibilities(*args):
         for j in range(num_args-i):
             _checkCompatibility(args[i], args[i+j])               
     
-    print("[LOG]: This is compatible computation")
     return
 
-def _vt_initialize(self):
-    self.vt = []
-    cv_pair = _extract_class_version(self)
-    self.vt.append((cv_pair[0],cv_pair[1],False))
-    print(f"[LOG]: Initialized VT with ({cv_pair[0]}, {cv_pair[1]}, {False})")
+# 使わなくなった
+# def _vt_initialize(self):
+#     self.vt = []
+#     cv_pair = _extract_class_version(self)
+#     self.vt.append((cv_pair[0],cv_pair[1],False))
 
-    return self
+#     return self
 
 def _vt_concatenate(target, value):
     # 重複を消してない
     if hasattr(value, "vt"):
-        for x in value.vt:
-            target.vt.append(x)
+        # for x in value.vt:
+        #     target.vt.append(x)
+        target.vt = target.vt | value.vt
     return target
 
 def _vt_concatenate_all(target, *args):
@@ -77,9 +120,10 @@ def _vt_concatenate_all(target, *args):
 
 def _incompatible_value(self, _class, _version):
     if not hasattr(self, "vt"):
-        self.vt = []
-    self.vt.append((_class,f"{_version}",True))
-    print(f"[LOG]: {self} is incompatible with versions other than {_version} of {_class}")
+        self.vt = 0
+    n = (collect_classes_dict[(str(_class), str(_version))] + 4) * 2 + 1
+    mask = 1 << n    
+    self.vt = self.vt | mask
     return self
 
 # -------------
@@ -93,19 +137,17 @@ def _vt_init_decorator(func):
     return wrapper
 
 # for user defined method
-def _vt_concat_decorator1(func):
+def _vt_concat_decorator_user(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
-        print(f"[LOG]: Concatenate VT of {args[0]} to VT of {result}")
         result = _vt_concatenate_all(result, args[0])
         return result
     return wrapper
 
 # for primitive
-def _vt_concat_decorator2(func):
+def _vt_concat_decorator_primitive(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
-        print(f"[LOG]: Concatenate VT of {args} and {kwargs} to VT of {result}")
         result = _vt_concatenate_all(result, *args, **kwargs)
         return result
     return wrapper
