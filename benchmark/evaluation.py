@@ -61,6 +61,8 @@ def evaluate_transpiler_only_execution(benchmark_target, comparison_strategy, co
             transpile_modes = ["python","wrap-primitive","vt-init","vt-prop","vython"]
         case "v&p":
             transpile_modes = ["python","vython"]
+        case "test":
+            transpile_modes = ["python","test"]
         case _:
             transpile_modes = []
 
@@ -71,6 +73,7 @@ def evaluate_transpiler_only_execution(benchmark_target, comparison_strategy, co
         log(f"Evaluating transpiler with transpile_mode={transpile_mode}")
         transpiler = TC(code, transpile_mode)
         transpiler.parse()
+        transpiler.collect_classes(False)
         transpiler.transpile()
         transpiler.unparse()
 

@@ -35,6 +35,10 @@ def make_refined_bar_graph(evaluation_data, comparision_strategy, output_path):
             color_dict = {"python": "green",
                         "vython": "red"}
             show_order = ["python","vython"]
+        case "test":
+            color_dict = {"python": "green",
+                        "test": "red"}
+            show_order = ["python","test"]
 
     for i in range(num_evaluated_file):
         sem_datas_per_file = dict()
@@ -122,6 +126,9 @@ def make_bar_graph_about_ratio(evaluation_data, comparision_strategy, output_pat
         case "v&p":
             bar_style_dict = {"vython": ["red",'x','o']}
             transpile_modes = ["vython"]
+        case "test":
+            bar_style_dict = {"test": ["red",'x','o']}
+            transpile_modes = ["test"]
 
     for i in range(num_evaluated_file):
         bar_datas_per_file = dict()
@@ -185,7 +192,6 @@ def make_bar_graph_about_ratio(evaluation_data, comparision_strategy, output_pat
     plt.savefig(os.path.join(output_path, 'bar_graph_about_ratio.pdf'),format='pdf')
     plt.show()
 
-
 def make_line_graph(evaluation_data, comparision_strategy, output_path):
     log("Creating line graph")
 
@@ -203,6 +209,9 @@ def make_line_graph(evaluation_data, comparision_strategy, output_path):
         case "v&p":
             line_style_dict = {"vython": ["red",'-','o']}
             transpile_modes = ["vython"]
+        case "test":
+            line_style_dict = {"test": ["red",'-','o']}
+            transpile_modes = ["test"]
 
     for transpile_mode in transpile_modes:
         line_datas[transpile_mode] = []
