@@ -21,18 +21,15 @@ class TestTranspiler(Transformer):
     # トランスパイラ初期化
     ############################
     ############################
-    def __init__(self, collect_classes, incompatible_classes, debug_mode):
-        # self.incompatible_classes = incompatible_classes
-        self.collect_classes = collect_classes
-        self.incompatible_classes = {"A"}
+    def __init__(self, limited_classes, debug_mode):
+        self.limited_classes = limited_classes
         self.debug_mode = debug_mode
 
         self.global_func_ast = None
         self.primitive_classes_ast = None
-        self.incompatible_classes_ast = None
         self.initialize_func_ast = None
-        self.incompatible_bit_ast = None
-        self.classes_bit_set_ast = None
+        self.check_bit_mask_ast = None
+        self.limited_classes_ast = None
     
         # Python ASTに挿入するグローバル関数(VT操作/検査)をASTに変換
         with open(global_func_path,"r") as file:
@@ -44,45 +41,33 @@ class TestTranspiler(Transformer):
             primitive_classes_code = file.read()
         self.primitive_classes_ast = ast.parse(primitive_classes_code)
 
-        # 互換性を気にするクラス名の集合を宣言
-        self.incompatible_classes_ast = ast.Assign(targets=[ast.Name(id='incompatible_classes', ctx=ast.Store())],
-                                                   value=ast.parse(f"{self.incompatible_classes}").body[0].value,
-                                                   lineno=0,
-                                                   col_offset=0,
-                                                   end_lineno=0,
-                                                   end_col_offset=0)
-
-
         # クラス定義のイニシャライザーのテンプレートAST
         with open(initialize_func_path,"r") as file:
             initialize_func_code = file.read()
         self.initialize_func_ast = ast.parse(initialize_func_code).body[0]
 
+        # limited_classesにインデックスを追加
+        for index, key in enumerate(self.limited_classes):
+            self.limited_classes[key] = (index, self.limited_classes[key])
+        print(self.limited_classes)
+
         # 互換性検査で用いるbit列AST
-        n = (len(self.collect_classes) + 4) * 2
-        mask = int(''.join(['0' if i % 2 != 0 else '1' for i in range(n)]), 2)
-        self.incompatible_bit_ast = ast.Assign(targets=[ast.Name(id='incompatible_bit', ctx=ast.Store())],
-                                                   value=ast.parse(f"{mask}").body[0].value,
+        count = 0
+        for key, value in self.limited_classes.items():
+            count += len(value)
+        check_bit_mask = 0
+        for i in range(0, count*2, 4):
+            check_bit_mask |= (1 << i)
+        self.check_bit_mask_ast = ast.Assign(targets=[ast.Name(id='check_bit_mask', ctx=ast.Store())],
+                                                   value=ast.parse(f"{check_bit_mask}").body[0].value,
                                                    lineno=0,
                                                    col_offset=0,
                                                    end_lineno=0,
                                                    end_col_offset=0)
         
-        # 
-        classes_bit_set = dict()
-        for key1, value1 in self.collect_classes.items():
-            for key2, value2 in self.collect_classes.items():
-                if (key1[0] == key2[0]) and (key1[1] != key2[1]):
-                    classes_bit_set.setdefault(value1, []).append(value2)
-        self.classes_bit_set_ast = ast.Assign(targets=[ast.Name(id='classes_bit_dict', ctx=ast.Store())],
-                                                   value=ast.parse(f"{classes_bit_set}").body[0].value,
-                                                   lineno=0,
-                                                   col_offset=0,
-                                                   end_lineno=0,
-                                                   end_col_offset=0)
-        
-        self.collect_classes_ast = ast.Assign(targets=[ast.Name(id='collect_classes_dict', ctx=ast.Store())],
-                                                   value=ast.parse(f"{self.collect_classes}").body[0].value,
+        # for incompatible
+        self.limited_classes_ast = ast.Assign(targets=[ast.Name(id='limited_classes', ctx=ast.Store())],
+                                                   value=ast.parse(f"{self.limited_classes}").body[0].value,
                                                    lineno=0,
                                                    col_offset=0,
                                                    end_lineno=0,
@@ -103,14 +88,10 @@ class TestTranspiler(Transformer):
         body.insert(0, self.primitive_classes_ast)
         # グローバル関数を挿入
         body.insert(0, self.global_func_ast)
-        # 互換性を気にするクラス名の集合を挿入
-        body.insert(0, self.incompatible_classes_ast)
         # VTの互換性を示すデータ構造を挿入
-        body.insert(0, self.incompatible_bit_ast)
+        body.insert(0, self.check_bit_mask_ast)
 
-        body.insert(0, self.classes_bit_set_ast)
-
-        body.insert(0, self.collect_classes_ast)
+        body.insert(0, self.limited_classes_ast)
 
         return ast.Module(body=body,type_ignores=[])
 
@@ -142,11 +123,10 @@ class TestTranspiler(Transformer):
         ######################
         # 互換性を気にするクラスでない時、名前だけ変えて直ちに終了
         ######################
-        # if not name in self.incompatible_classes:
-        #     return ast.ClassDef(name=class_name,bases=[],keywords=[],body=body,decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        if not (name in self.limited_classes.keys()):
+            return ast.ClassDef(name=class_name,bases=[],keywords=[],body=body,decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
         
-        # ユーザ定義のメソッドをラップするメソッドの配列
-        wrapped_func_list = []
+        
         is_init_exist = False
 
         # basesの中身を検査
@@ -154,11 +134,13 @@ class TestTranspiler(Transformer):
             if isinstance(element,ast.FunctionDef):
                 # initializeメソッドAST に VT初期化関数呼び出しAST を挿入
                 if(element.name == "__init__"):
-                    n = self.collect_classes[(str(name), str(version))] * 2
-                    # vython primitiveの分をシフト
-                    n += 8
-                    mask = 1 << n
-                    vt_init_stmt = f"self.vt = {mask}"
+                    version_list = self.limited_classes[str(name)][1]
+                    if str(version) == version_list[0]:
+                        n = self.limited_classes[str(name)][0] * 4
+                    else:
+                        n = self.limited_classes[str(name)][0] * 4 + 2
+
+                    vt_init_stmt = f"self.vt = {1 << n}"
                     element.body.insert(0, ast.parse(f"{vt_init_stmt}").body[0])
                     is_init_exist = True
                 # メソッドをラップし、VT書き換え関数呼び出しASTを挿入した新しいメソッドASTに変更する
@@ -167,11 +149,13 @@ class TestTranspiler(Transformer):
 
         if not is_init_exist:
             initialize_func_ast = copy.deepcopy(self.initialize_func_ast)
-            n = self.collect_classes[(str(name), str(version))] * 2
-            # vython primitiveの分をシフト
-            n += 8
-            mask = 1 << n
-            vt_init_stmt = f"self.vt = {mask}"
+            version_list = self.limited_classes[str(name)][1]
+            if str(version) == version_list[0]:
+                n = self.limited_classes[str(name)][0] * 4
+            else:
+                n = self.limited_classes[str(name)][0] * 4 + 2
+
+            vt_init_stmt = f"self.vt = {1 << n}"
             initialize_func_ast.body.insert(0, ast.parse(f"{vt_init_stmt}").body[0])
             body.append(initialize_func_ast)
 

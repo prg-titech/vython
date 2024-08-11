@@ -77,7 +77,7 @@ def run(args):
 
     # 各フェーズの実行
     execute_phase("[Phase 1] Prase to lark-vython AST", lambda: compiler.parse())
-    execute_phase("[Phase 1.5] Collect classes from lark-vython AST", lambda: compiler.collect_classes(False))
+    execute_phase("[Phase 1.5] Collect classes from lark-vython AST", lambda: compiler.collect_classes(True))
     execute_phase("[Phase 2] Transpile lark-vython AST to Python AST", lambda: compiler.transpile())
     execute_phase("[Phase 3] Unparse Python AST", lambda: compiler.unparse())
     execute_phase("[Phase 4] Execution", lambda: compiler.execute())

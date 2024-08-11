@@ -17,7 +17,17 @@ class CollectClasses(Transformer):
     ############################
     def __init__(self, debug_mode=None):
         self.debug_mode = debug_mode
-        self.collect_classes = set()
+        self.collected_classes = dict()
+
+    # 現在はmaxで二つのバージョンしか使われないことを仮定
+    def limit_version(self):
+        limited_classes = dict()
+        for class_name, version_list in self.collected_classes.items():
+            if len(version_list) == 2:
+                limited_classes[class_name] = version_list
+            elif len(version_list) >= 3:
+                print(f"3つ以上のバージョンが存在")
+        return limited_classes
 
     ############################
     ############################
@@ -45,7 +55,7 @@ class CollectClasses(Transformer):
         # バージョンの情報もクラス名が持つ
         class_name = str(name) + "_v_" + str(version)
 
-        self.collect_classes.add((str(name), str(version)))
+        self.collected_classes.setdefault(str(name), []).append(str(version))
 
         return None
     

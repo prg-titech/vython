@@ -6,8 +6,7 @@ class VInt(int):
 
     def __init__(self, value):
         self._value = value
-        self.vt = 1
-
+        
     # 抽象プロパティ
     # @property
     # def real(self) -> int: ...
@@ -190,7 +189,6 @@ class VFloat(numbers.Real):
 
     def __init__(self, value):
         self._value = value
-        self.vt = 4
 
     
     # 色々省略している実装がある -> float
@@ -303,7 +301,6 @@ class VBool(int):
 
     def __init__(self, value):
         self._value = value
-        self.vt = 16
 
     def __repr__(self):
         if self._value == 1:
@@ -353,7 +350,6 @@ class VStr(str):
 
     def __init__(self, value):
         self._value = value
-        self.vt = 64
 
     
     # 後で諸々は実装

@@ -29,7 +29,7 @@ class Compiler:
         # 評価時に使用するオブジェクト
         self.vythonCode = vythonCode
         self.vythonAST = None
-        self.class_dict = dict()
+        self.collected_classes = dict()
         self.pythonAST = None
         self.pythonCode = None
         self.result = None
@@ -41,20 +41,16 @@ class Compiler:
         if self.debug_mode:
             print(self.vythonAST)
 
-    def collect_classes(self, opt=False):
+    def collect_classes(self, limit_version=False):
         collector = CollectClasses(self.debug_mode)
         collector.transform(self.vythonAST)
-        collect_classes = collector.collect_classes
-        if opt:
-            # バージョン空間を限定してdictを作成
-            pass
+        if limit_version:
+            self.collected_classes = collector.limit_version()
         else:
-            num_classes = len(collect_classes)
-            for ite in range(num_classes):
-                key = collect_classes.pop()
-                self.class_dict[key] = ite
+            self.collected_classes = collector.collected_classes
+
         if self.debug_mode:
-            print(f"Collected Classes: {self.class_dict}")
+            print(f"Collected Classes: {self.collected_classes}")
     
     def transpile(self):
         # transpile_modeに応じたTranspilerのディスパッチ
@@ -65,7 +61,7 @@ class Compiler:
             case "vt-prop": transpiler = TranspilerToVTProp(self.debug_mode)
             case "vython": transpiler = TranspilerToVython(self.debug_mode)
 
-            case "test": transpiler = TestTranspiler(self.class_dict, {}, self.debug_mode)
+            case "test": transpiler = TestTranspiler(self.collected_classes,self.debug_mode)
             # どれにも当てはまらない場合はvythonで実行
             case _: transpiler = TranspilerToVython(self.debug_mode)
 
@@ -93,7 +89,7 @@ class Compiler:
 
     def get_result_fullpath(self):
         self.parse()
-        self.collect_classes(False)
+        self.collect_classes(True)
         self.transpile()
         self.unparse()
         self.execute()
