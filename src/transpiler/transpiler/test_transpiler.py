@@ -542,6 +542,14 @@ class TestTranspiler(Transformer):
         return ast.Tuple(elts=items,ctx=ast.Load())
 
     # Slice
+    def slice(self, items):
+        lower = items[0]
+        upper = items[1]
+        step = items[2]
+        return ast.Slice(lower,upper,step)
+    
+    def sliceop(self, items):
+        return items[0]
 
 
     ############################
