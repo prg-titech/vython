@@ -2,51 +2,139 @@ from lark import Token, Transformer, Tree
 import ast
 import copy
 
-global_func_paths = {"src/transpiler/lib/python_lib/global_func.py"}
-primitive_classes = {"src/transpiler/lib/wrap_primitive_lib/primitive_lib/Primitive_Bool.py","src/transpiler/lib/wrap_primitive_lib/primitive_lib/Primitive_String.py","src/transpiler/lib/wrap_primitive_lib/primitive_lib/Primitive_Number.py"}
+
+primitive_classes = "src/transpiler/vython_API/for_limited_vython/vt-init/primitives.py"
+global_func_path = "src/transpiler/vython_API/DVC.py"
+
+# AST templates
+initialize_func_path = "src/transpiler/vython_API/ast_templates/initialize_func.py"
+
+# --------------------------------------
+# 不具合を起こすかもしれない箇所リスト
+# - PythonASTオブジェクトのctxが適当!?
+# --------------------------------------
 
 # larkToIRを参考に実装する
 class TranspilerToWrapPrimitive(Transformer):
-    def __init__(self, debug_mode):
+    ############################
+    ############################
+    # トランスパイラ初期化
+    ############################
+    ############################
+    def __init__(self, limited_classes, debug_mode):
+        self.limited_classes = limited_classes
         self.debug_mode = debug_mode
-        
-        # Python ASTに挿入するグローバル関数(VT操作/検査)をASTに変換
-        global_func_asts = set()
-        for global_func_path in global_func_paths:
-            with open(global_func_path,"r") as file:
-                global_func_code = file.read()
-            global_func_asts.add(ast.parse(global_func_code))
-        # トランスパイラインスタンスの属性として保持
-        self.global_func_asts = global_func_asts
 
-        # Primitiveクラスの定義をASTに変換
-        primitive_class_asts = set()
-        for primitive_class in primitive_classes:
-            with open(primitive_class,"r") as file:
-                primitive_class_code = file.read()
-            primitive_class_asts.add(ast.parse(primitive_class_code))
-        # トランスパイラインスタンスの属性として保持
-        self.primitive_class_asts = primitive_class_asts
+        self.global_func_ast = None
+        self.primitive_classes_ast = None
+        self.initialize_func_ast = None
+        self.check_bit_mask_ast = None
+        self.limited_classes_ast = None
+    
+        # Python ASTに挿入するグローバル関数(VT操作/検査)をASTに変換
+        with open(global_func_path,"r") as file:
+            global_func_code = file.read()
+        self.global_func_ast = ast.parse(global_func_code).body
+
+        # Python ASTに挿入するVython Primitiveクラス定義のAST
+        with open(primitive_classes,"r") as file:
+            primitive_classes_code = file.read()
+        self.primitive_classes_ast = ast.parse(primitive_classes_code)
+
+        # クラス定義のイニシャライザーのテンプレートAST
+        with open(initialize_func_path,"r") as file:
+            initialize_func_code = file.read()
+        self.initialize_func_ast = ast.parse(initialize_func_code).body[0]
+
+        # limited_classesにインデックスを追加
+        for index, key in enumerate(self.limited_classes):
+            self.limited_classes[key] = (index, self.limited_classes[key])
+        print(self.limited_classes)
+
+        # 互換性検査で用いるbit列AST
+        count = 0
+        for key, value in self.limited_classes.items():
+            count += len(value)
+        check_bit_mask = 0
+        for i in range(0, count*2, 4):
+            check_bit_mask |= (1 << i)
+        self.check_bit_mask_ast = ast.Assign(targets=[ast.Name(id='check_bit_mask', ctx=ast.Store())],
+                                                   value=ast.parse(f"{check_bit_mask}").body[0].value,
+                                                   lineno=0,
+                                                   col_offset=0,
+                                                   end_lineno=0,
+                                                   end_col_offset=0)
+        
+        # for incompatible
+        self.limited_classes_ast = ast.Assign(targets=[ast.Name(id='limited_classes', ctx=ast.Store())],
+                                                   value=ast.parse(f"{self.limited_classes}").body[0].value,
+                                                   lineno=0,
+                                                   col_offset=0,
+                                                   end_lineno=0,
+                                                   end_col_offset=0)
+
+
+
+    ############################
+    ############################
+    # module
+    ############################
+    ############################
 
     def file_input(self, items):
         body = self._flatten_list(items)
 
         # Primitiveクラスを挿入
-        for primitive_class_ast in self.primitive_class_asts:
-            body.insert(0,primitive_class_ast)
+        body.insert(0, self.primitive_classes_ast)
         # グローバル関数を挿入
-        for global_func_ast in self.global_func_asts:
-            body.insert(0, global_func_ast)
+        body.insert(0, self.global_func_ast)
+        # VTの互換性を示すデータ構造を挿入
+        body.insert(0, self.check_bit_mask_ast)
+
+        body.insert(0, self.limited_classes_ast)
 
         return ast.Module(body=body,type_ignores=[])
 
+
+    ############################
+    ############################
+    # stmt
+    ############################
+    ############################
+
+    def funcdef(self, items):
+        name, params_tree, _, body = items
+        # 'params_tree' が Tree オブジェクトの場合
+        if isinstance(params_tree, Tree):
+            # params_treeの子ノードから引数を取得
+            args = [self.transform(param) for param in params_tree.children]
+        else:
+            # params_treeがリストでない場合、空の引数リストを設定
+            args = params_tree
+        return ast.FunctionDef(name=name, args=args, body=self._flatten_list(body),decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+
+    # + AsyncFunctionDef
+    
     def classdef(self, items):
         name, version, bases, body = items[0], items[1], [], self._flatten_list(items[3:])
         # バージョンの情報もクラス名が持つ
         class_name = str(name) + "_v_" + str(version)
 
+        ######################
+        # 互換性を気にするクラスでない時、名前だけ変えて直ちに終了
+        ######################
         return ast.ClassDef(name=class_name,bases=[],keywords=[],body=body,decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        
     
+    def return_stmt(self, items):
+        value_item = items[0]
+        value = (
+            self.transform(value_item) if isinstance(value_item, Tree) else value_item
+        )
+        return ast.Return(value=value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+
+    # + delete
+
     def assign_stmt(self, items):
         assign_tree = items[0]
         targets = assign_tree.children[0]
@@ -58,97 +146,177 @@ class TranspilerToWrapPrimitive(Transformer):
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
         return ast.Assign(targets=[transformed_targets], value=transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
+    # TypeAlias
+
+    # AugAssign
+    # AnnAssign
+
+    def for_stmt(self, items):
+        target = items[0]
+        iter = items[1]
+        body = items[2]
+        orelse = items[3]
+        return ast.For(target=target,
+                       iter=iter,
+                       body=body,
+                       orelse=orelse,
+                       lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+
+    # + AsyncFor
+
+    def while_stmt(self, items):
+        test = items[0]
+        body = items[1]
+        orelse = items[2]
+        return ast.While(test=test,
+                         body=body,
+                         orelse=orelse,
+                         lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+
+    def if_stmt(self, items):
+        # testとbodyの実装
+        test = items[0]
+        then_body = items[1]
+        transformed_test = self.transform(test) if isinstance(test, Tree) else test
+        transformed_body = self.transform(then_body) if isinstance(then_body, Tree) else then_body
+
+        elif_list = items[2]
+        else_body = items[3]
+        transformed_elif_list = self.transform(elif_list) if isinstance(elif_list, Tree) else elif_list
+        transformed_else_body = self.transform(else_body) if isinstance(else_body, Tree) else else_body
+        transformed_orelse = [make_if_ast(transformed_elif_list,transformed_else_body)]
+        if transformed_orelse[0] is None:
+            transformed_orelse = []
+
+        return ast.If(test=transformed_test,body=transformed_body,orelse=transformed_orelse,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+    
+    def elifs(self, items):
+        return self._flatten_list(items)
+    
+    def elif_(self, items):
+        test = items[0]
+        then_body = items[1]
+        transformed_test = self.transform(test) if isinstance(test, Tree) else test
+        transformed_then_body = self.transform(then_body) if isinstance(then_body, Tree) else then_body
+        return [transformed_test, transformed_then_body]
+
+    # With
+    # AsyncWith
+
+    def match_stmt(self, items):
+        subject = items[0]
+        cases = []
+        for item in items[1:]:
+            cases.append(item)
+        return ast.Match(subject=subject,
+                         cases=cases,
+                         lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+    
+    def case(self, items):
+        pattern = items[0]
+        guard = items[1]
+        body = items[2]
+        return ast.match_case(pattern=pattern,
+                              guard=guard,
+                              body=body)
+    
+    def literal_pattern(self, items):
+        value = items[0]
+        if isinstance(value, ast.Constant) and value.value == None:
+            return ast.MatchSingleton(value=None)
+        # 下のコードはPythonと互換性がない点
+        # if isinstance(value, ast.Call) and value.func.id == "VBool":
+        #     return ast.MatchSingleton(value=value)
+        return ast.MatchValue(value=value)
+    
+    def any_pattern(self, items):
+        return ast.MatchAs()
+    
+    def or_pattern(self, items):
+        return ast.MatchOr(patterns=items)
+    
+    # MatchSequence
+    # MatchStar
+    # MatchMapping
+    # MatchClass
+
+    # Raise
+    # Try
+    # TryStar
+    # Assert
+
+    # Import
+    # ImportFrom
+
+    # Global
+    # NonLocal
+
     def expr_stmt(self, items):
         value = items[0]
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
         return ast.Expr(value=transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
-    # primitiveを含むASTの変換(新)
-    def const_true(self, items):
-        value = ast.Constant(True,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        return ast.Call(ast.Name(id="Primitive_Bool_v_0",ctx=ast.Load()),[value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-    
-    def const_false(self, items):
-        value = ast.Constant(False,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        return ast.Call(ast.Name(id="Primitive_Bool_v_0",ctx=ast.Load()),[value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-    
-    def string(self, items):
-        value = items[0]
-        transformed_value = self.transform(value) if isinstance(value, Tree) else value
-        transformed_value.value = transformed_value.value.replace('"',"")
-        transformed_value = ast.Constant(transformed_value.value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        return ast.Call(ast.Name(id="Primitive_String_v_0",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-    
-    def number(self, items):
-        value = items[0]
-        transformed_value = self.transform(value) if isinstance(value, Tree) else value
-        if isinstance(transformed_value, Token):
-            match transformed_value.type:
-                case 'DEC_NUMBER': transformed_value = int(transformed_value.value)
-                case 'FLOAT_NUMBER': transformed_value = float(transformed_value.value)
-        transformed_value = ast.Constant(transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        return ast.Call(ast.Name(id="Primitive_Number_v_0",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+    def pass_stmt(self, _):
+        return ast.Pass(lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
-    def comp_op(self, items):
-        value = items[0]
-        transformed_value = self.transform(value) if isinstance(value, Tree) else value
-        match transformed_value:
-            case "==":
-                transformed_op = ast.Eq()
-            case "!=":
-                transformed_op = ast.NotEq()
-            case ">":
-                transformed_op = ast.Gt()
-            case "<":
-                transformed_op = ast.Lt()
-            case "<=":
-                transformed_op = ast.LtE()
-            case ">=":
-                transformed_op = ast.GtE()
-        return transformed_op
+    def break_stmt(self, items):
+        return ast.Break()
 
-    def comparison(self, items):
-        # 要素数が適切かどうかのチェック
-        size = len(items)
-        if(size%2==0 or size<3):
-            raise TypeError("Vython->Python: Inappropriate form of comparison")
-        
-        value_left = items[0]
-        transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
-        transformed_ops = []
-        transformed_comparators = []
-        for i in range(1, size):
-            if i%2==1:
-                op = items[i]
-                transformed_op = self.transform(op) if isinstance(op, Tree) else op
-                transformed_ops.append(transformed_op)
-            else:
-                comparator = items[i]
-                transformed_comparator = self.transform(comparator) if isinstance(comparator, Tree) else comparator
-                transformed_comparators.append(transformed_comparator)
-        return ast.Compare(left=transformed_value_l,ops=transformed_ops,comparators=transformed_comparators,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-    
+    def continue_stmt(self,items):
+        return ast.Continue()
+
+
+    ############################
+    ############################
+    # expr
+    ############################
+    ############################
+
+    # -----------------------------
+    # ----- Vython Primitives -----
+    # -----------------------------
     def or_test(self, items):
+        # value_left = items[0]
+        # value_right = items[1]
+        # transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
+        # transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
+        # # 糖衣として実装
+        # or_test_ast = copy.deepcopy(self.calling_or_suger_ast)
+        # or_test_ast.value.test.args[0] = transformed_value_l
+        # or_test_ast.value.body.args[1] = transformed_value_l
+        # or_test_ast.value.orelse.args[0].args[0].args[0] = transformed_value_r
+        # or_test_ast.value.orelse.args[1] = transformed_value_l
+        # or_test_ast.value.orelse.args[2] = transformed_value_r
+        # return or_test_ast.value
         value_left = items[0]
         value_right = items[1]
-        transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
-        transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-        
-        return ast.BoolOp(ast.Or(), [transformed_value_l, transformed_value_r])
+        return ast.BoolOp(ast.Or(), [value_left, value_right])
     
     def and_test(self, items):
+        # value_left = items[0]
+        # value_right = items[1]
+        # transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
+        # transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
+        # # 糖衣として実装
+        # and_test_ast = copy.deepcopy(self.calling_and_suger_ast)
+        # and_test_ast.value.test.operand.args[0] = transformed_value_l
+        # and_test_ast.value.body.args[1] = transformed_value_l
+        # and_test_ast.value.orelse.args[0].args[0].args[0] = transformed_value_r
+        # and_test_ast.value.orelse.args[1] = transformed_value_l
+        # and_test_ast.value.orelse.args[2] = transformed_value_r
+        # return and_test_ast.value
         value_left = items[0]
         value_right = items[1]
-        transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
-        transformed_value_r = self.transform(value_right) if isinstance(value_right, Tree) else value_right
-        
-        return ast.BoolOp(ast.And(), [transformed_value_l, transformed_value_r])
+        return ast.BoolOp(ast.And(), [value_left, value_right])
 
     def not_test(self, items):
+        # value = items[0]
+        # transformed_value = self.transform(value) if isinstance(value, Tree) else value
+        # op = ast.Not()
+        # return ast.Call(func=ast.Name(id='Primitive_Bool_v_0', ctx=ast.Load()), args=[ast.UnaryOp(op,transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)], keywords=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
         value = items[0]
-        transformed_value = self.transform(value) if isinstance(value, Tree) else value
-        return ast.UnaryOp(ast.Not(), transformed_value)
-
+        return ast.UnaryOp(ast.Not(), value)
+  
     def arith_expr(self, items):
         # 要素数が適切かどうかのチェック
         size = len(items)
@@ -201,32 +369,62 @@ class TranspilerToWrapPrimitive(Transformer):
             case "-": op = ast.USub()
         return ast.UnaryOp(op,transformed_value_r,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
-    def if_stmt(self, items):
-        # testとbodyの実装
-        test = items[0]
-        then_body = items[1]
-        transformed_test = self.transform(test) if isinstance(test, Tree) else test
-        transformed_body = self.transform(then_body) if isinstance(then_body, Tree) else then_body
-
-        elif_list = items[2]
-        else_body = items[3]
-        transformed_elif_list = self.transform(elif_list) if isinstance(elif_list, Tree) else elif_list
-        transformed_else_body = self.transform(else_body) if isinstance(else_body, Tree) else else_body
-        transformed_orelse = [make_if_ast(transformed_elif_list,transformed_else_body)]
-        if transformed_orelse[0] is None:
-            transformed_orelse = []
-
-        return ast.If(test=transformed_test,body=transformed_body,orelse=transformed_orelse,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+    def lambdef(self, items):
+        args=items[0]
+        body=items[1]
+        return ast.Lambda(args=args,
+                          body=body)
     
-    def elifs(self, items):
-        return self._flatten_list(items)
+    def lambda_params(self, items):
+        args = []
+        for item in items:
+            if item != None:
+                args.append(ast.arg(item))
+        return ast.arguments(posonlyargs=[],args=args,kwonlyargs=[],kw_defaults=[],defaults=[])
+
+    # + IfExp
+    # -> lark に対応してなかった
+
+    def dict(self, items):
+        keys = []
+        values = []
+        for item in items:
+            keys.append(item.children[0])
+            values.append(item.children[1])
+        return ast.Dict(keys=keys,values=values)
+
+    def set(self, items):
+        return ast.Set(items)
     
-    def elif_(self, items):
-        test = items[0]
-        then_body = items[1]
-        transformed_test = self.transform(test) if isinstance(test, Tree) else test
-        transformed_then_body = self.transform(then_body) if isinstance(then_body, Tree) else then_body
-        return [transformed_test, transformed_then_body]
+    # ListComp
+    # SetComp
+    # DictComp
+    # GeneratorExp
+
+    # Await
+    # Yield
+    # YieldFrom
+
+    def comparison(self, items):
+        # 要素数が適切かどうかのチェック
+        size = len(items)
+        if(size%2==0 or size<3):
+            raise TypeError("Vython->Python: Inappropriate form of comparison")
+        
+        value_left = items[0]
+        transformed_value_l = self.transform(value_left) if isinstance(value_left, Tree) else value_left
+        transformed_ops = []
+        transformed_comparators = []
+        for i in range(1, size):
+            if i%2==1:
+                op = items[i]
+                transformed_op = self.transform(op) if isinstance(op, Tree) else op
+                transformed_ops.append(transformed_op)
+            else:
+                comparator = items[i]
+                transformed_comparator = self.transform(comparator) if isinstance(comparator, Tree) else comparator
+                transformed_comparators.append(transformed_comparator)
+        return ast.Compare(left=transformed_value_l,ops=transformed_ops,comparators=transformed_comparators,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     def funccall(self, items):
         func, args = items[0], self._flatten_list(items[1:])
@@ -244,9 +442,37 @@ class TranspilerToWrapPrimitive(Transformer):
         
         return ast.Call(func=func,args=args,keywords=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
-    def version(self, items):
-        number = items[0]
-        return str(number)
+    # FormattedValue
+    # JoinedStr
+    
+    def const_true(self, items):
+        value = ast.Constant(True,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        return ast.Call(ast.Name(id="VBool",ctx=ast.Load()),[value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+    
+    def const_false(self, items):
+        value = ast.Constant(False,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        return ast.Call(ast.Name(id="VBool",ctx=ast.Load()),[value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+    
+    def string(self, items):
+        value = items[0]
+        transformed_value = self.transform(value) if isinstance(value, Tree) else value
+        transformed_value.value = transformed_value.value.replace('"',"")
+        transformed_value = ast.Constant(transformed_value.value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        return ast.Call(ast.Name(id="VStr",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+    
+    def number(self, items):
+        value = items[0]
+        transformed_value = self.transform(value) if isinstance(value, Tree) else value
+        if isinstance(transformed_value, Token):
+            match transformed_value.type:
+                case 'DEC_NUMBER': 
+                    transformed_value = int(transformed_value.value)
+                    transformed_value = ast.Constant(transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+                    return ast.Call(ast.Name(id="VInt",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+                case 'FLOAT_NUMBER': 
+                    transformed_value = float(transformed_value.value)
+                    transformed_value = ast.Constant(transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+                    return ast.Call(ast.Name(id="VFloat",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     def getattr(self, items):
         value, attr = items[0], items[1]
@@ -254,6 +480,82 @@ class TranspilerToWrapPrimitive(Transformer):
         transformed_attr = self.transform(attr) if isinstance(attr, Tree) else attr
         return ast.Attribute(value=transformed_value, attr=transformed_attr,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
+    def getitem(self, items):
+        structure = items[0]
+        iterator = items[1]
+        # # イテレーターがVython Primitiveになってしまう場合
+        # if(isinstance(iterator,ast.Call)):
+        #     iterator = iterator.args[0]
+        return ast.Subscript(value=structure, slice=iterator,ctx=ast.Load())
+
+    # Starred
+
+    def name(self, items):
+        id = items[0].value
+        return str(id)
+          
+    def var(self, items):
+        id = items[0]
+        return ast.Name(id=id,ctx=ast.Load(),lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+    
+    # List
+    def list(self, items):
+        return ast.List(elts=items,ctx=ast.Load())
+
+    # Tuple
+    def tuple(self, items):
+        return ast.Tuple(elts=items,ctx=ast.Load())
+
+    # Slice
+    def slice(self, items):
+        lower = items[0]
+        upper = items[1]
+        step = items[2]
+        return ast.Slice(lower,upper,step)
+    
+    def sliceop(self, items):
+        return items[0]
+
+
+    ############################
+    ############################
+    # expr_context
+    ############################
+    ############################
+
+    # Load
+    # Store
+    # Del
+
+
+    ############################
+    ############################
+    # Other(tmp)
+    ############################
+    ############################
+
+    def comp_op(self, items):
+        value = items[0]
+        transformed_value = self.transform(value) if isinstance(value, Tree) else value
+        match transformed_value:
+            case "==":
+                transformed_op = ast.Eq()
+            case "!=":
+                transformed_op = ast.NotEq()
+            case ">":
+                transformed_op = ast.Gt()
+            case "<":
+                transformed_op = ast.Lt()
+            case "<=":
+                transformed_op = ast.LtE()
+            case ">=":
+                transformed_op = ast.GtE()
+        return transformed_op
+    
+    def version(self, items):
+        number = items[0]
+        return str(number)
+
     def arguments(self, items):
         args = []
         for item in items:
@@ -262,15 +564,7 @@ class TranspilerToWrapPrimitive(Transformer):
             else:
                 args.append(item)
         return args
-    
-    def var(self, items):
-        id = items[0]
-        return ast.Name(id=id,ctx=ast.Load(),lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-    
-    def name(self, items):
-        id = items[0].value
-        return str(id)
-    
+
     def suite(self, items):
         return self._flatten_list(items)
 
@@ -280,27 +574,6 @@ class TranspilerToWrapPrimitive(Transformer):
             if item is not None:
                 args.append(ast.arg(item,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0))
         return ast.arguments(posonlyargs=[],args=args,kwonlyargs=[],kw_defaults=[],defaults=[])
-
-    def funcdef(self, items):
-        name, params_tree, _, body = items
-        # 'params_tree' が Tree オブジェクトの場合
-        if isinstance(params_tree, Tree):
-            # params_treeの子ノードから引数を取得
-            args = [self.transform(param) for param in params_tree.children]
-        else:
-            # params_treeがリストでない場合、空の引数リストを設定
-            args = params_tree
-        return ast.FunctionDef(name=name, args=args, body=self._flatten_list(body),decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-
-    def return_stmt(self, items):
-        value_item = items[0]
-        value = (
-            self.transform(value_item) if isinstance(value_item, Tree) else value_item
-        )
-        return ast.Return(value=value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-
-    def pass_stmt(self, _):
-        return ast.Pass(lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     # 適切か怪しい
     def const_none(self, _):
@@ -318,6 +591,10 @@ class TranspilerToWrapPrimitive(Transformer):
                 flattened.append(item)
         return flattened
 
+
+'''
+ASTを構成する際の補助関数
+'''
 def make_if_ast(elif_list, else_body):
         if len(elif_list) == 0:
             return else_body

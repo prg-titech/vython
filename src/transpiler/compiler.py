@@ -55,15 +55,15 @@ class Compiler:
     def transpile(self):
         # transpile_modeに応じたTranspilerのディスパッチ
         match self.transpile_mode:
-            case "python": transpiler = TranspilerToPython(self.debug_mode)
-            case "wrap-primitive": transpiler = TranspilerToWrapPrimitive(self.debug_mode)
-            case "vt-init": transpiler = TranspilerToVTInit(self.debug_mode)
-            case "vt-prop": transpiler = TranspilerToVTProp(self.debug_mode)
-            case "vython": transpiler = TranspilerToVython(self.debug_mode)
+            case "python": transpiler = TranspilerToPython(self.collected_classes,self.debug_mode)
+            case "wrap-primitive": transpiler = TranspilerToWrapPrimitive(self.collected_classes,self.debug_mode)
+            case "vt-init": transpiler = TranspilerToVTInit(self.collected_classes,self.debug_mode)
+            case "vt-prop": transpiler = TranspilerToVTProp(self.collected_classes,self.debug_mode)
+            case "vython": transpiler = TranspilerToVython(self.collected_classes,self.debug_mode)
 
             case "test": transpiler = TestTranspiler(self.collected_classes,self.debug_mode)
             # どれにも当てはまらない場合はvythonで実行
-            case _: transpiler = TranspilerToVython(self.debug_mode)
+            case _: transpiler = TranspilerToVython(self.collected_classes,self.debug_mode)
 
         self.pythonAST = transpiler.transform(self.vythonAST)
         if self.show_ast:
@@ -115,6 +115,11 @@ class Compiler:
         self.parse()
         end_time = time.perf_counter()
         execution_time["parse"] = end_time - start_time
+
+        start_time = time.perf_counter()
+        self.collect_classes(True)
+        end_time = time.perf_counter()
+        execution_time["collect-classes"] = end_time - start_time
 
         start_time = time.perf_counter()
         self.transpile()
