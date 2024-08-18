@@ -73,7 +73,7 @@ def evaluate_transpiler_only_execution(benchmark_target, comparison_strategy, co
         log(f"Evaluating transpiler with transpile_mode={transpile_mode}")
         transpiler = TC(code, transpile_mode)
         transpiler.parse()
-        transpiler.collect_classes(False)
+        transpiler.collect_classes(True)
         transpiler.transpile()
         transpiler.unparse()
 

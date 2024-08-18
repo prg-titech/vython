@@ -5,5 +5,5 @@
 
   "path_benchmarks": "benchmark/sample_programs",
 
-  "comparison_strategy": "test"
+  "comparison_strategy": "all"
 }

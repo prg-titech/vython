@@ -41,7 +41,7 @@ class Compiler:
         if self.debug_mode:
             print(self.vythonAST)
 
-    def collect_classes(self, limit_version=False):
+    def collect_classes(self, limit_version=True):
         collector = CollectClasses(self.debug_mode)
         collector.transform(self.vythonAST)
         if limit_version:
