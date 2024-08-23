@@ -60,7 +60,7 @@ class Compiler:
             case "vt-init": transpiler = TranspilerToVTInit(self.collected_classes,self.debug_mode)
             case "vt-prop": transpiler = TranspilerToVTProp(self.collected_classes,self.debug_mode)
             case "vython": transpiler = TranspilerToVython(self.collected_classes,self.debug_mode)
-
+            # 新しい実装を試すとき用
             case "test": transpiler = TestTranspiler(self.collected_classes,self.debug_mode)
             # どれにも当てはまらない場合はvythonで実行
             case _: transpiler = TranspilerToVython(self.collected_classes,self.debug_mode)
