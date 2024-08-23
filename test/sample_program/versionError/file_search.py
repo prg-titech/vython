@@ -15,7 +15,7 @@ class Hash!2:
             result = 5405432
             # incompat(self, result)
             # result.incompatible(Hash, 2)
-            _incompatible_value(result, "Hash", 2)
+            _incompatible_value(result, "Hash", 2, "Computation between incompatible values created from Hash!1 and Hash!2: the hasher method has been updated in version 2 to change the algorithm used from SHA to MD5")
             return result
         else:
             return -1
