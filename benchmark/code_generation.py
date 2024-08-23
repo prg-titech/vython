@@ -7,23 +7,45 @@ def generate_vython_code(loop, num_base_names, num_base_versions, num_actual_ver
     with_version_values = []
     code = ""
     
+    class_size = 0
     for base_name in base_names:
+        if class_size >= num_actual_versions:
+                break
         for i in range(1, num_base_versions + 1):
             code += f"class {base_name}!{i}:\n"
             code += "    def __init__(self, v):\n"
             code += "        self.v = v\n"
             code += "    def get_v(self):\n"
             code += "        return self.v\n\n"
+
+            class_size += 1
+            if class_size >= num_actual_versions:
+                break
     
+    instance_size = 0
     for base_name in base_names:
+        if instance_size >= num_actual_versions:
+                break
         for i in range(1, num_base_versions + 1):
             code += f"i{base_name.lower()}{i} = {base_name}!{i}(1)\n"
+
+            instance_size += 1
+            if instance_size >= num_actual_versions:
+                break
     
     code += "\n"
+
+    value_size = 0
     for base_name in base_names:
+        if value_size >= num_actual_versions:
+                break
         for i in range(1, num_base_versions + 1):
             code += f"v{base_name.lower()}{i} = i{base_name.lower()}{i}.get_v()\n"
             with_version_values.append(f"v{base_name.lower()}{i}")
+
+            value_size += 1
+            if value_size >= num_actual_versions:
+                break
     
     code += "\n"
     tmp_code = ""
