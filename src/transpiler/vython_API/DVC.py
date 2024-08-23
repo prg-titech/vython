@@ -4,22 +4,25 @@ class VersionError(Exception):
     def __init__(self, message):
         self.message = message
 
+def generate_feedback(v1, v2):
+    feedback = ""
+    if hasattr(v1, "error_feedback"):
+        feedback += v1.error_feedback
+        feedback += "\n"
+    if hasattr(v2, "error_feedback"):
+        feedback += v2.error_feedback
+        feedback += "\n"
+    return feedback
+
 def _checkCompatibility(v1, v2):
 
     if not (hasattr(v1, "vt") and hasattr(v2, "vt")):
         return
     
-    if ((v1.vt >> 1) & (v2.vt >> 2) & check_bit_mask) != 0:
-        raise VersionError(f"Incompatible!!")
-    
-    if ((v1.vt >> 2) & (v2.vt >> 1) & check_bit_mask) != 0:
-        raise VersionError(f"Incompatible!!")
-
-    if ((v1.vt) & (v2.vt >> 3) & check_bit_mask) != 0:
-        raise VersionError(f"Incompatible!!")
-    
-    if ((v1.vt >> 3) & (v2.vt) & check_bit_mask) != 0:
-        raise VersionError(f"Incompatible!!")
+    v1_or_v2 = (v1.vt | v2.vt)
+    if ((((v1_or_v2 >> 1) & v1_or_v2) >> 1) | ((v1_or_v2 >> 3) & v1_or_v2)) & check_bit_mask != 0:
+        feedback = generate_feedback(v1, v2)
+        raise VersionError(f"{feedback}")
 
     return
 
@@ -45,7 +48,7 @@ def _vt_concatenate_all(target, *args):
         _vt_concatenate(target, arg)
     return target
 
-def _incompatible_value(self, _class, _version):
+def _incompatible_value(self, _class, _version, _feedback):
     if not hasattr(self, "vt"):
         self.vt = 0
     version_list = limited_classes[str(_class)][1]
@@ -55,6 +58,8 @@ def _incompatible_value(self, _class, _version):
         n = limited_classes[str(_class)][0] * 4 + 3
     mask = 1 << n    
     self.vt = self.vt | mask
+
+    self.error_feedback = _feedback
     return self
 
 # -------------
