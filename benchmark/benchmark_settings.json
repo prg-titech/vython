@@ -1,9 +1,12 @@
 {
   "processor": "transpiler",
-  "benchmark_target": "sample",
+  "benchmark_target": "generate",
   "num_iterations": 300,
 
-  "path_benchmarks": "benchmark/sample_programs",
+  "num_loop": 2000,
+  "num_base_names": 25,
+  "num_base_versions": 2,
+  "interval_num_versions": "geometric",
 
   "comparison_strategy": "all"
 }

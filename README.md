@@ -113,8 +113,8 @@ Benchmark Settings used in 3p-abstract of APLAS SRC 2024
   "num_iterations": 300,
 
   "num_loop": 2000,
-  "num_base_names": 8,
-  "num_base_versions": 8,
+  "num_base_names": 25,
+  "num_base_versions": 2,
   "interval_num_versions": "geometric",
 
   "comparison_strategy": "all"
