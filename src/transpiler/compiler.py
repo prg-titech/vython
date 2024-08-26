@@ -1,7 +1,7 @@
 import ast
 import io
 import contextlib
-import time
+import time, traceback
 from src.transpiler.vython_parser import Parser
 from src.transpiler.transpiler.collect_classes import CollectClasses
 from src.transpiler.transpiler.transpiler_to_vython import TranspilerToVython
@@ -78,8 +78,13 @@ class Compiler:
 
     def execute(self):
         output = io.StringIO()
-        with contextlib.redirect_stdout(output):
-            exec(self.pythonCode,globals())
+        try:
+            with contextlib.redirect_stdout(output):
+                exec(self.pythonCode,globals())
+        except Exception as e:
+            # print(traceback.format_tb(e.__traceback__))
+            self.result = e.message
+            return self.result   
         captured_output = output.getvalue()
         self.result = captured_output
         return self.result
