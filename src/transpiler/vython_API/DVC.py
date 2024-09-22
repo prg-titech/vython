@@ -4,48 +4,51 @@ class VersionError(Exception):
     def __init__(self, message):
         self.message = message
 
-def generate_feedback(v1, v2):
+def generate_feedback(*args):
+    incompat_tuple_list = []
+    # エラー箇所の再特定
+    args_size = len(args)
+    for i in range(args_size-1):
+        for j in range(1, args_size-i):
+            v1 = args[i]
+            v2 = args[i+j]
+            if not (hasattr(v1, "vt") and hasattr(v2, "vt")):
+                break
+            v1_or_v2 = (v1.vt | v2.vt)
+            if ((((v1_or_v2 >> 1) & v1_or_v2) >> 1) | ((v1_or_v2 >> 3) & v1_or_v2)) & check_bit_mask != 0:
+                incompat_tuple_list.append((v1, v2))
+      
+    # エラー発生箇所についてフィードバックを生成
     feedback = ""
-    if hasattr(v1, "error_feedback"):
-        feedback += v1.error_feedback
-        feedback += "\n"
-    if hasattr(v2, "error_feedback"):
-        feedback += v2.error_feedback
-        feedback += "\n"
+    for index, incompat_tuple in enumerate(incompat_tuple_list):
+        partial_feedback = f"Version Error {index + 1}:\n"
+        if hasattr(v1, "error_feedback"):
+            partial_feedback += v1.error_feedback
+            partial_feedback += "\n"
+        if hasattr(v2, "error_feedback"):
+            partial_feedback += v2.error_feedback
+            partial_feedback += "\n"
+        feedback += partial_feedback
     return feedback
 
-def _checkCompatibility(v1, v2):
-
-    if not (hasattr(v1, "vt") and hasattr(v2, "vt")):
-        return
-    
-    v1_or_v2 = (v1.vt | v2.vt)
-    if ((((v1_or_v2 >> 1) & v1_or_v2) >> 1) | ((v1_or_v2 >> 3) & v1_or_v2)) & check_bit_mask != 0:
-        feedback = generate_feedback(v1, v2)
-        raise VersionError(f"{feedback}")
-
-    return
-
 def _checkCompatibilities(*args):
+    disjunction_bit = 0
+    for arg in args:
+        if hasattr(arg, "vt"):
+            disjunction_bit = (disjunction_bit | arg.vt)
 
-    num_args = len(args)
+    if ((((disjunction_bit >> 1) & disjunction_bit) >> 1) | ((disjunction_bit >> 3) & disjunction_bit)) & check_bit_mask != 0:
+        feedback = generate_feedback(*args)
+        raise VersionError(f"{feedback}")               
 
-    for i in range(num_args-1):
-        for j in range(1, num_args-i):
-            _checkCompatibility(args[i], args[i+j])               
-    
     return
-
-def _vt_concatenate(target, value):
-    if hasattr(value, "vt"):
-        target.vt = target.vt | value.vt
-    return target
 
 def _vt_concatenate_all(target, *args):
     if not hasattr(target, "vt"):
         target.vt = 0
     for arg in args:
-        _vt_concatenate(target, arg)
+        if hasattr(arg, "vt"):
+            target.vt = target.vt | arg.vt
     return target
 
 def _incompatible_value(self, _class, _version, _feedback):
