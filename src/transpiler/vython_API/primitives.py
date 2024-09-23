@@ -184,11 +184,13 @@ class VInt(int):
     def __index__(self):
         return VInt(super().__index__())
 
-
 class VFloat(numbers.Real):
 
     def __init__(self, value):
         self._value = value
+
+    def __repr__(self) -> str:
+        return self._value.__repr__()
 
     
     # 色々省略している実装がある -> float
@@ -251,6 +253,15 @@ class VFloat(numbers.Real):
     def __rdivmod__(self, value):
         return (VFloat(super().__rdivmod__(value)[0]), VFloat(super().__rdivmod__(value)[1]))
     
+    @_vt_check_decorator
+    @_vt_concat_decorator_primitive
+    def __pow__(self, exponent):
+        return VFloat(super().__pow__(exponent))
+    @_vt_check_decorator
+    @_vt_concat_decorator_primitive
+    def __rpow__(self, exponent):
+        return VFloat(super().__rpow__(exponent))
+    
     def __trunc__(self):
         return VFloat(super().__trunc__())
     def __getnewargs__(self):
@@ -285,6 +296,14 @@ class VFloat(numbers.Real):
         return VFloat(super().__neg__())
     def __pos__(self):
         return VFloat(super().__pos__())
+    def __ceil__(self):
+        return VInt(super().__ceil__())
+    def __floor__(self):
+        return VInt(super().__floor__())
+    def __round__(self, ndigit=None):
+        return VFloat(super().__round__(ndigit))
+        
+
     def __float__(self):
         return VFloat(super().__float__())
     def __int__(self):
