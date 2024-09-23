@@ -80,10 +80,9 @@ class Compiler:
         output = io.StringIO()
         try:
             with contextlib.redirect_stdout(output):
-                exec(self.pythonCode,globals())
+                exec(self.pythonCode, {})
         except Exception as e:
-            # print(traceback.format_tb(e.__traceback__))
-            self.result = e.message
+            self.result = e
             return self.result   
         captured_output = output.getvalue()
         self.result = captured_output
