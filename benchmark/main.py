@@ -41,6 +41,7 @@ def run():
             file_paths = get_file_paths(source_path)
 
     sys.setrecursionlimit(2500)
+    sys.set_int_max_str_digits(0)
     evaluation_data = evaluate_files(file_paths, settings, result_path)
 
     # generate graph

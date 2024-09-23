@@ -3,7 +3,7 @@ import os
 from utils import log
 
 def generate_vython_code(loop, num_base_names, num_base_versions, num_actual_versions):
-    base_names = list(string.ascii_uppercase[:num_base_names])
+    base_names = ["TestClass" + str(i) for i in range(num_base_names)]
     with_version_values = []
     code = ""
     
@@ -48,15 +48,15 @@ def generate_vython_code(loop, num_base_names, num_base_versions, num_actual_ver
                 break
     
     code += "\n"
-    tmp_code = ""
     for i in range(num_actual_versions):
         if i != 0:
-            tmp_code += " + "
-        tmp_code += with_version_values[i]
+            code += f"tmp = tmp + {with_version_values[i]}\n"
+        else:
+            code += f"tmp = {with_version_values[i]}\n"
     for i in range(num_base_names * num_base_versions - num_actual_versions):
-            tmp_code += f" + {with_version_values[0]}"
-    code += f"x = {tmp_code}\n"
-    code += f"y = {tmp_code}\n"
+            code += f"tmp = tmp + {with_version_values[0]}\n"
+    code += f"x = tmp\n"
+    code += f"y = tmp\n"
     
     code += "\n"
     code += "def loop(c, f, y):\n"
@@ -84,7 +84,7 @@ def allocate_vython_code(gen_code_requirements, source_path):
         generated_code = generate_vython_code(loop, num_base_names, num_base_versions, num_actual_versions)
 
         str_actual_versions = str(gen_code_requirement[3])
-        while len(str_actual_versions) != 3:
+        while len(str_actual_versions) < 3:
             str_actual_versions = "0" + str_actual_versions
 
         with open(os.path.join(source_path, f"benchmark_{loop}_{num_base_names}_{num_base_versions}_{str_actual_versions}.py"), "w") as f:

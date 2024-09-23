@@ -1,7 +1,7 @@
 {
   "processor": "transpiler",
   "benchmark_target": "generate",
-  "num_iterations": 300,
+  "num_iterations": 500,
 
   "num_loop": 2000,
   "num_base_names": 25,

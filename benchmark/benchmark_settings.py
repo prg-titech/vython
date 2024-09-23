@@ -35,5 +35,16 @@ class BenchmarkSettings():
                                self.num_base_versions,
                                current_num_version])
                 current_num_version *= 2
+        if self.interval_num_versions == "min_max":
+            max_num_version = self.num_base_names * self.num_base_versions
+            min_num_version = 1
+            requirements.append([self.num_loop,
+                                 self.num_base_names,
+                                 self.num_base_versions,
+                                 max_num_version])
+            requirements.append([self.num_loop,
+                                 self.num_base_names,
+                                 self.num_base_versions,
+                                 min_num_version])
         return requirements
 
