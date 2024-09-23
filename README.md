@@ -101,6 +101,7 @@ python3 benchmark/main.py
   - `"num_base_versions"`        : 生成されるvythonファイルにおける各クラスのバージョン数
   - `"num_interval_num_versions"`: 実際に使用するバージョン数を決定する引数
     - モード`geometric`: 使用するバージョン数は、1,2,4,...
+    - モード`min_max`: 
 - `"benchmark_target": sample`時の追加設定項目
   - `"path_benchmarks"`: 測定するプログラムのファイルパス or 測定するプログラムの集合を直下に含むディレクトリパス
 
