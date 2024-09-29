@@ -21,5 +21,6 @@ def sort(list):
     return sorted_lower_list + middle_list + sorted_upper_list
 
 a = [4, 3, 1, 2]
+result = sort(a)
 
-print(sort(a))
+print(result)

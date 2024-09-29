@@ -1,12 +1,22 @@
 from src.transpiler.compiler import Compiler as TC
+from helper_func import *
+import pytest
 
+@pytest.mark.integration
 def test():
     # テスト用のソースコードを読み込む
     with open("test/sample_program/basic/integration/car_class.py", "r") as f:
         code = f.read()
 
     # コンパイラのインスタンスを作成
-    result_t = TC(code,"vython").get_result_fullpath()
+    t = TC(code,"vython").run_fullpath()
+    result = t.get_result()
+    dict = t.get_dict()
 
     # 結果を検証
-    assert result_t == "Toyota\nCorolla\n2020\n30\n0\n"
+    car = dict["car"]
+    assert isSameValue(car.make, "Toyota")
+    assert isSameValue(car.model, "Corolla")
+    assert isSameValue(car.year, 2020)
+    assert isSameValue(car.accelerate(30), 30)
+    assert isSameValue(car.brake(40), 0)
