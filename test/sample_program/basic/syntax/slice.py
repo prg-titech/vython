@@ -1,6 +1,9 @@
 a = [1,2,3,4,5,6,7,8,9,10,11,12]
-
-print(a[3:])
-print(a[:8])
-print(a[4:7])
-print(a[2:11:2])
+result1 = a[3:]
+result2 = a[:8]
+result3 = a[4:7]
+result4 = a[2:11:2]
+print(result1)
+print(result2)
+print(result3)
+print(result4)
