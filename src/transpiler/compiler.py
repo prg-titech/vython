@@ -33,6 +33,7 @@ class Compiler:
         self.pythonAST = None
         self.pythonCode = None
         self.result = None
+        self.created_obj = {}
     
     def parse(self):
         if self.debug_mode:
@@ -80,7 +81,7 @@ class Compiler:
         output = io.StringIO()
         try:
             with contextlib.redirect_stdout(output):
-                exec(self.pythonCode, {})
+                exec(self.pythonCode, self.created_obj)
         except Exception as e:
             self.result = e
             return self.result   
@@ -101,13 +102,12 @@ class Compiler:
     
     # [評価用]: 評価用の特別な評価メソッド - evaluate_timeメソッドからしか使われない
     def execute_for_evaluate(self, mode):
-        global_dict = globals()
         start_time = time.perf_counter()
-        exec(self.pythonCode,global_dict)
+        exec(self.pythonCode,self.created_obj)
         end_time = time.perf_counter()
         if mode == "generate":
             start_time = time.perf_counter()
-            exec("main(m, f, y)",global_dict)
+            exec("main(m, f, y)",self.created_obj)
             end_time = time.perf_counter()
         return end_time - start_time
     
