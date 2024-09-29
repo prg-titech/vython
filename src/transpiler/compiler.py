@@ -91,14 +91,17 @@ class Compiler:
     
     def get_result(self):
         return self.result
+    
+    def get_dict(self):
+        return self.created_obj
 
-    def get_result_fullpath(self):
+    def run_fullpath(self):
         self.parse()
         self.collect_classes(True)
         self.transpile()
         self.unparse()
         self.execute()
-        return self.result
+        return self
     
     # [評価用]: 評価用の特別な評価メソッド - evaluate_timeメソッドからしか使われない
     def execute_for_evaluate(self, mode):
