@@ -5,7 +5,7 @@ import pytest
 @pytest.mark.DVC
 def test():
     # テスト用のソースコードを読み込む
-    with open("test/sample_program/DVC/vtprop_method.py", "r") as f:
+    with open("test/sample_program/DVC/vtprop_id.py", "r") as f:
         code = f.read()
 
     # コンパイラのインスタンスを作成し、実行
@@ -13,6 +13,6 @@ def test():
     result = t.get_result()
     dict = t.get_dict()
 
-    assert not hasVTAttribute(dict["n"])
+    assert hasExpectedVT(dict["a2"], 4)
     assert hasExpectedVT(dict["return_value_from_a2"], 4)
-    assert not hasVTAttribute(dict["return_value_from_b1"])
+    assert hasExpectedVT(dict["n"], 4)

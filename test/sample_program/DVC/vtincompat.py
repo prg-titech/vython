@@ -12,5 +12,6 @@ class B!1:
         return v
     
 a2 = A!2()
+incompat_value = a2.id(1)
 print(a2.vt) # 0100 -> 4
-print(a2.id(1).vt) # 1100 -> 12
+print(incompat_value.vt) # 1100 -> 12

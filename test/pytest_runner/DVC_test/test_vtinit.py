@@ -1,11 +1,18 @@
 from src.transpiler.compiler import Compiler as TC
+from helper_func import *
+import pytest
 
+@pytest.mark.DVC
 def test():
     # テスト用のソースコードを読み込む
     with open("test/sample_program/DVC/vtinit.py", "r") as f:
         code = f.read()
 
     # コンパイラのインスタンスを作成し、実行
-    result_t = TC(code, "vython").get_result_fullpath()
+    t = TC(code,"vython").run_fullpath()
+    result = t.get_result()
+    dict = t.get_dict()
 
-    assert result_t == "1\n4\nFalse\n"
+    assert hasExpectedVT(dict["a1"], 1)
+    assert hasExpectedVT(dict["a2"], 4)
+    assert not hasVTAttribute(dict["b1"])
