@@ -84,10 +84,8 @@ class Compiler:
                 exec(self.pythonCode, self.created_obj)
         except Exception as e:
             self.result = e
-            return self.result   
-        captured_output = output.getvalue()
-        self.result = captured_output
-        return self.result
+            return self.result
+        self.result = output.getvalue()
     
     def get_result(self):
         return self.result
