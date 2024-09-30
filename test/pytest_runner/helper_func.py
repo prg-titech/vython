@@ -16,3 +16,20 @@ def isSameArray(created_array, test_array):
             return False
     
     return True
+
+def hasExpectedVT(value, vt):
+    # vt属性を持っているかの確認
+    if not hasattr(value, "vt"):
+        return False
+    
+    # vtの中身の一致確認
+    if not (value.vt == vt):
+        return False
+    
+    return True
+
+def hasVTAttribute(value):
+    if not hasattr(value, "vt"):
+        return False
+    
+    return True
