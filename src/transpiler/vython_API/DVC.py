@@ -44,11 +44,14 @@ def _checkCompatibilities(*args):
     return
 
 def _vt_concatenate_all(target, *args):
-    if not hasattr(target, "vt"):
-        target.vt = 0
+    tmp_vt = 0
+    if hasattr(target, "vt"):
+        tmp_vt = tmp_vt | target.vt
     for arg in args:
         if hasattr(arg, "vt"):
-            target.vt = target.vt | arg.vt
+            tmp_vt = tmp_vt | arg.vt
+    if tmp_vt != 0:
+        target.vt = tmp_vt
     return target
 
 def _incompatible_value(self, _class, _version, _feedback):
