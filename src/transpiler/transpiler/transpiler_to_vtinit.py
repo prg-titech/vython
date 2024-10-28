@@ -49,7 +49,6 @@ class TranspilerToVTInit(Transformer):
         # limited_classesにインデックスを追加
         for index, key in enumerate(self.limited_classes):
             self.limited_classes[key] = (index, self.limited_classes[key])
-        print(self.limited_classes)
 
         # 互換性検査で用いるbit列AST
         count = 0
