@@ -111,10 +111,10 @@ Benchmark Settings used in 3p-abstract of APLAS SRC 2024
 {
   "processor": "transpiler",
   "benchmark_target": "generate",
-  "num_iterations": 500,
+  "num_iterations": 10000,
 
   "num_loop": 2000,
-  "num_base_names": 25,
+  "num_base_names": 1024,
   "num_base_versions": 2,
   "interval_num_versions": "geometric",
 
@@ -125,7 +125,7 @@ Benchmark Settings used in 3p-abstract of APLAS SRC 2024
 {
   "processor": "transpiler",
   "benchmark_target": "sample",
-  "num_iterations": 500,
+  "num_iterations": 10000,
 
   "path_benchmarks": "benchmark/sample_programs",
 
