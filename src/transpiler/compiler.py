@@ -104,6 +104,7 @@ class Compiler:
     # [評価用]: 評価用の特別な評価メソッド - evaluate_timeメソッドからしか使われない
     def execute_for_evaluate(self, mode):
         start_time = time.perf_counter()
+        self.created_obj = {}
         exec(self.pythonCode,self.created_obj)
         end_time = time.perf_counter()
         if mode == "generate":
