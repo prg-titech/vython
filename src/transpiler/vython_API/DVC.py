@@ -4,46 +4,28 @@ class VersionError(Exception):
     def __init__(self, message):
         self.message = message
 
-def generate_feedback(*args):
-    incompat_tuple_list = []
-    # エラー箇所の再特定
-    args_size = len(args)
-    for i in range(args_size-1):
-        for j in range(1, args_size-i):
-            v1 = args[i]
-            v2 = args[i+j]
-            if not (hasattr(v1, "vt") and hasattr(v2, "vt")):
-                break
-            v1_or_v2 = (v1.vt | v2.vt)
-            if ((((v1_or_v2 >> 1) & v1_or_v2) >> 1) | ((v1_or_v2 >> 3) & v1_or_v2)) & check_bit_mask != 0:
-                incompat_tuple_list.append((v1, v2))
-      
+def generate_feedback(obj):     
     # エラー発生箇所についてフィードバックを生成
     feedback = ""
-    for index, incompat_tuple in enumerate(incompat_tuple_list):
-        partial_feedback = f"Version Error {index + 1}:\n"
-        if hasattr(v1, "error_feedback"):
-            partial_feedback += v1.error_feedback
-            partial_feedback += "\n"
-        if hasattr(v2, "error_feedback"):
-            partial_feedback += v2.error_feedback
-            partial_feedback += "\n"
-        feedback += partial_feedback
+    if hasattr(obj, "_error_feedback"):
+        for error_feedback in obj._error_feedbacks:
+            feedback += error_feedback
+            feedback += "\n"
     return feedback
 
-def _checkCompatibilities(*args):
-    disjunction_bit = 0
-    for arg in args:
-        if hasattr(arg, "vt"):
-            disjunction_bit = (disjunction_bit | arg.vt)
+# -------------
+# VT Operations
+# -------------
 
-    if ((((disjunction_bit >> 1) & disjunction_bit) >> 1) | ((disjunction_bit >> 3) & disjunction_bit)) & check_bit_mask != 0:
-        feedback = generate_feedback(*args)
-        raise VersionError(f"{feedback}")               
-
+def _vt_well_fromed(obj):
+    if hasattr(obj, "vt"):
+        vt = obj.vt
+        if ((((vt >> 1) & vt) >> 1) | ((vt >> 3) & vt)) & check_bit_mask != 0:
+            feedback = generate_feedback(obj)
+            raise VersionError(f"{feedback}")               
     return
 
-def _vt_concatenate_all(target, *args):
+def _vt_join(target, *args):
     tmp_vt = 0
     if hasattr(target, "vt"):
         tmp_vt = tmp_vt | target.vt
@@ -53,6 +35,10 @@ def _vt_concatenate_all(target, *args):
     if tmp_vt != 0:
         target.vt = tmp_vt
     return target
+
+# -------------
+# Decorators & Pre-defined functions
+# -------------
 
 def _incompatible_value(self, _class, _version, _feedback):
     if not hasattr(self, "vt"):
@@ -65,34 +51,25 @@ def _incompatible_value(self, _class, _version, _feedback):
     mask = 1 << n    
     self.vt = self.vt | mask
 
-    self.error_feedback = _feedback
+    self._error_feedbacks = [_feedback]
     return self
 
-# -------------
-# Decorators
-# -------------
-
 # for user defined method
-def _vt_concat_decorator_user(func):
+def _vt_invk(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         if result is not None:
-            result = _vt_concatenate_all(result, args[0])
+            result = _vt_join(result, args[0])
+            _vt_well_fromed(result)
         return result
     return wrapper
 
 # for primitive
-def _vt_concat_decorator_primitive(func):
+def _vt_builtin_op(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         if result is not None:
-            result = _vt_concatenate_all(result, *args, **kwargs)
-        return result
-    return wrapper
-
-def _vt_check_decorator(func):
-    def wrapper(*args, **kwargs):
-        _checkCompatibilities(*args, **kwargs)
-        result = func(*args, **kwargs)
+            result = _vt_join(result, *args, **kwargs)
+            _vt_well_fromed(result)
         return result
     return wrapper

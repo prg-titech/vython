@@ -144,7 +144,7 @@ class TranspilerToVython(Transformer):
                     is_init_exist = True
                 # メソッドをラップし、VT書き換え関数呼び出しASTを挿入した新しいメソッドASTに変更する
                 else:
-                    element.decorator_list.append(ast.Name(id="_vt_concat_decorator_user", ctx=ast.Load()))
+                    element.decorator_list.append(ast.Name(id="_vt_invk", ctx=ast.Load()))
 
         if not is_init_exist:
             initialize_func_ast = copy.deepcopy(self.initialize_func_ast)
