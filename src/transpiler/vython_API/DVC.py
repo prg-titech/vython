@@ -1,5 +1,3 @@
-import re
-
 class VersionError(Exception):
     def __init__(self, message):
         self.message = message
@@ -48,7 +46,7 @@ def _incompatible_value(self, _class, _version, _feedback):
         n = limited_classes[str(_class)][0] * 4 + 1
     else:
         n = limited_classes[str(_class)][0] * 4 + 3
-    mask = 1 << n    
+    mask = 11 << (n-1)    
     self.vt = self.vt | mask
 
     self._error_feedbacks = [_feedback]
@@ -73,3 +71,32 @@ def _vt_builtin_op(func):
             _vt_well_fromed(result)
         return result
     return wrapper
+
+# for field reference
+def _vt_field(receiver, result):
+    result = _vt_join(result, receiver)
+    _vt_well_fromed(result)
+    return result
+
+# -------------
+# Dispatcher
+# -------------
+def _wrap_primitive(value):
+    result = value
+    match type(value):
+        case int(): result = VInt(value)
+        case float(): result = VFloat(value)
+        case str(): result = VStr(value)
+        case bool(): result = VBool(value)
+        case list(): result = VList(value)
+    return result
+
+# -------------
+# For Debug
+# -------------
+def _print_vt(value):
+    if hasattr(value, "vt"):
+        print(f"value {value} has vt: {value.vt}")
+    else:
+        print(f"value {value} has no vt")
+    return

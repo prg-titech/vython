@@ -178,6 +178,12 @@ class TranspilerToVython(Transformer):
             self.transform(targets) if isinstance(targets, Tree) else targets
         )
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
+        # assignのtargetが関数呼び出しの時：
+        # - 現在は、_vt_fieldによってwrapされたフィールド参照の可能性がある。
+        # このwrapを外す。
+        if type(transformed_targets) == ast.Call:
+            if transformed_targets.func.id == "_vt_field":
+                transformed_targets = transformed_targets.args[1]
         return ast.Assign(targets=[transformed_targets], value=transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     # TypeAlias
@@ -512,7 +518,13 @@ class TranspilerToVython(Transformer):
         value, attr = items[0], items[1]
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
         transformed_attr = self.transform(attr) if isinstance(attr, Tree) else attr
-        return ast.Attribute(value=transformed_value, attr=transformed_attr,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        attr_value = ast.Attribute(value=transformed_value, attr=transformed_attr,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        if type(transformed_attr) == ast.Call:
+            return attr_value
+        # field参照の時
+        # fieldへの代入の時もこれが呼ばれるので、assignでそれは解消する。
+        else:
+            return ast.Call(ast.Name(id="_vt_field",ctx=ast.Load()),[transformed_value, attr_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
     def getitem(self, items):
         structure = items[0]
@@ -534,7 +546,8 @@ class TranspilerToVython(Transformer):
     
     # List
     def list(self, items):
-        return ast.List(elts=items,ctx=ast.Load())
+        transformed_value = ast.List(elts=items,ctx=ast.Load())
+        return ast.Call(ast.Name(id="VList",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     # Tuple
     def tuple(self, items):

@@ -371,3 +371,27 @@ class VStr(str):
     
     # 後で諸々は実装
     
+class VList(list):
+    def __init__(self, value):
+        self._value = value
+    
+    def __len__(self):
+        return VInt(len(self._value))
+    
+    def __getitem__(self, key):
+        return (self._value[key])
+    
+    def __setitem__(self, key, value):
+        self._value[key] = value
+        return self
+    
+    def __repr__(self):
+        return VStr(self._value)
+    
+    def __add__(self, value):
+        self._value = self._value.__add__(value._value)
+        return self
+    
+    def append(self, object):
+        self._value.append(object)
+        return self
