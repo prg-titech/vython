@@ -164,6 +164,7 @@ cython_debug/
 #.idea/
 
 # デバッグ用ファイル & 結果出力ファイル
+test/fordebug.py
 output.py
 tmp.log
 execution_time.csv
@@ -174,3 +175,5 @@ benchmark/log/
 
 # transpiler/lib の中身もすべて無視から除外
 !transpiler/lib/**
+
+
