@@ -385,6 +385,9 @@ class VList(list):
         self._value[key] = value
         return self
     
+    def __iter__(self):
+        return iter(self._value)
+    
     def __repr__(self):
         return VStr(self._value)
     

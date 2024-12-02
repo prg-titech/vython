@@ -119,20 +119,13 @@ class TranspilerToVython(Transformer):
         # バージョンの情報もクラス名が持つ
         class_name = str(name) + "_v_" + str(version)
 
-        ######################
-        # 互換性を気にするクラスでない時、名前だけ変えて直ちに終了
-        ######################
-        if not (name in self.limited_classes.keys()):
-            return ast.ClassDef(name=class_name,bases=[],keywords=[],body=body,decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        
-        
         is_init_exist = False
 
         # basesの中身を検査
         for element in body:
             if isinstance(element,ast.FunctionDef):
                 # initializeメソッドAST に VT初期化関数呼び出しAST を挿入
-                if(element.name == "__init__"):
+                if(element.name == "__init__") and (name in self.limited_classes.keys()):
                     version_list = self.limited_classes[str(name)][1]
                     if str(version) == version_list[0]:
                         n = self.limited_classes[str(name)][0] * 4
@@ -146,7 +139,7 @@ class TranspilerToVython(Transformer):
                 else:
                     element.decorator_list.append(ast.Name(id="_vt_invk", ctx=ast.Load()))
 
-        if not is_init_exist:
+        if (not is_init_exist) and (name in self.limited_classes.keys()):
             initialize_func_ast = copy.deepcopy(self.initialize_func_ast)
             version_list = self.limited_classes[str(name)][1]
             if str(version) == version_list[0]:
@@ -469,6 +462,9 @@ class TranspilerToVython(Transformer):
     def funccall(self, items):
         func, args = items[0], self._flatten_list(items[1:])
         transformed_func = self.transform(func) if isinstance(func, Tree) else func
+        if (type(transformed_func) == ast.Call) and (transformed_func.func.id == "_vt_field"):
+            transformed_func = transformed_func.args[1]
+            return ast.Call(func=transformed_func,args=args,keywords=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
         return ast.Call(func=transformed_func,args=args,keywords=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
     def funccallwithversion(self, items):
@@ -519,12 +515,7 @@ class TranspilerToVython(Transformer):
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
         transformed_attr = self.transform(attr) if isinstance(attr, Tree) else attr
         attr_value = ast.Attribute(value=transformed_value, attr=transformed_attr,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        if type(transformed_attr) == ast.Call:
-            return attr_value
-        # field参照の時
-        # fieldへの代入の時もこれが呼ばれるので、assignでそれは解消する。
-        else:
-            return ast.Call(ast.Name(id="_vt_field",ctx=ast.Load()),[transformed_value, attr_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        return ast.Call(ast.Name(id="_vt_field",ctx=ast.Load()),[transformed_value, attr_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
     def getitem(self, items):
         structure = items[0]

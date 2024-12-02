@@ -5,11 +5,23 @@ class VersionError(Exception):
 def generate_feedback(obj):     
     # エラー発生箇所についてフィードバックを生成
     feedback = ""
-    if hasattr(obj, "_error_feedback"):
+    if hasattr(obj, "_error_feedbacks"):
         for error_feedback in obj._error_feedbacks:
             feedback += error_feedback
             feedback += "\n"
     return feedback
+
+def _feedback_join(*args):
+    result = []
+    for arg in args:
+        if hasattr(arg, "_error_feedbacks"):
+            result += arg._error_feedbacks
+    return result
+
+def _issue_warning(*args):
+    feedbacks = _feedback_join(*args)
+    for feedback in feedbacks:
+        print(feedback)
 
 # -------------
 # VT Operations
@@ -18,10 +30,8 @@ def generate_feedback(obj):
 def _vt_well_fromed(obj):
     if hasattr(obj, "vt"):
         vt = obj.vt
-        if ((((vt >> 1) & vt) >> 1) | ((vt >> 3) & vt)) & check_bit_mask != 0:
-            feedback = generate_feedback(obj)
-            raise VersionError(f"{feedback}")               
-    return
+        return ((((vt >> 1) & vt) >> 1) | ((vt >> 3) & vt)) & check_bit_mask == 0
+    return True
 
 def _vt_join(target, *args):
     tmp_vt = 0
@@ -46,7 +56,7 @@ def _incompatible_value(self, _class, _version, _feedback):
         n = limited_classes[str(_class)][0] * 4 + 1
     else:
         n = limited_classes[str(_class)][0] * 4 + 3
-    mask = 11 << (n-1)    
+    mask = 0b11 << (n-1)    
     self.vt = self.vt | mask
 
     self._error_feedbacks = [_feedback]
@@ -58,7 +68,8 @@ def _vt_invk(func):
         result = func(*args, **kwargs)
         if result is not None:
             result = _vt_join(result, args[0])
-            _vt_well_fromed(result)
+            if not _vt_well_fromed(result):
+                _issue_warning(result, args[0])
         return result
     return wrapper
 
@@ -68,14 +79,16 @@ def _vt_builtin_op(func):
         result = func(*args, **kwargs)
         if result is not None:
             result = _vt_join(result, *args, **kwargs)
-            _vt_well_fromed(result)
+            if not _vt_well_fromed(result):
+                _issue_warning(result, *args, **kwargs)
         return result
     return wrapper
 
 # for field reference
 def _vt_field(receiver, result):
     result = _vt_join(result, receiver)
-    _vt_well_fromed(result)
+    if not _vt_well_fromed(result):
+                _issue_warning(result, receiver)
     return result
 
 # -------------
