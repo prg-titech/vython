@@ -1,3 +1,5 @@
+import time
+
 def is_prime(n):
     if n <= 1:
         return False
@@ -14,5 +16,7 @@ def is_prime_recursive(n, i):
         return False
     return is_prime_recursive(n, i + 6)
 
+s = time.perf_counter()
 is_prime(128456903)
-# print(is_prime(128456903))
+e = time.perf_counter()
+print(e - s)

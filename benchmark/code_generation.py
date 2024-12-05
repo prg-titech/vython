@@ -7,6 +7,7 @@ def generate_vython_code(loop, num_base_names, num_base_versions, num_actual_ver
     with_version_values = []
     code = ""
     
+    code += "import time\n"
     class_size = 0
     for base_name in base_names:
         if class_size >= num_actual_versions:
@@ -61,6 +62,10 @@ def generate_vython_code(loop, num_base_names, num_base_versions, num_actual_ver
     code += "def main():\n"
     code += "   for i in range(m):\n"
     code += "       x + y\n"
+    code += "s = time.perf_counter()\n"
+    code += "main()\n"
+    code += "e = time.perf_counter()\n"
+    code += "print(e - s)\n"
     
     return code
 
