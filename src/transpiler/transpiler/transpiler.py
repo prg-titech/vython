@@ -321,6 +321,23 @@ class Transpiler(Transformer):
     # Assert
 
     # Import
+    def import_stmt(self, items):
+        return ast.Import(items[0])
+    
+    def import_name(self, items):
+        return items[0]
+    
+    def dotted_as_names(self, items):
+        return items[0]
+    
+    def dotted_as_name(self, items):
+        return items[0]
+
+    def dotted_name(self, items):
+        names = []
+        for elem in items:
+            names.append(ast.alias(elem, None))
+        return names
     # ImportFrom
 
     # Global
