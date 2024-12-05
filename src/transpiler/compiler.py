@@ -109,7 +109,7 @@ class Compiler:
         return self
     
     # [評価用]: 実行時間を測定
-    def evaluate_execution_time(self, python_code=None, name_dict=None):
+    def evaluate_execution_time_include_parse(self, python_code=None, name_dict=None):
         if(name_dict is None):
             name_dict = {}
         else:
@@ -121,6 +121,17 @@ class Compiler:
         exec(python_code, name_dict)
         end_time = time.perf_counter()
         return end_time - start_time
+
+    def evaluate_execution_time(self, name_dict=None):
+        if(name_dict is None):
+            name_dict = {}
+        else:
+            # deepcopyが望ましいが恐らくcopyで十分
+            name_dict = copy.copy(name_dict)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            exec(self.pythonCode, name_dict)
+        return float(output.getvalue())
     
     # [評価用]: DVC functionやwrap classの定義などを評価時間を含む時間を測定
     def evaluate_time(self, python_code=None, name_dict=None):
