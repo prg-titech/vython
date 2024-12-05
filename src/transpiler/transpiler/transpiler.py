@@ -138,11 +138,8 @@ class Transpiler(Transformer):
 
     def funcdef(self, items):
         name, params_tree, _, body = items
-        # 'params_tree' が Tree オブジェクトの場合
-        if isinstance(params_tree, Tree):
-            # params_treeの子ノードから引数を取得
-            args = [self.transform(param) for param in params_tree.children]
-        else:
+        args = params_tree
+        if args is None:
             # params_treeがリストでない場合、空の引数リストを設定
             args = ast.arguments(posonlyargs=[],args=[],kwonlyargs=[],kw_defaults=[],defaults=[])
         return ast.FunctionDef(name=name, args=args, body=self._flatten_list(body),decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
