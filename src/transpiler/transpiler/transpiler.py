@@ -144,7 +144,7 @@ class Transpiler(Transformer):
             args = [self.transform(param) for param in params_tree.children]
         else:
             # params_treeがリストでない場合、空の引数リストを設定
-            args = params_tree
+            args = ast.arguments(posonlyargs=[],args=[],kwonlyargs=[],kw_defaults=[],defaults=[])
         return ast.FunctionDef(name=name, args=args, body=self._flatten_list(body),decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     # + AsyncFunctionDef
