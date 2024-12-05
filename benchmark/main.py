@@ -51,7 +51,7 @@ def run():
             make_line_graph(evaluation_data, settings.comparison_strategy, result_path)
         case ("transpiler","sample"):
             make_bar_graph_about_ratio(evaluation_data, settings.comparison_strategy, result_path)
-            make_line_graph(evaluation_data, settings.comparison_strategy, result_path)
+            # make_line_graph(evaluation_data, settings.comparison_strategy, result_path)
         case "interpreter":
             pass
         case _:

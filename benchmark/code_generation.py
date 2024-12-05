@@ -15,8 +15,6 @@ def generate_vython_code(loop, num_base_names, num_base_versions, num_actual_ver
             code += f"class {base_name}!{i}:\n"
             code += "    def __init__(self, v):\n"
             code += "        self.v = v\n"
-            code += "    def get_v(self):\n"
-            code += "        return self.v\n\n"
 
             class_size += 1
             if class_size >= num_actual_versions:
@@ -40,7 +38,7 @@ def generate_vython_code(loop, num_base_names, num_base_versions, num_actual_ver
         if value_size >= num_actual_versions:
                 break
         for i in range(1, num_base_versions + 1):
-            code += f"v{base_name.lower()}{i} = i{base_name.lower()}{i}.get_v()\n"
+            code += f"v{base_name.lower()}{i} = i{base_name.lower()}{i}.v\n"
             with_version_values.append(f"v{base_name.lower()}{i}")
 
             value_size += 1
@@ -58,18 +56,11 @@ def generate_vython_code(loop, num_base_names, num_base_versions, num_actual_ver
     code += f"x = tmp\n"
     code += f"y = tmp\n"
     
-    code += "\n"
-    code += "def loop(c, f, y):\n"
-    code += "    if c > 0:\n"
-    code += "        f(y)\n"
-    code += "        loop(c - 1, f, y)\n"
-    code += "    else:\n"
-    code += "        return\n\n"
-    code += "f = x.__add__\n"
+    
     code += f"m = {loop}\n"
-    code += "\n"
-    code += "def main(m, f, y):\n"
-    code += "   loop(m, f, y)\n"
+    code += "def main():\n"
+    code += "   for i in range(m):\n"
+    code += "       x + y\n"
     
     return code
 

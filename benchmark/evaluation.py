@@ -71,29 +71,39 @@ def evaluate_transpiler_only_execution(benchmark_target, comparison_strategy, co
 
     for transpile_mode in transpile_modes:
         log(f"Evaluating transpiler with transpile_mode={transpile_mode}")
+        avg_t_execute = 0
+        execution_times = []
+        csv_writer.writerow(['Execution Time in transpile_mode = ' + transpile_mode])
+
         transpiler = TC(code, transpile_mode)
         transpiler.parse()
         transpiler.collect_classes(True)
-        transpiler.transpile()
-        transpiler.unparse()
-
-        avg_t_execute = 0
-        execution_times = []
-
-        csv_writer.writerow(['Execution Time in transpile_mode = ' + transpile_mode])
-
-        for i in range(count):
-            execution_time = transpiler.execute_for_evaluate(benchmark_target)
-            csv_writer.writerow([f"{execution_time:.6f}"])
-            avg_t_execute += execution_time
-            execution_times.append(execution_time)
+        match benchmark_target:
+            case "sample":
+                precode_dict = transpiler.make_dict_of_precode()
+                transpiler.transpile_wo_precode()            
+                transpiler.unparse()
+                for i in range(count):
+                    execution_time = transpiler.evaluate_execution_time(None, precode_dict)
+                    avg_t_execute += execution_time
+                    execution_times.append(execution_time)
+            case "generate":
+                transpiler.transpile()
+                transpiler.unparse()
+                transpiler.execute()
+                name_dict = transpiler.get_dict()
+                for i in range(count):
+                    execution_time = transpiler.evaluate_execution_time("main()", name_dict)
+                    avg_t_execute += execution_time
+                    execution_times.append(execution_time)
     
         avg_t_execute /= count
-        csv_writer.writerow(['AVG', f"{avg_t_execute:.6f}"])
 
         std_dev = np.std(execution_times)
         sem = std_dev / np.sqrt(count)
-
+        
+        csv_writer.writerow(['AVG', f"{avg_t_execute:.6f}"])
+        csv_writer.writerow(['SEM', f"{sem:.6f}"])
         log(f"Completed transpiler evaluation: avg_execute_time={avg_t_execute:.6f}, sem={sem:.6f}")
 
         result[transpile_mode] = (avg_t_execute, sem)
