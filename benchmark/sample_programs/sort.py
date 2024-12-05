@@ -26,4 +26,4 @@ a = [8841, 1092, 5647, 4210, 7658, 5154, 3837, 1459, 1270, 3302, 1916, 5117, 407
 s = time.perf_counter()
 sort(a)
 e = time.perf_counter()
-print(e - s)
+exe_time = e - s

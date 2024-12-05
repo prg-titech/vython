@@ -41,4 +41,4 @@ s = time.perf_counter()
 for i in a:
     root.insert(i)
 e = time.perf_counter()
-print(e - s)
+exe_time = e - s

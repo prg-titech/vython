@@ -60,12 +60,11 @@ def generate_vython_code(loop, num_base_names, num_base_versions, num_actual_ver
     
     code += f"m = {loop}\n"
     code += "def main():\n"
+    code += "   s = time.perf_counter()\n"
     code += "   for i in range(m):\n"
     code += "       x + y\n"
-    code += "s = time.perf_counter()\n"
-    code += "main()\n"
-    code += "e = time.perf_counter()\n"
-    code += "print(e - s)\n"
+    code += "   e = time.perf_counter()\n"
+    code += "   return e - s\n"
     
     return code
 

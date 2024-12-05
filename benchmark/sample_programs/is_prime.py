@@ -19,4 +19,4 @@ def is_prime_recursive(n, i):
 s = time.perf_counter()
 is_prime(128456903)
 e = time.perf_counter()
-print(e - s)
+exe_time = e - s

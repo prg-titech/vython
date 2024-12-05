@@ -78,13 +78,24 @@ def evaluate_transpiler_only_execution(benchmark_target, comparison_strategy, co
         transpiler = TC(code, transpile_mode)
         transpiler.parse()
         transpiler.collect_classes(True)
-        precode_dict = transpiler.make_dict_of_precode()
-        transpiler.transpile_wo_precode()            
-        transpiler.unparse()
-        for i in range(count):
-            execution_time = transpiler.evaluate_execution_time(precode_dict)
-            avg_t_execute += execution_time
-            execution_times.append(execution_time)
+        match benchmark_target:
+            case "sample":
+                precode_dict = transpiler.make_dict_of_precode()
+                transpiler.transpile_wo_precode()            
+                transpiler.unparse()
+                for i in range(count):
+                    execution_time = transpiler.evaluate_execution_time(None, precode_dict)
+                    avg_t_execute += execution_time
+                    execution_times.append(execution_time)
+            case "generate":
+                transpiler.transpile()
+                transpiler.unparse()
+                transpiler.execute()
+                name_dict = transpiler.get_dict()
+                for i in range(count):
+                    execution_time = transpiler.evaluate_execution_time("exe_time = main()", name_dict)
+                    avg_t_execute += execution_time
+                    execution_times.append(execution_time)
     
         avg_t_execute /= count
 

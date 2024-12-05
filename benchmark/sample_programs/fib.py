@@ -9,4 +9,4 @@ def fib(n):
 s = time.perf_counter()
 fib(20)
 e = time.perf_counter()
-print(e - s)
+exe_time = e - s
