@@ -2,9 +2,11 @@ from lark import Token, Transformer, Tree
 import ast
 import copy
 
-
-primitive_classes = "src/transpiler/vython_API/primitives.py"
+primitive_classes_path = "src/transpiler/vython_API/primitives.py"
 global_func_path = "src/transpiler/vython_API/DVC.py"
+# DVCの機能を制限したコンパイル用
+primitive_classes_wo_decorator_path = "src/transpiler/vython_API/limited_API/primitives_wo_deco.py"
+global_func_wo_wf_path = "src/transpiler/vython_API/limited_API/DVC_wo_wf.py"
 
 # AST templates
 initialize_func_path = "src/transpiler/vython_API/ast_templates/initialize_func.py"
@@ -15,15 +17,21 @@ initialize_func_path = "src/transpiler/vython_API/ast_templates/initialize_func.
 # --------------------------------------
 
 # larkToIRを参考に実装する
-class TestTranspiler(Transformer):
+class Transpiler(Transformer):
     ############################
     ############################
     # トランスパイラ初期化
     ############################
     ############################
-    def __init__(self, limited_classes, debug_mode):
+    def __init__(self, limited_classes, compilation_mode, debug_mode, omit_precode=False):
         self.limited_classes = limited_classes
+        self.compilation_mode = compilation_mode
         self.debug_mode = debug_mode
+        self.omit_precode = omit_precode
+        match compilation_mode:
+            case "python" | "wrap-primitive" | "vt-init" | "vt-prop" | "vython": self.compilation_mode = compilation_mode
+            # どれにも当てはまらない場合はvythonで実行
+            case _: self.compilation_mode = "vython"
 
         self.global_func_ast = None
         self.primitive_classes_ast = None
@@ -32,16 +40,34 @@ class TestTranspiler(Transformer):
         self.limited_classes_ast = None
     
         # Python ASTに挿入するグローバル関数(VT操作/検査)をASTに変換
-        with open(global_func_path,"r") as file:
-            global_func_code = file.read()
-        self.global_func_ast = ast.parse(global_func_code).body
+        match compilation_mode:
+            case "python" | "wrap-primitive" | "vt-init" : pass
+            case "vt-prop" : 
+                with open(global_func_wo_wf_path,"r") as file:
+                    global_func_code = file.read()
+                self.global_func_ast = ast.parse(global_func_code).body
+            case "vython" :
+                with open(global_func_path,"r") as file:
+                    global_func_code = file.read()
+                self.global_func_ast = ast.parse(global_func_code).body
+            case _ : pass
 
         # Python ASTに挿入するVython Primitiveクラス定義のAST
-        with open(primitive_classes,"r") as file:
-            primitive_classes_code = file.read()
-        self.primitive_classes_ast = ast.parse(primitive_classes_code)
+        match compilation_mode:
+            case "python" : pass
+            case "wrap-primitive" | "vt-init" : 
+                with open(primitive_classes_wo_decorator_path,"r") as file:
+                    primitive_classes_code = file.read()
+                self.primitive_classes_ast = ast.parse(primitive_classes_code)
+            case "vt-prop" | "vython" :
+                with open(primitive_classes_path,"r") as file:
+                    primitive_classes_code = file.read()
+                self.primitive_classes_ast = ast.parse(primitive_classes_code)
+            case _ :
+                pass
+            
 
-        # クラス定義のイニシャライザーのテンプレートAST
+        # クラス定義のイニシャライザー関数のテンプレートAST
         with open(initialize_func_path,"r") as file:
             initialize_func_code = file.read()
         self.initialize_func_ast = ast.parse(initialize_func_code).body[0]
@@ -49,7 +75,6 @@ class TestTranspiler(Transformer):
         # limited_classesにインデックスを追加
         for index, key in enumerate(self.limited_classes):
             self.limited_classes[key] = (index, self.limited_classes[key])
-        print(self.limited_classes)
 
         # 互換性検査で用いるbit列AST
         count = 0
@@ -65,7 +90,7 @@ class TestTranspiler(Transformer):
                                                    end_lineno=0,
                                                    end_col_offset=0)
         
-        # for incompatible
+        # フィードバック生成のために使用するデータ構造のAST
         self.limited_classes_ast = ast.Assign(targets=[ast.Name(id='limited_classes', ctx=ast.Store())],
                                                    value=ast.parse(f"{self.limited_classes}").body[0].value,
                                                    lineno=0,
@@ -83,15 +108,24 @@ class TestTranspiler(Transformer):
 
     def file_input(self, items):
         body = self._flatten_list(items)
-
-        # Primitiveクラスを挿入
-        body.insert(0, self.primitive_classes_ast)
-        # グローバル関数を挿入
-        body.insert(0, self.global_func_ast)
-        # VTの互換性を示すデータ構造を挿入
-        body.insert(0, self.check_bit_mask_ast)
-
-        body.insert(0, self.limited_classes_ast)
+        if not self.omit_precode:
+            match self.compilation_mode:
+                case "python": pass
+                case "wrap-primitive" | "vt-init":
+                    body.insert(0, self.primitive_classes_ast)
+                case "vt-prop":
+                    body.insert(0, self.primitive_classes_ast)
+                    body.insert(0, self.global_func_ast)
+                case "vython":
+                    # Primitiveクラスを挿入
+                    body.insert(0, self.primitive_classes_ast)
+                    # グローバル関数を挿入
+                    body.insert(0, self.global_func_ast)
+                    # VTの互換性を示すデータ構造を挿入
+                    body.insert(0, self.check_bit_mask_ast)
+                    # フィードバック生成のために使用するデータ
+                    body.insert(0, self.limited_classes_ast)
+                case _ : pass
 
         return ast.Module(body=body,type_ignores=[])
 
@@ -120,20 +154,34 @@ class TestTranspiler(Transformer):
         # バージョンの情報もクラス名が持つ
         class_name = str(name) + "_v_" + str(version)
 
-        ######################
-        # 互換性を気にするクラスでない時、名前だけ変えて直ちに終了
-        ######################
-        if not (name in self.limited_classes.keys()):
-            return ast.ClassDef(name=class_name,bases=[],keywords=[],body=body,decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        
-        
         is_init_exist = False
 
         # basesの中身を検査
         for element in body:
             if isinstance(element,ast.FunctionDef):
-                # initializeメソッドAST に VT初期化関数呼び出しAST を挿入
-                if(element.name == "__init__"):
+                match self.compilation_mode:
+                    case "vt-init" | "vt-prop" | "vython" :
+                        # initializeメソッドAST に VT初期化関数呼び出しAST を挿入
+                        if(element.name == "__init__") and (name in self.limited_classes.keys()):
+                            version_list = self.limited_classes[str(name)][1]
+                            if str(version) == version_list[0]:
+                                n = self.limited_classes[str(name)][0] * 4
+                            else:
+                                n = self.limited_classes[str(name)][0] * 4 + 2
+
+                            vt_init_stmt = f"self.vt = {1 << n}"
+                            element.body.insert(0, ast.parse(f"{vt_init_stmt}").body[0])
+                            is_init_exist = True
+                        # メソッドをラップし、VT書き換え関数呼び出しASTを挿入した新しいメソッドASTに変更する
+                        else:
+                            if (self.compilation_mode == "vt-prop") or (self.compilation_mode == "vython"):
+                                element.decorator_list.append(ast.Name(id="_vt_invk", ctx=ast.Load()))
+                    case _ : pass
+        
+        match self.compilation_mode:
+            case "vt-init" | "vt-prop" | "vython" :
+                if (not is_init_exist) and (name in self.limited_classes.keys()):
+                    initialize_func_ast = copy.deepcopy(self.initialize_func_ast)
                     version_list = self.limited_classes[str(name)][1]
                     if str(version) == version_list[0]:
                         n = self.limited_classes[str(name)][0] * 4
@@ -141,23 +189,9 @@ class TestTranspiler(Transformer):
                         n = self.limited_classes[str(name)][0] * 4 + 2
 
                     vt_init_stmt = f"self.vt = {1 << n}"
-                    element.body.insert(0, ast.parse(f"{vt_init_stmt}").body[0])
-                    is_init_exist = True
-                # メソッドをラップし、VT書き換え関数呼び出しASTを挿入した新しいメソッドASTに変更する
-                else:
-                    element.decorator_list.append(ast.Name(id="_vt_concat_decorator_user", ctx=ast.Load()))
-
-        if not is_init_exist:
-            initialize_func_ast = copy.deepcopy(self.initialize_func_ast)
-            version_list = self.limited_classes[str(name)][1]
-            if str(version) == version_list[0]:
-                n = self.limited_classes[str(name)][0] * 4
-            else:
-                n = self.limited_classes[str(name)][0] * 4 + 2
-
-            vt_init_stmt = f"self.vt = {1 << n}"
-            initialize_func_ast.body.insert(0, ast.parse(f"{vt_init_stmt}").body[0])
-            body.append(initialize_func_ast)
+                    initialize_func_ast.body.insert(0, ast.parse(f"{vt_init_stmt}").body[0])
+                    body.append(initialize_func_ast)
+            case _ : pass
 
         return ast.ClassDef(name=class_name,bases=[],keywords=[],body=body,decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
@@ -179,6 +213,15 @@ class TestTranspiler(Transformer):
             self.transform(targets) if isinstance(targets, Tree) else targets
         )
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
+        match self.compilation_mode:
+            case "vt-prop" | "vython" :
+                # assignのtargetが関数呼び出しの時：
+                # - 現在は、_vt_fieldによってwrapされたフィールド参照の可能性がある。
+                # このwrapを外す。
+                if type(transformed_targets) == ast.Call:
+                    if transformed_targets.func.id == "_vt_field":
+                        transformed_targets = transformed_targets.args[1]
+            case _ : pass
         return ast.Assign(targets=[transformed_targets], value=transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     # TypeAlias
@@ -464,6 +507,12 @@ class TestTranspiler(Transformer):
     def funccall(self, items):
         func, args = items[0], self._flatten_list(items[1:])
         transformed_func = self.transform(func) if isinstance(func, Tree) else func
+        match self.compilation_mode:
+            case "vt-prop" | "vython" :
+                if (type(transformed_func) == ast.Call) and (transformed_func.func.id == "_vt_field"):
+                    transformed_func = transformed_func.args[1]
+                    return ast.Call(func=transformed_func,args=args,keywords=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+            case _ : pass
         return ast.Call(func=transformed_func,args=args,keywords=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
     def funccallwithversion(self, items):
@@ -482,18 +531,27 @@ class TestTranspiler(Transformer):
     
     def const_true(self, items):
         value = ast.Constant(True,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        return ast.Call(ast.Name(id="VBool",ctx=ast.Load()),[value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        match self.compilation_mode:
+            case "wrap-primitive" | "vt-init" | "vt-prop" | "vython" :
+                return ast.Call(ast.Name(id="VBool",ctx=ast.Load()),[value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+            case _ : return value
     
     def const_false(self, items):
         value = ast.Constant(False,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        return ast.Call(ast.Name(id="VBool",ctx=ast.Load()),[value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        match self.compilation_mode:
+            case "wrap-primitive" | "vt-init" | "vt-prop" | "vython" :
+                return ast.Call(ast.Name(id="VBool",ctx=ast.Load()),[value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+            case _ : return value
     
     def string(self, items):
         value = items[0]
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
         transformed_value.value = transformed_value.value.replace('"',"")
         transformed_value = ast.Constant(transformed_value.value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        return ast.Call(ast.Name(id="VStr",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        match self.compilation_mode:
+            case "wrap-primitive" | "vt-init" | "vt-prop" | "vython" :               
+                return ast.Call(ast.Name(id="VStr",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+            case _ : return transformed_value
     
     def number(self, items):
         value = items[0]
@@ -503,17 +561,28 @@ class TestTranspiler(Transformer):
                 case 'DEC_NUMBER': 
                     transformed_value = int(transformed_value.value)
                     transformed_value = ast.Constant(transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-                    return ast.Call(ast.Name(id="VInt",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+                    match self.compilation_mode:
+                        case "wrap-primitive" | "vt-init" | "vt-prop" | "vython" :               
+                            return ast.Call(ast.Name(id="VInt",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+                        case _ : return transformed_value
                 case 'FLOAT_NUMBER': 
                     transformed_value = float(transformed_value.value)
                     transformed_value = ast.Constant(transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-                    return ast.Call(ast.Name(id="VFloat",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+                    match self.compilation_mode:
+                        case "wrap-primitive" | "vt-init" | "vt-prop" | "vython" :               
+                            return ast.Call(ast.Name(id="VFloat",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+                        case _ : return transformed_value
 
     def getattr(self, items):
         value, attr = items[0], items[1]
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
         transformed_attr = self.transform(attr) if isinstance(attr, Tree) else attr
-        return ast.Attribute(value=transformed_value, attr=transformed_attr,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        attr_value = ast.Attribute(value=transformed_value, attr=transformed_attr,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        match self.compilation_mode:
+            case "vt-prop" | "vython" :
+                return ast.Call(ast.Name(id="_vt_field",ctx=ast.Load()),[transformed_value, attr_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+            case _ :
+                return attr_value
     
     def getitem(self, items):
         structure = items[0]
@@ -535,7 +604,12 @@ class TestTranspiler(Transformer):
     
     # List
     def list(self, items):
-        return ast.List(elts=items,ctx=ast.Load())
+        transformed_value = ast.List(elts=items,ctx=ast.Load())
+        match self.compilation_mode:
+            case "wrap-primitive" | "vt-init" | "vt-prop" | "vython" :               
+                return ast.Call(ast.Name(id="VList",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+            case _ : 
+                return transformed_value
 
     # Tuple
     def tuple(self, items):
