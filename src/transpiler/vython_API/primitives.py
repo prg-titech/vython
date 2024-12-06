@@ -368,6 +368,26 @@ class VStr(str):
     def __init__(self, value):
         self._value = value
 
+    def split(self):
+        result = VList([])
+        for word in self._value.split():
+            result.append(VStr(word))
+        return result
+    
+    def __len__(self):
+        return VInt(len(self._value))
+    
+    def __sizeof__(self):
+        return VInt(super().__sizeof__())
+    
+    @_vt_builtin_op
+    def __add__(self, other):
+        return VStr(self._value + other._value)
+    
+    @_vt_builtin_op
+    def __lt__(self, other):
+        return VBool(self._value < other._value)
+
     
     # 後で諸々は実装
     

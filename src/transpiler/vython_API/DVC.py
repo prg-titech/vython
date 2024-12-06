@@ -76,12 +76,22 @@ def _vt_invk(func):
 # for primitive
 def _vt_builtin_op(func):
     def wrapper(*args, **kwargs):
-        result = func(*args, **kwargs)
-        if result is not None:
-            result = _vt_join(result, *args, **kwargs)
-            if not _vt_well_fromed(result):
-                _issue_warning(result, *args, **kwargs)
-        return result
+        try:
+            result = func(*args, **kwargs)
+            if result is not None:
+                result = _vt_join(result, *args, **kwargs)
+                if not _vt_well_fromed(result):
+                    _issue_warning(result, *args, **kwargs)
+            return result
+        except:
+            # Pythonからのエラーで落ちるとき、Versionのconsistencyを先に検査する
+            tmp_obj = _vt_join(*args, **kwargs)     
+            if not _vt_well_fromed(tmp_obj):
+                _issue_warning(tmp_obj, *args, **kwargs)
+            # Pythonのエラーを出すために再度問題のある計算を行う
+            result = func(*args, **kwargs)
+            # 仮に問題が出なかったら次に進む
+            return result
     return wrapper
 
 # for field reference
