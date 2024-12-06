@@ -519,15 +519,22 @@ class Transpiler(Transformer):
         return ast.Compare(left=transformed_value_l,ops=transformed_ops,comparators=transformed_comparators,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     def funccall(self, items):
-        func, args = items[0], self._flatten_list(items[1:])
+        func, all_args = items[0], self._flatten_list(items[1:])
+        args = []
+        kargs = []
+        for arg in all_args:
+            if type(arg) == ast.keyword:
+                kargs.append(arg)
+            else:
+                args.append(arg)
         transformed_func = self.transform(func) if isinstance(func, Tree) else func
         match self.compilation_mode:
             case "vt-prop" | "vython" :
                 if (type(transformed_func) == ast.Call) and (transformed_func.func.id == "_vt_field"):
                     transformed_func = transformed_func.args[1]
-                    return ast.Call(func=transformed_func,args=args,keywords=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+                    return ast.Call(func=transformed_func,args=args,keywords=kargs,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
             case _ : pass
-        return ast.Call(func=transformed_func,args=args,keywords=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        return ast.Call(func=transformed_func,args=args,keywords=kargs,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
     def funccallwithversion(self, items):
         func, version, args = items[0], items[1], self._flatten_list(items[2:])
@@ -687,6 +694,11 @@ class Transpiler(Transformer):
             else:
                 args.append(item)
         return args
+    
+    def argvalue(self, items):
+        arg = items[0].id
+        value = items[1]
+        return ast.keyword(arg, value)
 
     def suite(self, items):
         return self._flatten_list(items)
