@@ -31,23 +31,24 @@ pip uninstall vython # Uninstall
 ### Run
 `vython` 言語処理系はインタプリタとトランスパイラを提供しています。
 2つ目のコマンドライン引数で `vython` プログラムをどちらを使用して評価するかを指定できます。
-例えば、インタプリタを使用して `test/test_interpreter/sample/basic/classandmethod.py` をコンパイル・実行するには、以下を実行してください。
+
+(2024.12.6 Interpreter does not work)
+例えば、インタプリタを使用して `test/sample_program/basic/syntax/function.py` をコンパイル・実行するには、以下を実行してください。
 ```sh
-vython -i test/test_interpreter/sample/basic/classandmethod.py
+vython -i test/sample_program/basic/syntax/function.py
 ```
-トランスパイラを使用して `test/test_transpiler/sample/basic/classandmethod.py` をコンパイル・実行するには、以下を実行してください。
+トランスパイラを使用して `test/sample_program/basic/syntax/function.py` をコンパイル・実行するには、以下を実行してください。
 ```sh
-vython -t test/test_transpiler/sample/basic/classandmethod.py
+vython -t test/sample_program/basic/syntax/function.py
 ```
 #### `vython`言語処理系を使用する際のオプション
 - `-d` `--debug` は実行時の詳細な情報を出力します。(インタプリタ & トランスパイラ)
 ```sh
-vython -i --debug test/test_interpreter/sample/basic/classandmethod.py | tee tmp.log # tmp.logと標準出力にログを出力
-vython -t -d test/test_transpiler/sample/basic/classandmethod.py | tee tmp.log
+vython -t -d test/sample_program/basic/syntax/function.py | tee tmp.log
 ```
 - `--ast` はトランスパイル後のPython ASTを出力します。(トランスパイラ)
 ```sh
-vython -t --ast test/test_transpiler/sample/basic/classandmethod.py
+vython -t --ast test/sample_program/basic/syntax/function.py
 ```
 - `-t` の**直後**で以下に示すオプションを使用すると、`vython`の提案言語機構のON,OFFを選択したトランスパイルができます。(トランスパイラ) 
   - `vython`  : 全ての提案言語機構がON
@@ -56,7 +57,7 @@ vython -t --ast test/test_transpiler/sample/basic/classandmethod.py
   - `vt-init` : オブジェクトに自身のバージョン情報だけを持たせる
   - `vt-prop` : オブジェクトが自身のバージョン情報を持ち、他のオブジェクトの計算でそれらが合成される
 ```sh
-vython -t python --wo test/test_transpiler/sample/basic/classandmethod.py
+vython -t python --wo test/sample_program/basic/syntax/function.py
 ```
 
 
