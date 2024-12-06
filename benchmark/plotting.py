@@ -151,9 +151,20 @@ def make_bar_graph_about_ratio(evaluation_data, comparision_strategy, output_pat
 
         bar_datas.append(bar_datas_per_file)
 
+
+    # グラフの作成
     (fig, ax1) = plt.subplots(figsize=(8,4))
     x = np.arange(len(file_names))
     width = 0.8
+
+
+    # 順番が気に食わないので入れかえた
+    # print(bar_datas)
+    # print(file_names)
+    bar_datas[0], bar_datas[1], bar_datas[2] = bar_datas[2], bar_datas[0], bar_datas[1]
+    file_names[0], file_names[1], file_names[2] = file_names[2], file_names[0], file_names[1]
+    # print(bar_datas)
+    # print(file_names)
 
     for i in range(len(bar_datas)):
         file_name = file_names[i]
@@ -175,12 +186,16 @@ def make_bar_graph_about_ratio(evaluation_data, comparision_strategy, output_pat
     ax1.set_xticks(x)
     ax1.set_xticklabels(file_names)
 
+    plt.axhline(y=1, color='black', linestyle='--', linewidth=1)
+    plt.text(x=0.1, y=0.32, s="python\n(baseline)", color='black', fontsize=12, ha='center', transform=ax1.transAxes,
+             bbox=dict(edgecolor='black', linestyle='--', facecolor='none', linewidth=1))
+
     # 軸の目盛りラベルのフォントサイズを設定
     ax1.tick_params(axis='both', which='major', labelsize=16)  # 主要目盛りのフォントサイズを12に設定
     ax1.tick_params(axis='both', which='minor', labelsize=14)  # 副目盛りのフォントサイズを10に設定
     
     custom_legend = [mpatches.Patch(facecolor='none',alpha=0.6,hatch=list[1],edgecolor='black',label=transpile_mode) for index, (transpile_mode,list) in enumerate(bar_style_dict.items())]
-    custom_label = [transpile_mode for index, (transpile_mode,list) in enumerate(bar_style_dict.items())]
+    custom_label = ['wrap-literals','mk','join','wf (vython)']
     ax1.legend(custom_legend, custom_label, loc='upper left', fontsize=16)
 
     # Y軸の範囲を0から始める

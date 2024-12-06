@@ -3,7 +3,7 @@ import os
 import sys
 
 from utils import file_category_name, log
-from src.interpreter.compiler import Compiler as IC
+# from src.interpreter.compiler import Compiler as IC
 from src.transpiler.compiler import Compiler as TC
 from plotting import make_refined_bar_graph, make_scatter_plot
 from benchmark_settings import BenchmarkSettings
