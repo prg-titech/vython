@@ -70,6 +70,8 @@ class Compiler:
 
     def execute(self, dict=None):
         output = io.StringIO()
+        vython_output = None
+        python_error = None
         try:
             with contextlib.redirect_stdout(output):
                 if(dict is not None):
@@ -78,9 +80,10 @@ class Compiler:
                     self.clear_dict()
                     exec(self.pythonCode, self.name_dict)
         except Exception as e:
-            self.result = e
-            return self.result
-        self.result = output.getvalue()
+            python_error = e
+        vython_output = output.getvalue()
+        self.result = (vython_output, python_error)
+        return self.result
 
     def make_dict_of_precode(self):
         transpiler = Transpiler(self.collected_classes, self.transpile_mode, self.debug_mode)

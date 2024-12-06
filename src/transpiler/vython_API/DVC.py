@@ -19,9 +19,12 @@ def _feedback_join(*args):
     return result
 
 def _issue_warning(*args):
+    print("-- Version Inconsistency Error --")
+    print("Incompatible version usage found in Line ~~ :")
     feedbacks = _feedback_join(*args)
     for feedback in feedbacks:
-        print(feedback)
+        print(f"    {feedback}\n")
+    print("---------------------------------")
 
 # -------------
 # VT Operations
