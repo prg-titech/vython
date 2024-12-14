@@ -2,14 +2,8 @@ class VersionError(Exception):
     def __init__(self, message):
         self.message = message
 
-def generate_feedback(obj):     
-    # エラー発生箇所についてフィードバックを生成
-    feedback = ""
-    if hasattr(obj, "_error_feedbacks"):
-        for error_feedback in obj._error_feedbacks:
-            feedback += error_feedback
-            feedback += "\n"
-    return feedback
+# どのクラスのどのバージョンについてエラーが発生したかを自動で出力する仕組みは未実装
+# 現在は、上流の開発者が指定するfeedbackに、それを依存している。
 
 def _feedback_join(*args):
     result = []
@@ -51,6 +45,7 @@ def _vt_join(target, *args):
 # Decorators & Pre-defined functions
 # -------------
 
+# for declaring incompatibility
 def _incompatible_value(self, _class, _version, _feedback):
     if not hasattr(self, "vt"):
         self.vt = 0
@@ -65,7 +60,7 @@ def _incompatible_value(self, _class, _version, _feedback):
     self._error_feedbacks = [_feedback]
     return self
 
-# for user defined method
+# for normal method
 def _vt_invk(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
@@ -76,7 +71,7 @@ def _vt_invk(func):
         return result
     return wrapper
 
-# for primitive
+# for literals' method
 def _vt_builtin_op(func):
     def wrapper(*args, **kwargs):
         try:
