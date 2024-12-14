@@ -2,26 +2,19 @@ from lark import Token, Transformer, Tree
 import ast
 import copy
 
+# Vythonリテラルのクラス定義・DVC関数
 primitive_classes_path = "src/transpiler/vython_API/primitives.py"
 global_func_path = "src/transpiler/vython_API/DVC.py"
-# DVCの機能を制限したコンパイル用
+# 機能制限版
 primitive_classes_wo_decorator_path = "src/transpiler/vython_API/limited_API/primitives_wo_deco.py"
 global_func_wo_wf_path = "src/transpiler/vython_API/limited_API/DVC_wo_wf.py"
 
-# AST templates
-initialize_func_path = "src/transpiler/vython_API/ast_templates/initialize_func.py"
+# initializer関数が無いときにクラス定義に挿入するためのテンプレート
+initialize_func_ast = ast.FunctionDef(name='__init__',args=ast.arguments(posonlyargs=[], args=[ast.arg(arg='self')], kwonlyargs=[], kw_defaults=[], defaults=[]), body=[], decorator_list=[], type_params=[], lineno=0, col_offset=0, end_lineno=0, end_col_offset=0)
 
-# --------------------------------------
-# 不具合を起こすかもしれない箇所リスト
-# - PythonASTオブジェクトのctxが適当!?
-# --------------------------------------
-
-# larkToIRを参考に実装する
 class Transpiler(Transformer):
     ############################
-    ############################
     # トランスパイラ初期化
-    ############################
     ############################
     def __init__(self, limited_classes, compilation_mode, debug_mode, omit_precode=False):
         self.limited_classes = limited_classes
@@ -30,8 +23,9 @@ class Transpiler(Transformer):
         self.omit_precode = omit_precode
         match compilation_mode:
             case "python" | "wrap-primitive" | "vt-init" | "vt-prop" | "vython": self.compilation_mode = compilation_mode
-            # どれにも当てはまらない場合はvythonで実行
-            case _: self.compilation_mode = "vython"
+            case _:
+                error_message = f"compile_mode: {compilation_mode} is not defined.\n"
+                raise NameError(error_message)
 
         self.global_func_ast = None
         self.primitive_classes_ast = None
@@ -66,11 +60,8 @@ class Transpiler(Transformer):
             case _ :
                 pass
             
-
         # クラス定義のイニシャライザー関数のテンプレートAST
-        with open(initialize_func_path,"r") as file:
-            initialize_func_code = file.read()
-        self.initialize_func_ast = ast.parse(initialize_func_code).body[0]
+        self.initialize_func_ast = initialize_func_ast
 
         # limited_classesにインデックスを追加
         for index, key in enumerate(self.limited_classes):
@@ -97,8 +88,6 @@ class Transpiler(Transformer):
                                                    col_offset=0,
                                                    end_lineno=0,
                                                    end_col_offset=0)
-
-
 
     ############################
     ############################
