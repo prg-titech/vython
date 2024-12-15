@@ -99,10 +99,6 @@ python3 benchmark/main.py
 - `"benchmark_target": generate`時の追加設定項目
   - `"num_loop"`                 : 何回primitive演算を行うか
   - `"num_base_names"`           : 生成されるvythonファイルにおけるクラス名の種類数
-  - `"num_base_versions"`        : 生成されるvythonファイルにおける各クラスのバージョン数
-  - `"num_interval_num_versions"`: 実際に使用するバージョン数を決定する引数
-    - モード`geometric`: 使用するバージョン数は、1,2,4,...
-    - モード`min_max`: 
 - `"benchmark_target": sample`時の追加設定項目
   - `"path_benchmarks"`: 測定するプログラムのファイルパス or 測定するプログラムの集合を直下に含むディレクトリパス
 
@@ -116,8 +112,6 @@ Benchmark Settings used in 3p-abstract of APLAS SRC 2024
 
   "num_loop": 2000,
   "num_base_names": 1024,
-  "num_base_versions": 2,
-  "interval_num_versions": "geometric",
 
   "comparison_strategy": "all"
 }
