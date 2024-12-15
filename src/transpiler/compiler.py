@@ -22,7 +22,7 @@ class Compiler:
         # - wrap-primitive
         # - vython
 
-        # 評価時に使用するオブジェクト
+        # 評価の結果や途中で生成されるオブジェクト
         self.vythonCode = vythonCode
         self.vythonAST = None
         self.collected_classes = dict()
@@ -31,6 +31,7 @@ class Compiler:
         self.result = None
         self.name_dict = {}
     
+    # self.vythonCodeをparseしてvythonASTを作成
     def parse(self):
         if self.debug_mode:
             print(f"File Content:\n{self.vythonCode}")
@@ -38,6 +39,8 @@ class Compiler:
         if self.debug_mode:
             print(self.vythonAST)
 
+    # self.vythonASTからバージョン空間を作成
+    # 引数に応じて、2つのバージョンのみのバージョン空間に制限したものを返す
     def collect_classes(self, limit_version=True):
         collector = CollectClasses(self.debug_mode)
         collector.transform(self.vythonAST)
@@ -49,6 +52,8 @@ class Compiler:
         if self.debug_mode:
             print(f"Collected Classes: {self.collected_classes}")
     
+    # self.vythonASTをPython ASTにトランスパイルする
+    # VIntなどのリテラルをラップするクラスの定義やDVC関数の定義が挿入される
     def transpile(self):
         transpiler = Transpiler(self.collected_classes, self.transpile_mode, self.debug_mode)
         self.pythonAST = transpiler.transform(self.vythonAST)
@@ -61,6 +66,7 @@ class Compiler:
         if self.show_ast:
             print(ast.dump(self.pythonAST,False,indent=4))
 
+    # self.pythonASTをPythonのプログラムにunparseする
     def unparse(self):
         self.pythonCode = ast.unparse(self.pythonAST)
         if self.debug_mode:
@@ -68,31 +74,28 @@ class Compiler:
                 print("# [Unparse Python AST]",file=log)
                 print(self.pythonCode, file=log)
 
+    # self.pythonCodeを指定した名前空間のもとで実行する
+    # 名前空間を指定しなかった場合は空で実行される
+    # 返り値：self.result
+    #   self.result["output"] : printで出力された内容
+    #   self.result["error"]  : VersionErrorやPython runtimeによって出されたエラー
+    # 　slef.result["dict"]   : 実行後の名前空間
     def execute(self, dict=None):
         output = io.StringIO()
         vython_output = None
         python_error = None
         try:
             with contextlib.redirect_stdout(output):
-                if(dict is not None):
-                    exec(self.pythonCode, dict)
-                else:
+                if(dict is None):
                     self.clear_dict()
-                    exec(self.pythonCode, self.name_dict)
+                    dict = self.name_dict
+                exec(self.pythonCode, dict)
         except Exception as e:
             python_error = e
         vython_output = output.getvalue()
         self.result = (vython_output, python_error)
+        self.result = {"output": vython_output, "error": python_error, "dict": dict}
         return self.result
-
-    def make_dict_of_precode(self):
-        transpiler = Transpiler(self.collected_classes, self.transpile_mode, self.debug_mode)
-        empty_vython_AST = lark.Tree(lark.Token('RULE', 'file_input'), [])
-        python_AST = transpiler.transform(empty_vython_AST)
-        python_code = ast.unparse(python_AST)
-        dict_of_precode = {}
-        exec(python_code, dict_of_precode)
-        return dict_of_precode
     
     def get_result(self):
         return self.result
@@ -112,19 +115,6 @@ class Compiler:
         return self
     
     # [評価用]: 実行時間を測定
-    def evaluate_execution_time_include_parse(self, python_code=None, name_dict=None):
-        if(name_dict is None):
-            name_dict = {}
-        else:
-            # deepcopyが望ましいが恐らくcopyで十分
-            name_dict = copy.copy(name_dict)
-        if(python_code is None):
-            python_code = self.pythonCode
-        start_time = time.perf_counter()
-        exec(python_code, name_dict)
-        end_time = time.perf_counter()
-        return end_time - start_time
-
     def evaluate_execution_time(self, python_code=None, name_dict=None):
         if(name_dict is None):
             name_dict = {}
@@ -138,7 +128,7 @@ class Compiler:
         return float(result)
     
     # [評価用]: DVC functionやwrap classの定義などを評価時間を含む時間を測定
-    def evaluate_time(self, python_code=None, name_dict=None):
+    def evaluate_fullpath_time(self, python_code=None, name_dict=None):
         execution_time = dict()
 
         start_time = time.perf_counter()
