@@ -16,7 +16,11 @@ def is_prime_recursive(n, i):
         return False
     return is_prime_recursive(n, i + 6)
 
-s = time.perf_counter()
-is_prime(128456903)
-e = time.perf_counter()
-exe_time = e - s
+def main(num_iteration):
+    execution_times = []
+    for i in range(num_iteration):
+        s = time.perf_counter()
+        is_prime(128456903)
+        e = time.perf_counter()
+        execution_times.append(e - s)
+    return execution_times
