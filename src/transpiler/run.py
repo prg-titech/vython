@@ -81,4 +81,4 @@ def run(args):
     execute_phase("[Phase 2] Transpile lark-vython AST to Python AST", lambda: compiler.transpile())
     execute_phase("[Phase 3] Unparse Python AST", lambda: compiler.unparse())
     execute_phase("[Phase 4] Execution", lambda: compiler.execute())
-    print(f"[Result]:\n-- Vython Results --\n{compiler.get_result()[0]}\n-- Python Error --\n{compiler.get_result()[1]}")
+    print(f"[Result]:\n-- Vython Results --\n{compiler.get_result()["output"]}\n-- Python Error --\n{compiler.get_result()["error"]}")
