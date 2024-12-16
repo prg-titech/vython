@@ -20,7 +20,7 @@ def evaluate_transpiler(code, comparison_strategy, num_iteration):
     for transpile_mode in transpile_modes:
         log(f"Evaluating with transpile_mode={transpile_mode}")
 
-        transpiler = TC(code, transpile_mode)
+        transpiler = TC(code, transpile_mode, lazy_wrap=True)
         transpiler.parse()
         transpiler.collect_classes(True)
         transpiler.transpile()
