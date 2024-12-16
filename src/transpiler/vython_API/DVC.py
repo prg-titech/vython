@@ -24,22 +24,28 @@ def _issue_warning(*args):
 # VT Operations
 # -------------
 
-def _vt_well_fromed(obj):
-    if hasattr(obj, "vt"):
-        vt = obj.vt
-        return ((((vt >> 1) & vt) >> 1) | ((vt >> 3) & vt)) & check_bit_mask == 0
-    return True
+# def _vt_well_fromed(obj):
+#     if hasattr(obj, "vt"):
+#         vt = obj.vt
+#         return ((((vt >> 1) & vt) >> 1) | ((vt >> 3) & vt)) & check_bit_mask == 0
+#     return True
 
-def _vt_join(target, *args):
-    tmp_vt = 0
-    if hasattr(target, "vt"):
-        tmp_vt = tmp_vt | target.vt
-    for arg in args:
-        if hasattr(arg, "vt"):
-            tmp_vt = tmp_vt | arg.vt
-    if tmp_vt != 0:
-        target.vt = tmp_vt
-    return target
+# def _vt_join(target, *args):
+#     tmp_vt = 0
+#     if hasattr(target, "vt"):
+#         tmp_vt = tmp_vt | target.vt
+#     for arg in args:
+#         if hasattr(arg, "vt"):
+#             tmp_vt = tmp_vt | arg.vt
+#     if tmp_vt != 0:
+#         target.vt = tmp_vt
+#     return target
+
+def _vt_join(vt1, vt2):
+    return vt1 | vt2
+
+def _vt_well_formed(vt):
+    return ((((vt >> 1) & vt) >> 1) | ((vt >> 3) & vt)) & check_bit_mask == 0
 
 # -------------
 # Decorators & Pre-defined functions
@@ -65,8 +71,8 @@ def _vt_invk(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         if result is not None:
-            result = _vt_join(result, args[0])
-            if not _vt_well_fromed(result):
+            result.vt = _vt_join(result.vt, args[0].vt)
+            if not _vt_well_formed(result.vt):
                 _issue_warning(result, args[0])
         return result
     return wrapper
@@ -77,15 +83,22 @@ def _vt_builtin_op(func):
         try:
             result = func(*args, **kwargs)
             if result is not None:
-                result = _vt_join(result, *args, **kwargs)
-                if not _vt_well_fromed(result):
+                for arg in args:
+                    result.vt = _vt_join(result.vt, arg.vt)
+                for kwarg in kwargs:
+                    result.vt = _vt_join(result.vt, kwarg.vt)
+                if not _vt_well_formed(result.vt):
                     _issue_warning(result, *args, **kwargs)
             return result
         except:
             # Pythonからのエラーで落ちるとき、Versionのconsistencyを先に検査する
-            tmp_obj = _vt_join(*args, **kwargs)     
-            if not _vt_well_fromed(tmp_obj):
-                _issue_warning(tmp_obj, *args, **kwargs)
+            tmp_vt = 0
+            for arg in args:
+                tmp_vt = _vt_join(tmp_vt, arg.vt)
+            for kwarg in kwargs:
+                tmp_vt = _vt_join(tmp_vt, kwarg.vt)  
+            if not _vt_well_formed(tmp_vt):
+                _issue_warning(*args, **kwargs)
             # Pythonのエラーを出すために再度問題のある計算を行う
             result = func(*args, **kwargs)
             # 仮に問題が出なかったら次に進む
@@ -94,8 +107,8 @@ def _vt_builtin_op(func):
 
 # for field reference
 def _vt_field(receiver, result):
-    result = _vt_join(result, receiver)
-    if not _vt_well_fromed(result):
+    result.vt = _vt_join(result.vt, receiver.vt)
+    if not _vt_well_formed(result.vt):
                 _issue_warning(result, receiver)
     return result
 
@@ -103,13 +116,13 @@ def _vt_field(receiver, result):
 # Dispatcher
 # -------------
 def _wrap_primitive(value):
-    result = value
     match type(value):
         case int(): result = VInt(value)
         case float(): result = VFloat(value)
         case str(): result = VStr(value)
         case bool(): result = VBool(value)
         case list(): result = VList(value)
+        case _: result = value
     return result
 
 # -------------

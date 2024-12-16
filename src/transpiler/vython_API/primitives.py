@@ -6,6 +6,7 @@ class VInt(int):
 
     def __init__(self, value):
         self._value = value
+        self.vt = 0
         
     # 抽象プロパティ
     # @property
@@ -188,6 +189,7 @@ class VFloat(numbers.Real):
 
     def __init__(self, value):
         self._value = value
+        self.vt = 0
 
     def __repr__(self) -> str:
         return self._value.__repr__()
@@ -319,6 +321,7 @@ class VBool(int):
 
     def __init__(self, value):
         self._value = value
+        self.vt = 0
 
     def __repr__(self):
         if self._value == 1:
@@ -367,6 +370,7 @@ class VStr(str):
 
     def __init__(self, value):
         self._value = value
+        self.vt = 0
 
     def split(self):
         result = VList([])
@@ -394,6 +398,7 @@ class VStr(str):
 class VList(list):
     def __init__(self, value):
         self._value = value
+        self.vt = 0
     
     def __len__(self):
         return VInt(len(self._value))
@@ -418,3 +423,6 @@ class VList(list):
     def append(self, object):
         self._value.append(object)
         return self
+    
+    def length(self):
+        return VInt(len(self._value))
