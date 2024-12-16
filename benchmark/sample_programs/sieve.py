@@ -3,13 +3,15 @@ import time
 def sieve(flags, size):
     prime_count = 0
 
-    for i in range(2, size + 1):
+    i = 2
+    while i < size + 1:
         if flags[i - 1]:
             prime_count = prime_count + 1
             k = 2 * i
             while k <= size:
                 flags[k - 1] = False
                 k = k + i
+        i = i + 1
 
     return prime_count
 

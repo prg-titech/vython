@@ -1,9 +1,5 @@
 import time
 
-class Empty!1():
-    def __init__(self):
-        pass
-
 class Node!1():
     def __init__(self, value):
         self.value = value

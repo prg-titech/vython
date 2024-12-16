@@ -1,9 +1,15 @@
 import time
 
+def list_size(list):
+    if hasattr(list, "length"):
+        return list.length()
+    else:
+        return len(list)
+
 def sort(list):
-    if len(list) < 1:
+    if list_size(list) < 1:
         return []
-    elif len(list) == 1:
+    elif list_size(list) == 1:
         return list
     pivot = list[0]
     lower_list = []
