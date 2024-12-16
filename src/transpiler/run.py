@@ -21,6 +21,7 @@ def just_execute_phase(message, function):
 def run(args):
     debug_mode = False
     transpile_mode = "vython"
+    lazy_wrap=False
     file_path = None
 
     # transpile_modeはコマンドラインの第二引数に来ることを想定

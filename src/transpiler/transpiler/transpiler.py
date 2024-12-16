@@ -165,14 +165,17 @@ class Transpiler(Transformer):
                 match self.compilation_mode:
                     case "vt-init" | "vt-prop" | "vython" :
                         # initializeメソッドAST に VT初期化関数呼び出しAST を挿入
-                        if(element.name == "__init__") and (name in self.limited_classes.keys()):
-                            version_list = self.limited_classes[str(name)][1]
-                            if str(version) == version_list[0]:
-                                n = self.limited_classes[str(name)][0] * 4
-                            else:
-                                n = self.limited_classes[str(name)][0] * 4 + 2
+                        if(element.name == "__init__"):
+                            if name in self.limited_classes.keys():
+                                version_list = self.limited_classes[str(name)][1]
+                                if str(version) == version_list[0]:
+                                    n = self.limited_classes[str(name)][0] * 4
+                                else:
+                                    n = self.limited_classes[str(name)][0] * 4 + 2
 
-                            vt_init_stmt = f"self.vt = {1 << n}"
+                                vt_init_stmt = f"self.vt = {1 << n}"
+                            else:
+                                vt_init_stmt = f"self.vt = 0"
                             element.body.insert(0, ast.parse(f"{vt_init_stmt}").body[0])
                             is_init_exist = True
                         # メソッドをラップし、VT書き換え関数呼び出しASTを挿入した新しいメソッドASTに変更する
@@ -183,15 +186,18 @@ class Transpiler(Transformer):
         
         match self.compilation_mode:
             case "vt-init" | "vt-prop" | "vython" :
-                if (not is_init_exist) and (name in self.limited_classes.keys()):
+                if not is_init_exist:
                     initialize_func_ast = copy.deepcopy(self.initialize_func_ast)
-                    version_list = self.limited_classes[str(name)][1]
-                    if str(version) == version_list[0]:
-                        n = self.limited_classes[str(name)][0] * 4
-                    else:
-                        n = self.limited_classes[str(name)][0] * 4 + 2
+                    if (name in self.limited_classes.keys()):
+                        version_list = self.limited_classes[str(name)][1]
+                        if str(version) == version_list[0]:
+                            n = self.limited_classes[str(name)][0] * 4
+                        else:
+                            n = self.limited_classes[str(name)][0] * 4 + 2
 
-                    vt_init_stmt = f"self.vt = {1 << n}"
+                        vt_init_stmt = f"self.vt = {1 << n}"
+                    else:
+                        vt_init_stmt = f"self.vt = 0"
                     initialize_func_ast.body.insert(0, ast.parse(f"{vt_init_stmt}").body[0])
                     body.append(initialize_func_ast)
             case _ : pass
