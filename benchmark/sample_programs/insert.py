@@ -1,20 +1,26 @@
 import time
 
+class Empty!1():
+    def __init__(self):
+        pass
+
 class Node!1():
     def __init__(self, value):
         self.value = value
-        self.left = None
-        self.right = None
+        self.empty_left = True
+        self.empty_right = True
 
     def insert_right(self, v):
-        if self.right == None:
+        if self.empty_right:
             self.right = Node!1(v)
+            self.empty_right = False
         else:
             self.right.insert(v)
 
     def insert_left(self, v):    
-        if self.left == None:
+        if self.empty_left:
             self.left = Node!1(v)
+            self.empty_left = False
         else:
             self.left.insert(v)
         
@@ -26,10 +32,10 @@ class Node!1():
     
     def prity_print(self):
         result = ""
-        if self.left != None:
+        if not self.empty_left:
             result = result + self.left.prity_print()
         result = result + str(self.value) + ", "
-        if self.right != None:
+        if not self.empty_right:
             result = result + self.right.prity_print()
         return result
 
