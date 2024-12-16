@@ -3,7 +3,10 @@ def isSameClass(name, class_name):
     return str(type(name)) == f"<class '{class_name}'>"
 
 def isSameValue(created_value, test_value):
-    return created_value == test_value
+    if hasattr(created_value, "_value"):
+        return created_value._value == test_value
+    else:
+        return created_value == test_value
 
 def isSameArray(created_array, test_array):
     # 要素数の確認
@@ -28,8 +31,3 @@ def hasExpectedVT(value, vt):
     
     return True
 
-def hasVTAttribute(value):
-    if not hasattr(value, "vt"):
-        return False
-    
-    return True

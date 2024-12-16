@@ -1,7 +1,7 @@
 def sort(list):
-    if len(list) < 1:
+    if list.length() < 1:
         return []
-    elif len(list) == 1:
+    elif list.length() == 1:
         return list
     pivot = list[0]
     lower_list = []

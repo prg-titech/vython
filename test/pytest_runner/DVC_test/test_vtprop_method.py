@@ -10,9 +10,9 @@ def test():
 
     # コンパイラのインスタンスを作成し、実行
     t = TC(code,"vython").run_fullpath()
-    result = t.get_result()
+    result = t.get_result()['output']
     dict = t.get_dict()
 
-    assert not hasVTAttribute(dict["n"])
+    assert hasExpectedVT(dict["n"], 0)
     assert hasExpectedVT(dict["return_value_from_a2"], 4)
-    assert not hasVTAttribute(dict["return_value_from_b1"])
+    assert hasExpectedVT(dict["return_value_from_b1"], 0)

@@ -1,5 +1,7 @@
 a = {'apple': 200, 'banana': 150}
-print(a['apple'])
+apple = 'apple'
+print(a[apple])
 
-a['orange'] = 100
-print(a['orange'])
+orange = 'orange'
+a[orange] = 100
+print(a[orange])

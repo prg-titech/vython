@@ -10,7 +10,7 @@ def test():
 
     # コンパイラのインスタンスを作成
     t = TC(code,"vython").run_fullpath()
-    result = t.get_result()
+    result = t.get_result()['output']
     dict = t.get_dict()
 
     # 結果を検証

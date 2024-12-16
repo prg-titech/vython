@@ -14,6 +14,7 @@ def test():
     dict = t.get_dict()
 
     # 結果を検証
+    # メソッドオブジェクトには、vtが付かないので失敗する
     a = dict["a"]
     assert isSameValue(a.value, 3628800)
 

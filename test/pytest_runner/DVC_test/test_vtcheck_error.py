@@ -10,7 +10,7 @@ def test():
 
     # コンパイラのインスタンスを作成し、実行
     t = TC(code,"vython").run_fullpath()
-    result = t.get_result()
+    result = t.get_result()['output']
     dict = t.get_dict()
 
     assert result.message == "Version Error 1:\nincompatibly updated\n"

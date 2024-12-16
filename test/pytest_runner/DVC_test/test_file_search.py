@@ -10,7 +10,7 @@ def test():
 
     # コンパイラのインスタンスを作成し、実行
     t = TC(code,"vython").run_fullpath()
-    result = t.get_result()
+    result = t.get_result()['output']
     dict = t.get_dict()
 
     assert result.message == "Version Error 1:\nComputation between incompatible values created from Hash!1 and Hash!2: the hasher method has been updated in version 2 to change the algorithm used from SHA to MD5\n"
