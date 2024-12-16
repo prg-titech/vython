@@ -18,7 +18,7 @@ def evaluate_transpiler(code, comparison_strategy, num_iteration):
     execution_time_data = dict()
 
     for transpile_mode in transpile_modes:
-        log(f"Evaluating transpiler with transpile_mode={transpile_mode}")
+        log(f"Evaluating with transpile_mode={transpile_mode}")
 
         transpiler = TC(code, transpile_mode)
         transpiler.parse()
@@ -39,7 +39,7 @@ def evaluate_transpiler(code, comparison_strategy, num_iteration):
         std_dev = np.std(execution_time_list)
         sem_execution_time = std_dev / np.sqrt(num_iteration)
         
-        log(f"Completed transpiler evaluation: avg_execute_time={avg_execution_time:.6f}, sem={sem_execution_time:.6f}")
+        log(f"Completed evaluation with {transpile_mode}: avg_execute_time={avg_execution_time:.6f}, sem={sem_execution_time:.6f}")
 
         execution_time_data[transpile_mode] = (avg_execution_time, sem_execution_time)
 
@@ -62,6 +62,8 @@ def evaluate_files(file_paths, settings):
         except Exception as e:
             log(f"An error occurred while opening the file: {e}")
             sys.exit(1)
+
+        log(f"Evaluate: {file_path}")
 
         match benchmark_processor:
             case "transpiler":
