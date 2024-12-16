@@ -20,7 +20,6 @@ def just_execute_phase(message, function):
 
 def run(args):
     debug_mode = False
-    show_ast = False
     transpile_mode = "vython"
     file_path = None
 
@@ -51,8 +50,8 @@ def run(args):
         for arg in args:
             if arg in ["--debug", "-d"]:
                 debug_mode = True
-            elif arg == "--ast":
-                show_ast = True
+            elif arg == "-o":
+                lazy_wrap = True
             else:
                 if file_path is not None:
                     print("Too many arguments. Please specify only one file name.")
@@ -62,7 +61,7 @@ def run(args):
         print(f"Error: {e}")
         sys.exit(1)
 
-        # 変換するコードを取得
+    # 変換するコードを取得
     try:
         with open(file_path, "r") as file:
             code = file.read()
@@ -73,7 +72,7 @@ def run(args):
         print(f"An error occurred while opening the file: {e}")
         sys.exit(1)
 
-    compiler = Compiler(code, transpile_mode, show_ast, debug_mode)
+    compiler = Compiler(code, transpile_mode, lazy_wrap=lazy_wrap, debug_mode=debug_mode)
 
     # 各フェーズの実行
     execute_phase("[Phase 1] Prase to lark-vython AST", lambda: compiler.parse())

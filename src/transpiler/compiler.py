@@ -9,11 +9,7 @@ from src.transpiler.transpiler.collect_classes import CollectClasses
 from src.transpiler.transpiler.transpiler import Transpiler
 
 class Compiler:
-    def __init__(self, vythonCode, transpile_mode, show_ast=False, debug_mode=False, ):
-        # デバッグ用
-        self.debug_mode = debug_mode
-        self.show_ast = show_ast
-
+    def __init__(self, vythonCode, transpile_mode, lazy_wrap=False, debug_mode=False):
         # コンパイルオプション
         self.transpile_mode = transpile_mode
         # - python
@@ -21,6 +17,12 @@ class Compiler:
         # - vt-prop
         # - wrap-primitive
         # - vython
+
+        # デバッグ用
+        self.debug_mode = debug_mode
+
+        # wrapを遅延する最適化を行う火のフラグ
+        self.lazy_wrap = lazy_wrap
 
         # 評価の結果や途中で生成されるオブジェクト
         self.vythonCode = vythonCode
@@ -55,16 +57,20 @@ class Compiler:
     # self.vythonASTをPython ASTにトランスパイルする
     # VIntなどのリテラルをラップするクラスの定義やDVC関数の定義が挿入される
     def transpile(self):
-        transpiler = Transpiler(self.collected_classes, self.transpile_mode, self.debug_mode)
-        self.pythonAST = transpiler.transform(self.vythonAST)
-        if self.show_ast:
-            print(ast.dump(self.pythonAST,False,indent=4))
-
-    def transpile_wo_precode(self):
-        transpiler = Transpiler(self.collected_classes, self.transpile_mode, self.debug_mode, True)
-        self.pythonAST = transpiler.transform(self.vythonAST)
-        if self.show_ast:
-            print(ast.dump(self.pythonAST,False,indent=4))
+        if self.lazy_wrap:
+            # tryとexceptの中に入るPython ASTをそれぞれ作成する
+            transpiler_wo_wrap = Transpiler(self.collected_classes, "python", debug_mode=self.debug_mode)
+            pythonAST_try = transpiler_wo_wrap.transform(self.vythonAST)
+            transpiler = Transpiler(self.collected_classes, self.transpile_mode, debug_mode=self.debug_mode)
+            pythonAST_except = transpiler.transform(self.vythonAST)
+            # 作成したPythonASTを合成する
+            handlers = [ast.ExceptHandler(type=None, name=None, body=pythonAST_except.body)]
+            body = [ast.Try(body=pythonAST_try.body, handlers=handlers, orelse=None, finalbody=None)]
+            pythonAST = ast.Module(body=body,type_ignores=[])
+            self.pythonAST = pythonAST
+        else:  
+            transpiler = Transpiler(self.collected_classes, self.transpile_mode, debug_mode=self.debug_mode)
+            self.pythonAST = transpiler.transform(self.vythonAST)
 
     # self.pythonASTをPythonのプログラムにunparseする
     def unparse(self):

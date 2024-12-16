@@ -16,11 +16,10 @@ class Transpiler(Transformer):
     ############################
     # トランスパイラ初期化
     ############################
-    def __init__(self, limited_classes, compilation_mode, debug_mode, omit_precode=False):
+    def __init__(self, limited_classes, compilation_mode, debug_mode=False):
         self.limited_classes = limited_classes
         self.compilation_mode = compilation_mode
         self.debug_mode = debug_mode
-        self.omit_precode = omit_precode
         match compilation_mode:
             case "python" | "wrap-primitive" | "vt-init" | "vt-prop" | "vython": self.compilation_mode = compilation_mode
             case _:
@@ -97,24 +96,23 @@ class Transpiler(Transformer):
 
     def file_input(self, items):
         body = self._flatten_list(items)
-        if not self.omit_precode:
-            match self.compilation_mode:
-                case "python": pass
-                case "wrap-primitive" | "vt-init":
-                    body.insert(0, self.primitive_classes_ast)
-                case "vt-prop":
-                    body.insert(0, self.primitive_classes_ast)
-                    body.insert(0, self.global_func_ast)
-                case "vython":
-                    # Primitiveクラスを挿入
-                    body.insert(0, self.primitive_classes_ast)
-                    # グローバル関数を挿入
-                    body.insert(0, self.global_func_ast)
-                    # VTの互換性を示すデータ構造を挿入
-                    body.insert(0, self.check_bit_mask_ast)
-                    # フィードバック生成のために使用するデータ
-                    body.insert(0, self.limited_classes_ast)
-                case _ : pass
+        match self.compilation_mode:
+            case "python": pass
+            case "wrap-primitive" | "vt-init":
+                body.insert(0, self.primitive_classes_ast)
+            case "vt-prop":
+                body.insert(0, self.primitive_classes_ast)
+                body.insert(0, self.global_func_ast)
+            case "vython":
+                # Primitiveクラスを挿入
+                body.insert(0, self.primitive_classes_ast)
+                # グローバル関数を挿入
+                body.insert(0, self.global_func_ast)
+                # VTの互換性を示すデータ構造を挿入
+                body.insert(0, self.check_bit_mask_ast)
+                # フィードバック生成のために使用するデータ
+                body.insert(0, self.limited_classes_ast)
+            case _ : pass
 
         return ast.Module(body=body,type_ignores=[])
 
@@ -306,6 +304,25 @@ class Transpiler(Transformer):
 
     # Raise
     # Try
+    def try_stmt(self, items):
+        body = items[0]
+        handlers = items[1]
+        orelse = items[2]
+        # finalブロックはlarkのASTの作り方の問題で未実装
+        # 直すならsyntax > language.larkのfinallyの名前をPythonの予約語にかぶさらないように変更する？
+        finalbody = items[3]
+        return ast.Try(body=body, handlers=handlers, orelse=orelse, finalbody=finalbody)
+    
+    def except_clauses(self, items):
+        return items
+    
+    def except_clause(self, items):
+        type = items[0]
+        name = items[1]
+        body = items[2]
+        return ast.ExceptHandler(type=type, name=name, body=body)
+    
+
     # TryStar
     # Assert
 
