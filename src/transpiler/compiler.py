@@ -59,7 +59,7 @@ class Compiler:
     def transpile(self):
         if self.lazy_wrap:
             # tryとexceptの中に入るPython ASTをそれぞれ作成する
-            transpiler_wo_wrap = Transpiler(self.collected_classes, "python", debug_mode=self.debug_mode)
+            transpiler_wo_wrap = Transpiler(self.collected_classes, self.transpile_mode, wo_wrap=True, debug_mode=self.debug_mode)
             pythonAST_try = transpiler_wo_wrap.transform(self.vythonAST)
             transpiler = Transpiler(self.collected_classes, self.transpile_mode, debug_mode=self.debug_mode)
             pythonAST_except = transpiler.transform(self.vythonAST)
