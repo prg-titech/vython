@@ -51,8 +51,12 @@ def _vt_well_formed(vt):
 # Decorators & Pre-defined functions
 # -------------
 
+<<<<<<< Updated upstream
 # for declaring incompatibility
 def _incompatible_value(self, _class, _version, _feedback):
+=======
+def _incompatible_value(self, _class, _version, _feedback, limited_classes):
+>>>>>>> Stashed changes
     if not hasattr(self, "vt"):
         self.vt = 0
     version_list = limited_classes[str(_class)][1]
