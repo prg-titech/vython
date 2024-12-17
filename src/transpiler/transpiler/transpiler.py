@@ -99,10 +99,15 @@ class Transpiler(Transformer):
     def file_input(self, items):
         body = self._flatten_list(items)
         match self.compilation_mode:
-            case "python" |"wrap-primitive" | "vt-init": pass
+            case "python": pass
+            case "wrap-primitive" | "vt-init":
+                body.insert(0, self.primitive_classes_ast)
             case "vt-prop":
+                body.insert(0, self.primitive_classes_ast)
                 body.insert(0, self.global_func_ast)
             case "vython":
+                # Primitiveクラスを挿入
+                body.insert(0, self.primitive_classes_ast)
                 # グローバル関数を挿入
                 body.insert(0, self.global_func_ast)
                 # VTの互換性を示すデータ構造を挿入
