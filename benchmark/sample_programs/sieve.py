@@ -1,6 +1,6 @@
 import time
 
-def sieve(flags, size):
+def sieve_pure(flags, size):
     prime_count = 0
 
     i = 2
@@ -15,7 +15,7 @@ def sieve(flags, size):
 
     return prime_count
 
-def main(num_iteration):
+def main_pure(num_iteration):
     flags = []
     size = 5000
     for flag in range(size):
@@ -23,7 +23,7 @@ def main(num_iteration):
     execution_times = []
     for iteration in range(num_iteration):
         s = time.perf_counter()
-        sieve(flags, size)
+        sieve_pure(flags, size)
         e = time.perf_counter()
         execution_times.append(e - s)
     return execution_times
