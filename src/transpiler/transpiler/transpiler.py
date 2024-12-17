@@ -256,6 +256,7 @@ class Transpiler(Transformer):
                          lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     def if_stmt(self, items):
+        print(items)
         # testとbodyの実装
         test = items[0]
         then_body = items[1]
@@ -266,10 +267,9 @@ class Transpiler(Transformer):
         else_body = items[3]
         transformed_elif_list = self.transform(elif_list) if isinstance(elif_list, Tree) else elif_list
         transformed_else_body = self.transform(else_body) if isinstance(else_body, Tree) else else_body
-        transformed_orelse = [make_if_ast(transformed_elif_list,transformed_else_body)]
+        transformed_orelse = make_if_ast(transformed_elif_list,transformed_else_body)
         if transformed_orelse[0] is None:
             transformed_orelse = []
-
         return ast.If(test=transformed_test,body=transformed_body,orelse=transformed_orelse,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     
     def elifs(self, items):
@@ -767,7 +767,7 @@ def make_if_ast(elif_list, else_body):
             test = elif_list[0]
             body = elif_list[1]
             orelse = [make_if_ast(elif_list[2:],else_body)]
-        return ast.If(test=test,body=body,orelse=orelse,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+        return [ast.If(test=test,body=body,orelse=orelse,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)]
 
 # pureな関数かどうかを判定する補助関数
 def is_pure_func(name):
