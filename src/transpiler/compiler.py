@@ -1,8 +1,7 @@
 import ast
 import io
 import contextlib
-import time, traceback
-import lark
+import time
 import copy
 from src.transpiler.vython_parser import Parser
 from src.transpiler.transpiler.collect_classes import CollectClasses
@@ -57,20 +56,8 @@ class Compiler:
     # self.vythonASTをPython ASTにトランスパイルする
     # VIntなどのリテラルをラップするクラスの定義やDVC関数の定義が挿入される
     def transpile(self):
-        if self.lazy_wrap:
-            # tryとexceptの中に入るPython ASTをそれぞれ作成する
-            transpiler_wo_wrap = Transpiler(self.collected_classes, self.transpile_mode, wo_wrap=True, debug_mode=self.debug_mode)
-            pythonAST_try = transpiler_wo_wrap.transform(self.vythonAST)
-            transpiler = Transpiler(self.collected_classes, self.transpile_mode, debug_mode=self.debug_mode)
-            pythonAST_except = transpiler.transform(self.vythonAST)
-            # 作成したPythonASTを合成する
-            handlers = [ast.ExceptHandler(type=None, name=None, body=pythonAST_except.body)]
-            body = [ast.Try(body=pythonAST_try.body, handlers=handlers, orelse=None, finalbody=None)]
-            pythonAST = ast.Module(body=body,type_ignores=[])
-            self.pythonAST = pythonAST
-        else:  
-            transpiler = Transpiler(self.collected_classes, self.transpile_mode, debug_mode=self.debug_mode)
-            self.pythonAST = transpiler.transform(self.vythonAST)
+        transpiler = Transpiler(self.collected_classes, self.transpile_mode, wo_wrap=self.lazy_wrap, debug_mode=self.debug_mode)
+        self.pythonAST = transpiler.transform(self.vythonAST)
 
     # self.pythonASTをPythonのプログラムにunparseする
     def unparse(self):

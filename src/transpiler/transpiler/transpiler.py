@@ -1,6 +1,7 @@
 from lark import Token, Transformer, Tree
 import ast
 import copy
+from src.transpiler.transpiler.optimize_pure_func import Pure_Func_Optimizer
 
 # Vythonリテラルのクラス定義・DVC関数
 primitive_classes_path = "src/transpiler/vython_API/primitives.py"
@@ -19,7 +20,7 @@ class Transpiler(Transformer):
     def __init__(self, limited_classes, compilation_mode, wo_wrap=False, debug_mode=False):
         self.limited_classes = limited_classes
         self.compilation_mode = compilation_mode
-        self.wo_wrap = wo_wrap # literalsのラップをしない。これはcompilation_modeよりも優先される。
+        self.wo_wrap = wo_wrap 
         self.debug_mode = debug_mode
         match compilation_mode:
             case "python" | "wrap-primitive" | "vt-init" | "vt-prop" | "vython": self.compilation_mode = compilation_mode
@@ -97,34 +98,11 @@ class Transpiler(Transformer):
 
     def file_input(self, items):
         body = self._flatten_list(items)
-        # wo_wrapの時、wrapプリミティブクラスの定義は挿入しない
-        # 挿入してもしなくても、意味は変わらないと思う
-        if self.wo_wrap:
-            match self.compilation_mode:
-                case "python" |"wrap-primitive" | "vt-init": pass
-                case "vt-prop":
-                    body.insert(0, self.global_func_ast)
-                case "vython":
-                    # グローバル関数を挿入
-                    body.insert(0, self.global_func_ast)
-                    # VTの互換性を示すデータ構造を挿入
-                    body.insert(0, self.check_bit_mask_ast)
-                    # フィードバック生成のために使用するデータ
-                    body.insert(0, self.limited_classes_ast)
-                case _ : pass
-
-            return ast.Module(body=body,type_ignores=[])
-
         match self.compilation_mode:
-            case "python": pass
-            case "wrap-primitive" | "vt-init":
-                body.insert(0, self.primitive_classes_ast)
+            case "python" |"wrap-primitive" | "vt-init": pass
             case "vt-prop":
-                body.insert(0, self.primitive_classes_ast)
                 body.insert(0, self.global_func_ast)
             case "vython":
-                # Primitiveクラスを挿入
-                body.insert(0, self.primitive_classes_ast)
                 # グローバル関数を挿入
                 body.insert(0, self.global_func_ast)
                 # VTの互換性を示すデータ構造を挿入
@@ -134,7 +112,6 @@ class Transpiler(Transformer):
             case _ : pass
 
         return ast.Module(body=body,type_ignores=[])
-
 
     ############################
     ############################
@@ -148,6 +125,19 @@ class Transpiler(Transformer):
         if args is None:
             # params_treeがリストでない場合、空の引数リストを設定
             args = ast.arguments(posonlyargs=[],args=[],kwonlyargs=[],kw_defaults=[],defaults=[])
+        # pureな関数の時、wrapを遅延させる最適化を行う
+        if self.wo_wrap and is_pure_func(name):
+            # tryとexceptの中に入るPython ASTをそれぞれ作成
+            # try -> Pythonのastモジュールのvisitorを使用して、body中のwrap-literalをはがしたもの
+            try_body = []
+            for stmt in copy.deepcopy(body):
+                unwrapped_stmt = Pure_Func_Optimizer().visit(stmt)
+                try_body.append(unwrapped_stmt)
+            # except -> そのまま
+            except_body = body
+            # 作成したPythonASTを合成する
+            handlers = [ast.ExceptHandler(type=None, name=None, body=except_body)]
+            body = [ast.Try(body=try_body, handlers=handlers, orelse=None, finalbody=None)]
         return ast.FunctionDef(name=name, args=args, body=self._flatten_list(body),decorator_list=[],type_params=[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     # + AsyncFunctionDef
@@ -583,8 +573,6 @@ class Transpiler(Transformer):
     
     def const_true(self, items):
         value = ast.Constant(True,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        if self.wo_wrap:
-            return value
         match self.compilation_mode:
             case "wrap-primitive" | "vt-init" | "vt-prop" | "vython" :
                 return ast.Call(ast.Name(id="VBool",ctx=ast.Load()),[value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
@@ -592,8 +580,6 @@ class Transpiler(Transformer):
     
     def const_false(self, items):
         value = ast.Constant(False,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        if self.wo_wrap:
-            return value
         match self.compilation_mode:
             case "wrap-primitive" | "vt-init" | "vt-prop" | "vython" :
                 return ast.Call(ast.Name(id="VBool",ctx=ast.Load()),[value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
@@ -604,8 +590,6 @@ class Transpiler(Transformer):
         transformed_value = self.transform(value) if isinstance(value, Tree) else value
         transformed_value.value = transformed_value.value.replace('"',"")
         transformed_value = ast.Constant(transformed_value.value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-        if self.wo_wrap:
-            return transformed_value
         match self.compilation_mode:
             case "wrap-primitive" | "vt-init" | "vt-prop" | "vython" :               
                 return ast.Call(ast.Name(id="VStr",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
@@ -619,8 +603,6 @@ class Transpiler(Transformer):
                 case 'DEC_NUMBER': 
                     transformed_value = int(transformed_value.value)
                     transformed_value = ast.Constant(transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-                    if self.wo_wrap:
-                        return transformed_value
                     match self.compilation_mode:
                         case "wrap-primitive" | "vt-init" | "vt-prop" | "vython" :               
                             return ast.Call(ast.Name(id="VInt",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
@@ -628,8 +610,6 @@ class Transpiler(Transformer):
                 case 'FLOAT_NUMBER': 
                     transformed_value = float(transformed_value.value)
                     transformed_value = ast.Constant(transformed_value,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
-                    if self.wo_wrap:
-                        return transformed_value
                     match self.compilation_mode:
                         case "wrap-primitive" | "vt-init" | "vt-prop" | "vython" :               
                             return ast.Call(ast.Name(id="VFloat",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
@@ -667,8 +647,6 @@ class Transpiler(Transformer):
     # List
     def list(self, items):
         transformed_value = ast.List(elts=items,ctx=ast.Load())
-        if self.wo_wrap:
-            return transformed_value
         match self.compilation_mode:
             case "wrap-primitive" | "vt-init" | "vt-prop" | "vython" :               
                 return ast.Call(ast.Name(id="VList",ctx=ast.Load()),[transformed_value],[],lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
@@ -785,3 +763,11 @@ def make_if_ast(elif_list, else_body):
             body = elif_list[1]
             orelse = [make_if_ast(elif_list[2:],else_body)]
         return ast.If(test=test,body=body,orelse=orelse,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
+
+# pureな関数かどうかを判定する補助関数
+def is_pure_func(name):
+    if name[-4:] == "pure":
+        return True
+    else:
+        return False
+    
