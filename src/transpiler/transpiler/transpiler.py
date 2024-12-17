@@ -238,6 +238,10 @@ class Transpiler(Transformer):
         iter = items[1]
         body = items[2]
         orelse = items[3]
+        if type(target) == ast.Name:
+            target.ctx = ast.Store()
+        if orelse is None:
+            orelse = []
         return ast.For(target=target,
                        iter=iter,
                        body=body,
@@ -256,7 +260,6 @@ class Transpiler(Transformer):
                          lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
 
     def if_stmt(self, items):
-        print(items)
         # testとbodyの実装
         test = items[0]
         then_body = items[1]
@@ -268,7 +271,7 @@ class Transpiler(Transformer):
         transformed_elif_list = self.transform(elif_list) if isinstance(elif_list, Tree) else elif_list
         transformed_else_body = self.transform(else_body) if isinstance(else_body, Tree) else else_body
         transformed_orelse = make_if_ast(transformed_elif_list,transformed_else_body)
-        if transformed_orelse[0] is None:
+        if transformed_orelse is None:
             transformed_orelse = []
         return ast.If(test=transformed_test,body=transformed_body,orelse=transformed_orelse,lineno=0,col_offset=0,end_lineno=0,end_col_offset=0)
     

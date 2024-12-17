@@ -184,6 +184,8 @@ class VInt(int):
         return VBool(super().__bool__())
     def __index__(self):
         return VInt(super().__index__())
+    def __str__(self):
+        return VStr(super().__str__())
 
 class VFloat(numbers.Real):
 
@@ -386,7 +388,7 @@ class VStr(str):
     
     @_vt_builtin_op
     def __add__(self, other):
-        return VStr(self._value + other._value)
+        return VStr(str(self._value) + str(other._value))
     
     @_vt_builtin_op
     def __lt__(self, other):
