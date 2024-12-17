@@ -26,17 +26,7 @@ def list_modules_in_path(path):
     except FileNotFoundError:
         return []
 def run():
-<<<<<<< Updated upstream
     # ベンチマーク設定ファイルから設定を収集
-=======
-    print(sys.path)
-    for path in sys.path:
-        print(f"\nPath: {path}")
-        modules = list_modules_in_path(path)
-        for module in sorted(modules):
-            print(f"  {module}")
-    return
->>>>>>> Stashed changes
     settings = BenchmarkSettings(load_settings_json(settings_path))
 
     # ベンチマーク測定の結果等を格納するフォルダを生成
