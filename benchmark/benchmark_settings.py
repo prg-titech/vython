@@ -19,6 +19,7 @@ class BenchmarkSettings():
         # settings for Transpiler
         if(self.processor == "transpiler"):
             self.comparison_strategy = settings_json["comparison_strategy"]
+            self.optimize_pure_function = bool(settings_json["optimize_pure_function"])
 
     def get_gen_code_requirements(self):
         requirements = []

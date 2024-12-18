@@ -5,5 +5,6 @@
 
   "path_benchmarks": "benchmark/sample_programs",
 
-  "comparison_strategy": "all"
+  "comparison_strategy": "all",
+  "optimize_pure_function": true
 }

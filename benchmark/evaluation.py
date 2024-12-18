@@ -4,7 +4,7 @@ from utils import file_category_name, log
 from src.transpiler.compiler import Compiler as TC
 import numpy as np
 
-def evaluate_transpiler(code, comparison_strategy, num_iteration):
+def evaluate_transpiler(code, comparison_strategy, optimize_pure_function, num_iteration):
     match comparison_strategy:
         case "all":
             transpile_modes = ["python","wrap-primitive","vt-init","vt-prop","vython"]
@@ -20,14 +20,14 @@ def evaluate_transpiler(code, comparison_strategy, num_iteration):
     for transpile_mode in transpile_modes:
         log(f"Evaluating with transpile_mode={transpile_mode}")
 
-        transpiler = TC(code, transpile_mode, lazy_wrap=False)
+        transpiler = TC(code, transpile_mode, lazy_wrap=optimize_pure_function)
         transpiler.parse()
         transpiler.collect_classes(True)
         transpiler.transpile()
         transpiler.unparse()
         transpiler.execute()
         name_dict = transpiler.get_dict()
-        exec(f"exe_time = main({num_iteration})", name_dict)
+        exec(f"exe_time = main_pure({num_iteration})", name_dict)
         name_dict_after_execution = name_dict
         execution_time_list = name_dict_after_execution["exe_time"]
 
@@ -68,7 +68,9 @@ def evaluate_files(file_paths, settings):
         match benchmark_processor:
             case "transpiler":
                 comparison_strategy = settings.comparison_strategy
-                execution_time_per_file = evaluate_transpiler(code, comparison_strategy, num_iterations)
+                optimize_pure_function = settings.optimize_pure_function
+                log(f"Evaluate files with transpiler: comprison_strategy={comparison_strategy}, optimize_pure_function={optimize_pure_function}")
+                execution_time_per_file = evaluate_transpiler(code, comparison_strategy, optimize_pure_function, num_iterations)
         
         evaluation_results.append(execution_time_per_file)
         file_names.append(file_category_name(file_path))

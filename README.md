@@ -94,6 +94,9 @@ python3 benchmark/main.py
   - `"comparison_strategy"`: 使用する言語機構を切り替えた測定が可能
     - モード`all`: 切り替えられる全てのケースで測定 
     - モード`v&p`: 全ての言語機構を使用(vython)と、全て使用しない(python)の二つで測定
+  - `"optimize_pure_function"`: pureな関数(メソッド含む)に対する最適化のON/OFFを切り替え可能
+    - `true` : ON
+    - `false`: OFF
 - `"benchmark_target": generate`時の追加設定項目
   - `"num_loop"`                 : 何回primitive演算を行うか
   - `"num_base_names"`           : 生成されるvythonファイルにおけるクラス名の種類数
