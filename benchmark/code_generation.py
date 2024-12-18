@@ -59,7 +59,7 @@ def generate_vython_code(loop, num_base_names, expo):
     
     
     code += f"m = {loop}\n"
-    code += "def main(num_iteration):\n"
+    code += "def main_pure(num_iteration):\n"
     code += "   execution_times = []\n"
     code += "   for i in range(num_iteration):\n"
     code += "       s = time.perf_counter()\n"
