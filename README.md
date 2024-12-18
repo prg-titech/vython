@@ -114,7 +114,8 @@ Benchmark Settings used in 3p-abstract of APLAS SRC 2024
   "num_loop": 2000,
   "num_base_names": 1024,
 
-  "comparison_strategy": "all"
+  "comparison_strategy": "all",
+  "optimize_pure_function": false
 }
 ```
 ```bash
@@ -125,7 +126,8 @@ Benchmark Settings used in 3p-abstract of APLAS SRC 2024
 
   "path_benchmarks": "benchmark/sample_programs",
 
-  "comparison_strategy": "all"
+  "comparison_strategy": "all",
+  "optimize_pure_function": false
 }
 ```
 
