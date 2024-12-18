@@ -6,8 +6,7 @@ from src.transpiler.transpiler.optimize_pure_func import Pure_Func_Optimizer
 # Vythonリテラルのクラス定義・DVC関数
 primitive_classes_path = "src/transpiler/vython_API/primitives.py"
 global_func_path = "src/transpiler/vython_API/DVC.py"
-# 機能制限版
-primitive_classes_wo_decorator_path = "src/transpiler/vython_API/limited_API/primitives_wo_deco.py"
+# DVC関数・機能制限版
 global_func_wo_wf_path = "src/transpiler/vython_API/limited_API/DVC_wo_wf.py"
 
 # initializer関数が無いときにクラス定義に挿入するためのテンプレート
@@ -48,18 +47,20 @@ class Transpiler(Transformer):
             case _ : pass
 
         # Python ASTに挿入するVython Primitiveクラス定義のAST
+        with open(primitive_classes_path,"r") as file:
+            primitive_classes_code = file.read()
+        # compilation_modeに従って、Primitiveクラス定義のコードの一部を書き換え & parseしてASTを記録
         match compilation_mode:
-            case "python" : pass
-            case "wrap-primitive" | "vt-init" : 
-                with open(primitive_classes_wo_decorator_path,"r") as file:
-                    primitive_classes_code = file.read()
-                self.primitive_classes_ast = ast.parse(primitive_classes_code)
+            case "python": pass
+            case "wrap-primitive":
+                primitive_classes_code_wo_deco = remove_target_string(primitive_classes_code, "@_vt_builtin_op")
+                primitive_classes_code_wo_deco_mk = remove_target_string(primitive_classes_code_wo_deco, "self.vt = 0")
+                self.primitive_classes_ast = ast.parse(primitive_classes_code_wo_deco_mk)
+            case "vt-init":
+                primitive_classes_code_wo_deco = remove_target_string(primitive_classes_code, "@_vt_builtin_op")
+                self.primitive_classes_ast = ast.parse(primitive_classes_code_wo_deco)
             case "vt-prop" | "vython" :
-                with open(primitive_classes_path,"r") as file:
-                    primitive_classes_code = file.read()
                 self.primitive_classes_ast = ast.parse(primitive_classes_code)
-            case _ :
-                pass
             
         # クラス定義のイニシャライザー関数のテンプレートAST
         self.initialize_func_ast = initialize_func_ast
@@ -161,6 +162,7 @@ class Transpiler(Transformer):
                     case "vt-init" | "vt-prop" | "vython" :
                         # initializeメソッドAST に VT初期化関数呼び出しAST を挿入
                         if(element.name == "__init__"):
+                            # バージョンを気にするクラスであった場合、初期化するbit列をそのクラスとバージョンについて作成
                             if name in self.limited_classes.keys():
                                 version_list = self.limited_classes[str(name)][1]
                                 if str(version) == version_list[0]:
@@ -169,16 +171,18 @@ class Transpiler(Transformer):
                                     n = self.limited_classes[str(name)][0] * 4 + 2
 
                                 vt_init_stmt = f"self.vt = {1 << n}"
+                            # バージョンを気にしないクラスであった場合、vt = 0で初期化するようにする
                             else:
                                 vt_init_stmt = f"self.vt = 0"
                             element.body.insert(0, ast.parse(f"{vt_init_stmt}").body[0])
                             is_init_exist = True
-                        # メソッドをラップし、VT書き換え関数呼び出しASTを挿入した新しいメソッドASTに変更する
+                        # __init__でない場合、_vt_invkをデコレーターに挿入した新しいメソッドASTに変更する
                         else:
                             if (self.compilation_mode == "vt-prop") or (self.compilation_mode == "vython"):
                                 element.decorator_list.append(ast.Name(id="_vt_invk", ctx=ast.Load()))
                     case _ : pass
         
+        # __init__が存在しなかったクラス定義について、mk付き__init__の定義を作成し、挿入する
         match self.compilation_mode:
             case "vt-init" | "vt-prop" | "vython" :
                 if not is_init_exist:
@@ -778,4 +782,9 @@ def is_pure_func(name):
         return True
     else:
         return False
+    
+# fullのvython_APIプログラムから特定の機能を削除するために使う補助関数
+# 元のcodeには影響を与えない
+def remove_target_string(code, target):
+    return code.replace(target, "")
     

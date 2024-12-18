@@ -24,7 +24,7 @@ def _issue_warning(*args):
 # VT Operations
 # -------------
 
-# def _vt_well_fromed(obj):
+# def _vt_well_formed(obj):
 #     if hasattr(obj, "vt"):
 #         vt = obj.vt
 #         return ((((vt >> 1) & vt) >> 1) | ((vt >> 3) & vt)) & check_bit_mask == 0
