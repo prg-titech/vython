@@ -393,7 +393,14 @@ class VStr(str):
     @_vt_builtin_op
     def __lt__(self, other):
         return VBool(self._value < other._value)
-
+    
+    # @_vt_builtin_op
+    # slice (=item)にはvtがないため
+    def __getitem__(self, items):
+        return VStr(self._value.__getitem__(items))
+    
+    def rjust(self, i):
+        return VStr(self._value.rjust(i))
     
     # 後で諸々は実装
     

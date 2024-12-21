@@ -115,6 +115,22 @@ def _wrap_primitive(value):
     return result
 
 # -------------
+# helper functions
+# -------------
+def _wrap_range(value):
+    result = VList([])
+    for i in range(value):
+        result.append(VInt(i))
+    return result
+
+def _wrap_sorted(list, **key):
+    result = VList(sorted(list, key=key["key"]))
+    return result
+
+def _wrap_chr(code):
+    return VStr(chr(code))
+
+# -------------
 # For Debug
 # -------------
 def _print_vt(value):
