@@ -141,6 +141,9 @@ def _wrap_sorted(list, **key):
 def _wrap_chr(code):
     return VStr(chr(code))
 
+def _wrap_ord(chr):
+    return VInt(ord(chr))
+
 # -------------
 # For Debug
 # -------------
