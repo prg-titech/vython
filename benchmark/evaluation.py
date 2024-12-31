@@ -45,8 +45,42 @@ def evaluate_transpiler(code, comparison_strategy, optimize_pure_function, num_i
 
     return execution_time_data
 
+def evaluate_transpiler_mono(code, comparison_strategy, optimize_pure_function, num_iteration):
+    match comparison_strategy:
+        case "all":
+            transpile_modes = ["python","wrap-primitive","vt-init","vt-prop","vython"]
+        case "v&p":
+            transpile_modes = ["python","vython"]
+        case _:
+            log(f"Undefined option of comparison_strategy: {comparison_strategy}")
+            sys.exit(1)
+
+    # {"{transpile_mode}": (avg, sem),..}
+    execution_time_data = dict()
+
+    for transpile_mode in transpile_modes:
+        log(f"Evaluating with transpile_mode={transpile_mode}")
+
+        transpiler = TC(code, transpile_mode, lazy_wrap=optimize_pure_function)
+        transpiler.parse()
+        transpiler.collect_classes(True)
+        transpiler.transpile()
+        transpiler.unparse()
+        transpiler.execute()
+        name_dict = transpiler.get_dict()
+        exec(f"exe_time = main_pure({num_iteration})", name_dict)
+        name_dict_after_execution = name_dict
+        execution_time_list = name_dict_after_execution["exe_time"]
+        
+        log(f"Completed evaluation with {transpile_mode}")
+
+        execution_time_data[transpile_mode] = execution_time_list
+
+    return execution_time_data
+
 def evaluate_files(file_paths, settings):
     benchmark_processor = settings.processor
+    benchmark_target = settings.benchmark_target
     num_iterations = settings.num_iterations
 
     file_names = []
@@ -65,8 +99,13 @@ def evaluate_files(file_paths, settings):
 
         log(f"Evaluate: {file_path}")
 
-        match benchmark_processor:
-            case "transpiler":
+        match (benchmark_processor, benchmark_target):
+            case ("transpiler", "sample_mono"):
+                comparison_strategy = settings.comparison_strategy
+                optimize_pure_function = settings.optimize_pure_function
+                log(f"Evaluate files with transpiler: comprison_strategy={comparison_strategy}, optimize_pure_function={optimize_pure_function}")
+                execution_time_per_file = evaluate_transpiler_mono(code, comparison_strategy, optimize_pure_function, num_iterations)
+            case ("transpiler", _):
                 comparison_strategy = settings.comparison_strategy
                 optimize_pure_function = settings.optimize_pure_function
                 log(f"Evaluate files with transpiler: comprison_strategy={comparison_strategy}, optimize_pure_function={optimize_pure_function}")

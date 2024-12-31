@@ -6,7 +6,7 @@ class BenchmarkSettings():
         self.num_iterations = settings_json["num_iterations"]
 
         # settings for sample
-        if(self.benchmark_target == "sample"):
+        if(self.benchmark_target == "sample") or (self.benchmark_target == "sample_mono"):
             self.path_benchmarks = settings_json["path_benchmarks"]
         
         # settings for generate

@@ -27,6 +27,21 @@ def get_file_paths(path):
         return file_paths
     
 def generate_csv(evaluation_results, csv_writer, settings):
+    if settings.benchmark_target == "sample_mono":
+        log("Generating csv file with the evaluation results")
+        for evaluation_result in evaluation_results:
+            file_name = evaluation_result[0]
+            evaluation_data = evaluation_result[1]
+            csv_writer.writerow(['Program', file_name, ': Execution Time in', settings.processor])
+
+            for compilation_mode, data in evaluation_data.items():
+                csv_writer.writerow(['Executed in', compilation_mode])
+                csv_writer.writerow(['DATA', f"{data}"])
+            csv_writer.writerow([])
+            
+        log("Generated csv file")
+        return
+
     log("Generating csv file with the evaluation results")
     for evaluation_result in evaluation_results:
         file_name = evaluation_result[0]

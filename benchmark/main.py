@@ -49,7 +49,7 @@ def run():
 
     # ベンチマークターゲットプログラムのpathのリストを取得
     match settings.benchmark_target:
-        case "sample":
+        case "sample" | "sample_mono":
             file_paths = get_file_paths(settings.path_benchmarks)
         case "generate":
             allocate_vython_code(gen_code_requirements, source_path)
