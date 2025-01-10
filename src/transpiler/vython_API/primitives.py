@@ -55,7 +55,13 @@ class VInt(int):
     
     @_vt_builtin_op
     def __rsub__(self, value):
-        return VInt(super().__rsub__(value))
+        try:
+            return VBool(super().__rsub__(value))
+        except Exception as e:
+            if hasattr(value, "_value"):
+                return VBool(value._value - self._value)
+            else:
+                raise e
     
     @_vt_builtin_op
     def __rmul__(self, value):
@@ -162,7 +168,13 @@ class VInt(int):
     
     @_vt_builtin_op
     def __le__(self, value):
-        return VBool(super().__le__(value))
+        try:
+            return VBool(super().__le__(value))
+        except Exception as e:
+            if hasattr(value, "_value"):
+                return VBool(self._value <= value._value)
+            else:
+                raise e
     
     @_vt_builtin_op
     def __gt__(self, value):
